@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Pre-commit hook
+#
+# 1. Runs pre-commit (auto-format, lint, type-check) when it is installed and
+#    hook environments are already set up.  Skips gracefully when pre-commit is
+#    absent, when the config is missing, or when running in CI without caching.
+#    Formatters that modify staged files re-stage them automatically.
+# 2. Runs the bootstrap test suite (bash syntax + shellcheck + pytest).
+
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+log()  { printf '[pre-commit] %s\n'      "$*"; }
+warn() { printf '[pre-commit] WARN: %s\n' "$*" >&2; }
+
+# ── pre-commit ────────────────────────────────────────────────────────────────
+
+run_precommit() {
+    # Bail out gracefully if pre-commit isn't installed
+    if ! command -v pre-commit >/dev/null 2>&1; then
+        warn "pre-commit not found; skipping auto-format/lint."
+        warn "Install with: uv tool install pre-commit"
+        return 0
+    fi
+
+    # Bail out gracefully if the config is missing
+    if [[ ! -f "$ROOT_DIR/.pre-commit-config.yaml" ]]; then
+        warn "No .pre-commit-config.yaml found; skipping pre-commit."
+        return 0
+    fi
+
+    # If hook environments have never been installed, installing them now would
+    # require network access and can take minutes.  Detect this state and skip
+    # instead of silently hanging or failing.
+    #
+    # pre-commit stores its cache under $PRE_COMMIT_HOME (default ~/.cache/pre-commit).
+    local cache_dir="${PRE_COMMIT_HOME:-${XDG_CACHE_HOME:-$HOME/.cache}/pre-commit}"
+    if [[ ! -d "$cache_dir" ]]; then
+        warn "pre-commit hook environments not yet installed (cache dir absent)."
+        warn "Run 'pre-commit install-hooks' once to set them up, then commit again."
+        return 0
+    fi
+
+    log "Running pre-commit hooks..."
+
+    # Record staged files before running so we can re-stage auto-fixed ones.
+    mapfile -t staged_before < <(git diff --name-only --cached)
+
+    set +e
+    pre-commit run --from-ref HEAD --to-ref HEAD 2>/dev/null \
+        || pre-commit run 2>/dev/null
+    local pc_exit=$?
+    set -e
+
+    if [[ $pc_exit -ne 0 ]]; then
+        # Re-stage files that pre-commit auto-fixed and that were already staged.
+        mapfile -t modified_after < <(git diff --name-only)
+        local restaged=0
+        local f s
+        for f in "${modified_after[@]}"; do
+            for s in "${staged_before[@]}"; do
+                if [[ "$f" == "$s" ]]; then
+                    git add -- "$f"
+                    log "Re-staged (auto-fixed): $f"
+                    restaged=$((restaged + 1))
+                    break
+                fi
+            done
+        done
+
+        if [[ $restaged -gt 0 ]]; then
+            warn "$restaged file(s) were auto-fixed and re-staged."
+            warn "Review the changes and commit again."
+        else
+            warn "pre-commit reported errors. Fix them and commit again."
+        fi
+
+        return 1
+    fi
+
+    log "pre-commit passed."
+}
+
+run_precommit
+
+# ── Bootstrap test suite ──────────────────────────────────────────────────────
+log "Running bootstrap checks..."
+bash scripts/test.sh

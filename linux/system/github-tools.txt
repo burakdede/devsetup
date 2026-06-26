@@ -1,0 +1,6 @@
+# command|repo|asset_regex|mode|binary
+yq|mikefarah/yq|^yq_linux_amd64$|raw|yq
+eza|eza-community/eza|^eza_x86_64-unknown-linux-gnu\.tar\.gz$|tar.gz|eza
+sd|chmln/sd|^sd-.*x86_64-unknown-linux.*\.tar\.gz$|tar.gz|sd
+scc|boyter/scc|^scc_Linux_x86_64\.tar\.gz$|tar.gz|scc
+hcloud|hetznercloud/cli|^hcloud-linux-amd64\.tar\.gz$|tar.gz|hcloud

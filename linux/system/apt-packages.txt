@@ -1,0 +1,56 @@
+# Tier 1 agent tooling
+bat
+bzip2
+build-essential
+ca-certificates
+curl
+diffutils
+fd-find
+file
+fzf
+gettext-base
+git
+git-lfs
+gnupg
+jq
+less
+openssl
+p7zip-full
+patch
+pkg-config
+poppler-utils
+python3
+python3-pip
+python3-venv
+ripgrep
+shellcheck
+sqlite3
+tar
+tree
+unzip
+wget
+xclip
+xsel
+xz-utils
+zip
+zstd
+
+# Security and system safety
+fail2ban
+timeshift
+ufw
+
+# Coding agent productivity
+direnv    # per-directory env vars — agents cd in and env is automatically set
+just      # task runner — agents call `just <task>` without parsing Makefiles
+shfmt     # shell script formatter — agents write shell; this keeps it correct
+
+# Useful local development utilities
+ffmpeg
+gh
+gimp
+gnome-tweaks
+imagemagick
+tmux
+vim
+zsh

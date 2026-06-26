@@ -1,0 +1,72 @@
+name: Linux CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - feat/**
+    paths:
+      - 'linux/**'
+      - 'dotfiles/**'
+  pull_request:
+    paths:
+      - 'linux/**'
+      - 'dotfiles/**'
+  schedule:
+    # Weekly full test every Monday at 06:00 UTC — catches upstream breakage
+    # (snap removals, GitHub release asset renames, npm package changes, etc.)
+    - cron: '0 6 * * 1'
+
+defaults:
+  run:
+    working-directory: linux
+
+jobs:
+  bootstrap-checks:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck python3
+
+      - name: Run bootstrap checks
+        run: bash scripts/test.sh
+
+  system-smoke:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Run the full system step on a real Ubuntu 24.04 VM.
+      # Snaps are skipped — snapd requires systemd which GitHub runners don't provide.
+      # UFW is skipped — enabling it would block the runner's own network access.
+      # Everything else (apt, GitHub tools, uv, mise, npm, Docker, Chrome, runtimes) runs for real.
+      - name: System bootstrap
+        env:
+          LINUX_SETUP_SMOKE_FULL: "1"
+          LINUX_SETUP_SKIP_SNAPS: "1"
+          LINUX_SETUP_SKIP_UFW: "1"
+          DEBIAN_FRONTEND: noninteractive
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/smoke-system.sh
+
+      - name: Verify installed commands
+        env:
+          LINUX_SETUP_SKIP_WEZTERM: "1"
+          LINUX_SETUP_SKIP_NEOVIM: "1"
+          LINUX_SETUP_SKIP_FONTS: "1"
+        run: bash scripts/verify-system-smoke.sh
+
+      - name: Dotfiles bootstrap
+        run: bash run.sh --only dotfiles
+
+      - name: Agents bootstrap
+        run: bash run.sh --only agents

@@ -1,0 +1,5 @@
+# Agent CLIs and JS formatting/linting
+@openai/codex
+opencode-ai
+eslint
+prettier

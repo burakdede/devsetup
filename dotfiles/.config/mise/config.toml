@@ -1,0 +1,10 @@
+# mise global tool versions
+# https://mise.jdx.dev/configuration.html
+#
+# Override per-project in <project>/.mise.toml or <project>/.tool-versions.
+# Add new tools: mise use --global <tool>@<version>
+
+[tools]
+python = "3.13"
+node   = "24"
+go     = "1.23"

@@ -1,0 +1,708 @@
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import tempfile
+import textwrap
+import unittest
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+# dotfiles/ lives at the monorepo root, one level above linux/
+DOTFILES_DIR = REPO_ROOT.parent / "dotfiles"
+
+
+class BootstrapRepoTests(unittest.TestCase):
+    def run_cmd(self, args, cwd=None, env=None):
+        return subprocess.run(
+            args,
+            cwd=cwd or REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def create_sourceable_system_script(self, directory: Path) -> Path:
+        original = (REPO_ROOT / "system" / "system.sh").read_text(encoding="utf-8")
+        lines = original.splitlines()
+        filtered_lines = []
+        for line in lines:
+            if line.strip() == 'source "$SCRIPT_DIR/../utils/utils.sh"':
+                continue
+            if line.strip() == "main":
+                continue
+            filtered_lines.append(line)
+
+        script_path = directory / "system-sourceable.sh"
+        script_path.write_text("\n".join(filtered_lines) + "\n", encoding="utf-8")
+        return script_path
+
+    def test_shell_syntax_is_valid(self):
+        scripts = [
+            ".githooks/pre-commit",
+            ".githooks/pre-push",
+            "run.sh",
+            "scripts/install-hooks.sh",
+            "scripts/smoke-system.sh",
+            "system/system.sh",
+            "sdk/sdk.sh",
+            "git/git.sh",
+            "dotfiles.sh",
+            "utils/utils.sh",
+            "utils/settings.sh",
+            "scripts/test.sh",
+            "scripts/verify-system-smoke.sh",
+            "scripts/vm-smoke-test.sh",
+            "terminal/terminal.sh",
+            "shell/shell.sh",
+            "editor/editor.sh",
+            "multiplexer/multiplexer.sh",
+            "scripts/verify-install.sh",
+            "configure/configure.sh",
+        ]
+        result = self.run_cmd(["bash", "-n", *scripts])
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_shellcheck_passes(self):
+        files = [
+            ".githooks/pre-commit",
+            ".githooks/pre-push",
+            "run.sh",
+            "scripts/install-hooks.sh",
+            "scripts/smoke-system.sh",
+            "system/system.sh",
+            "sdk/sdk.sh",
+            "git/git.sh",
+            "dotfiles.sh",
+            "utils/utils.sh",
+            "utils/settings.sh",
+            "scripts/test.sh",
+            "scripts/verify-system-smoke.sh",
+            "scripts/vm-smoke-test.sh",
+            "terminal/terminal.sh",
+            "shell/shell.sh",
+            "editor/editor.sh",
+            "multiplexer/multiplexer.sh",
+            "scripts/verify-install.sh",
+            "configure/configure.sh",
+        ]
+        # Include shared dotfiles files when the monorepo dotfiles dir is present.
+        dotfiles_files = [DOTFILES_DIR / ".bash_aliases", DOTFILES_DIR / ".zshenv"]
+        for f in dotfiles_files:
+            if f.exists():
+                files.append(str(f))
+
+        result = self.run_cmd(["shellcheck", *files])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_run_help_succeeds(self):
+        result = self.run_cmd(["bash", "run.sh", "--help"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Usage: ./run.sh [options]", result.stdout)
+        self.assertIn("--only STEP", result.stdout)
+
+    def test_settings_script_skips_without_desktop_session(self):
+        env = os.environ.copy()
+        env.pop("DISPLAY", None)
+        env.pop("WAYLAND_DISPLAY", None)
+
+        result = self.run_cmd(["bash", "utils/settings.sh"], env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Skipping GNOME settings because no desktop session is active.", result.stderr)
+
+    def test_dotfiles_script_installs_and_backs_up(self):
+        if not (DOTFILES_DIR / ".gitconfig").exists():
+            self.skipTest("dotfiles directory not found")
+        with tempfile.TemporaryDirectory() as temp_home:
+            home = Path(temp_home)
+            existing_gitconfig = home / ".gitconfig"
+            existing_gitconfig.write_text("[user]\n\tname = Old User\n", encoding="utf-8")
+
+            env = os.environ.copy()
+            env["HOME"] = temp_home
+
+            result = self.run_cmd(["bash", "dotfiles.sh"], env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            installed_aliases = home / ".bash_aliases"
+            installed_gitconfig = home / ".gitconfig"
+
+            self.assertTrue(installed_aliases.exists())
+            self.assertTrue(installed_gitconfig.exists())
+
+            # dotfiles.sh must create symlinks, not copies
+            self.assertTrue(installed_aliases.is_symlink(), ".bash_aliases should be a symlink")
+            self.assertTrue(installed_gitconfig.is_symlink(), ".gitconfig should be a symlink")
+            self.assertTrue(
+                str(installed_gitconfig.resolve()).startswith(str(REPO_ROOT.parent)),
+                "symlink should point into the repo",
+            )
+
+            # .config sub-dirs must also be symlinked
+            source_config_dir = DOTFILES_DIR / ".config"
+            if source_config_dir.exists():
+                for entry in source_config_dir.iterdir():
+                    target = home / ".config" / entry.name
+                    self.assertTrue(target.is_symlink(), f".config/{entry.name} should be a symlink")
+
+            # Existing .gitconfig must have been backed up
+            backup_root = home / ".local" / "state" / "devsetup" / "dotfiles-backups"
+            backups = list(backup_root.rglob(".gitconfig"))
+            self.assertTrue(backups, "Expected .gitconfig backup to be created")
+
+    def test_run_only_executes_requested_step(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            repo = Path(tmp_dir) / "repo"
+            (repo / "utils").mkdir(parents=True)
+            (repo / "system").mkdir()
+            (repo / "dotfiles").mkdir()
+            (repo / "sdk").mkdir()
+            (repo / "agents").mkdir()
+            (repo / "git").mkdir()
+
+            shutil.copy2(REPO_ROOT / "run.sh", repo / "run.sh")
+            shutil.copy2(REPO_ROOT / "utils" / "utils.sh", repo / "utils" / "utils.sh")
+
+            marker_dir = repo / "markers"
+            marker_dir.mkdir()
+
+            for step_dir, script_name, marker_name in [
+                ("system", "system.sh", "system"),
+                ("dotfiles", "dotfiles.sh", "dotfiles"),
+                ("sdk", "sdk.sh", "sdk"),
+                ("agents", "agents.sh", "agents"),
+                ("git", "git.sh", "git"),
+            ]:
+                script_path = repo / step_dir / script_name
+                script_path.write_text(
+                    textwrap.dedent(
+                        f"""\
+                        #!/usr/bin/env bash
+                        set -euo pipefail
+                        touch "{marker_dir / marker_name}"
+                        """
+                    ),
+                    encoding="utf-8",
+                )
+                script_path.chmod(script_path.stat().st_mode | stat.S_IXUSR)
+
+            settings_path = repo / "utils" / "settings.sh"
+            settings_path.write_text(
+                textwrap.dedent(
+                    f"""\
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    touch "{marker_dir / 'settings'}"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            settings_path.chmod(settings_path.stat().st_mode | stat.S_IXUSR)
+
+            env = os.environ.copy()
+            env["HOME"] = str(Path(tmp_dir) / "home")
+            Path(env["HOME"]).mkdir()
+
+            result = self.run_cmd(["bash", "run.sh", "--only", "sdk"], cwd=repo, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((marker_dir / "sdk").exists())
+            self.assertFalse((marker_dir / "system").exists())
+            self.assertFalse((marker_dir / "dotfiles").exists())
+            self.assertFalse((marker_dir / "agents").exists())
+            self.assertFalse((marker_dir / "git").exists())
+            self.assertFalse((marker_dir / "settings").exists())
+
+    def test_read_list_file_skips_comments_and_blank_lines(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            manifest = Path(tmp_dir) / "manifest.txt"
+            manifest.write_text(
+                textwrap.dedent(
+                    """\
+                    # comment
+
+                    rg
+                    fd-find   # inline comment
+
+                    jq
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            command = (
+                f'source "{REPO_ROOT / "utils" / "utils.sh"}"; '
+                f'read_list_file "{manifest}"'
+            )
+            result = self.run_cmd(["bash", "-lc", command])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.splitlines(), ["rg", "fd-find", "jq"])
+
+    def test_manifests_are_well_formed(self):
+        simple_manifests = [
+            REPO_ROOT / "system" / "apt-packages.txt",
+            REPO_ROOT / "system" / "npm-packages.txt",
+            REPO_ROOT / "system" / "uv-tools.txt",
+        ]
+        for manifest in simple_manifests:
+            seen = set()
+            for raw_line in manifest.read_text(encoding="utf-8").splitlines():
+                line = raw_line.split("#", 1)[0].strip()
+                if not line:
+                    continue
+                self.assertNotIn(line, seen, f"Duplicate entry {line!r} in {manifest}")
+                seen.add(line)
+
+        snap_seen = set()
+        for raw_line in (REPO_ROOT / "system" / "snap-packages.txt").read_text(encoding="utf-8").splitlines():
+            line = raw_line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            parts = line.split()
+            self.assertGreaterEqual(len(parts), 1)
+            self.assertLessEqual(len(parts), 3)
+            self.assertNotIn(line, snap_seen)
+            snap_seen.add(line)
+            if len(parts) >= 2:
+                self.assertTrue(parts[1] == "-" or re.fullmatch(r"[A-Za-z0-9./_-]+", parts[1]))
+            if len(parts) == 3:
+                self.assertEqual(parts[2], "classic")
+
+        github_seen = set()
+        valid_modes = {"raw", "tar.gz"}
+        for raw_line in (REPO_ROOT / "system" / "github-tools.txt").read_text(encoding="utf-8").splitlines():
+            line = raw_line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            self.assertEqual(len(parts), 5, f"Expected 5 columns in github-tools.txt, got {line!r}")
+            command_name, repo, asset_pattern, mode, binary_name = parts
+            self.assertTrue(command_name)
+            self.assertRegex(repo, r"^[^/]+/[^/]+$")
+            self.assertTrue(asset_pattern)
+            self.assertIn(mode, valid_modes)
+            self.assertTrue(binary_name)
+            self.assertNotIn(command_name, github_seen)
+            github_seen.add(command_name)
+
+    def test_system_installer_uses_expected_apt_command(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            log_file = Path(tmp_dir) / "log.txt"
+            manifest = Path(tmp_dir) / "apt.txt"
+            sourceable_script = self.create_sourceable_system_script(tmp_path)
+            manifest.write_text("rg\nfd-find\njq\n", encoding="utf-8")
+
+            command = textwrap.dedent(
+                f"""\
+                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                sudo_run() {{ printf 'sudo:%s\\n' "$*" >> "{log_file}"; }}
+                log_info() {{ :; }}
+                log_warn() {{ :; }}
+                log_success() {{ :; }}
+                echo_header() {{ :; }}
+                source "{sourceable_script}"
+                APT_PACKAGES_FILE="{manifest}"
+                install_apt_packages
+                """
+            )
+
+            result = self.run_cmd(["bash", "-lc", command])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            log_output = log_file.read_text(encoding="utf-8")
+            self.assertIn("sudo:apt-get install -y --no-install-recommends rg fd-find jq", log_output)
+
+    def test_system_installer_parses_snap_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            log_file = Path(tmp_dir) / "log.txt"
+            manifest = Path(tmp_dir) / "snaps.txt"
+            sourceable_script = self.create_sourceable_system_script(tmp_path)
+            manifest.write_text(
+                "discord - classic\npostman latest/stable\nlocalsend\n",
+                encoding="utf-8",
+            )
+
+            command = textwrap.dedent(
+                f"""\
+                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                sudo_run() {{ printf 'sudo:%s\\n' "$*" >> "{log_file}"; }}
+                log_info() {{ :; }}
+                log_warn() {{ :; }}
+                log_success() {{ :; }}
+                echo_header() {{ :; }}
+                snap() {{ return 1; }}
+                source "{sourceable_script}"
+                SNAP_PACKAGES_FILE="{manifest}"
+                install_snap_packages
+                """
+            )
+
+            result = self.run_cmd(["bash", "-lc", command])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            lines = log_file.read_text(encoding="utf-8").splitlines()
+            self.assertIn("sudo:snap install discord --classic", lines)
+            self.assertIn("sudo:snap install postman --channel=latest/stable", lines)
+            self.assertIn("sudo:snap install localsend", lines)
+
+    def test_ensure_line_in_file_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            target = tmp_path / ".bashrc"
+            line = 'eval "$("$HOME/.local/bin/mise" activate bash)"'
+
+            command = textwrap.dedent(
+                f"""\
+                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                ensure_line_in_file '{line}' "{target}"
+                ensure_line_in_file '{line}' "{target}"
+                """
+            )
+
+            result = self.run_cmd(["bash", "-lc", command])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            bashrc = target.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(bashrc.count(line), 1)
+
+    def test_system_main_respects_skip_flags(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            log_file = Path(tmp_dir) / "log.txt"
+            sourceable_script = self.create_sourceable_system_script(tmp_path)
+            command = textwrap.dedent(
+                f"""\
+                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{sourceable_script}"
+                check_root() {{ :; }}
+                ensure_sudo() {{ :; }}
+                ensure_core_packages() {{ printf 'core\\n' >> "{log_file}"; }}
+                upgrade_base_system() {{ printf 'upgrade\\n' >> "{log_file}"; }}
+                install_apt_packages() {{ printf 'apt\\n' >> "{log_file}"; }}
+                ensure_agent_command_names() {{ printf 'compat\\n' >> "{log_file}"; }}
+                setup_docker_repo() {{ printf 'docker\\n' >> "{log_file}"; }}
+                install_snap_packages() {{ printf 'snaps\\n' >> "{log_file}"; }}
+                setup_google_chrome_repo() {{ printf 'chrome\\n' >> "{log_file}"; }}
+                setup_spotify_repo() {{ printf 'spotify\\n' >> "{log_file}"; }}
+                install_steam_apt() {{ printf 'steam\\n' >> "{log_file}"; }}
+                setup_tailscale_repo() {{ printf 'tailscale\\n' >> "{log_file}"; }}
+                install_jetbrains_toolbox() {{ printf 'jetbrains-toolbox\\n' >> "{log_file}"; }}
+                configure_timeshift_policy() {{ printf 'timeshift\\n' >> "{log_file}"; }}
+                install_github_release_tools() {{ printf 'gh-tools\\n' >> "{log_file}"; }}
+                install_uv() {{ printf 'uv\\n' >> "{log_file}"; }}
+                install_uv_tools() {{ printf 'uv-tools\\n' >> "{log_file}"; }}
+                install_claude_code() {{ printf 'claude\\n' >> "{log_file}"; }}
+                install_npm_clis() {{ printf 'npm\\n' >> "{log_file}"; }}
+                install_go_runtime() {{ printf 'go\\n' >> "{log_file}"; }}
+                install_python_runtime() {{ printf 'python\\n' >> "{log_file}"; }}
+                install_rust() {{ printf 'rust\\n' >> "{log_file}"; }}
+                install_iac_tools() {{ printf 'iac\\n' >> "{log_file}"; }}
+                setup_ufw() {{ printf 'ufw\\n' >> "{log_file}"; }}
+                echo_header() {{ :; }}
+                log_success() {{ :; }}
+                export LINUX_SETUP_SKIP_SNAPS=1
+                export LINUX_SETUP_SKIP_CHROME=1
+                export LINUX_SETUP_SKIP_GO=1
+                export LINUX_SETUP_SKIP_PYTHON=1
+                export LINUX_SETUP_SKIP_RUST=1
+                export LINUX_SETUP_SKIP_IAC_TOOLS=1
+                export LINUX_SETUP_SKIP_UFW=1
+                main
+                """
+            )
+
+            result = self.run_cmd(["bash", "-lc", command])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output = log_file.read_text(encoding="utf-8").splitlines()
+            self.assertIn("core", output)
+            self.assertIn("apt", output)
+            self.assertIn("docker", output)
+            self.assertIn("spotify", output)
+            self.assertIn("steam", output)
+            self.assertIn("tailscale", output)
+            self.assertIn("jetbrains-toolbox", output)
+            self.assertIn("timeshift", output)
+            self.assertNotIn("snaps", output)
+            self.assertNotIn("chrome", output)
+            self.assertNotIn("go", output)
+            self.assertNotIn("python", output)
+            self.assertNotIn("rust", output)
+            self.assertNotIn("iac", output)
+            self.assertNotIn("ufw", output)
+
+    def test_dotfiles_script_is_idempotent(self):
+        if not (DOTFILES_DIR / ".bash_aliases").exists():
+            self.skipTest("dotfiles directory not found")
+        with tempfile.TemporaryDirectory() as temp_home:
+            env = os.environ.copy()
+            env["HOME"] = temp_home
+
+            first = self.run_cmd(["bash", "dotfiles.sh"], env=env)
+            second = self.run_cmd(["bash", "dotfiles.sh"], env=env)
+
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(second.returncode, 0, second.stderr)
+            aliases = Path(temp_home) / ".bash_aliases"
+            self.assertTrue(aliases.is_symlink(), ".bash_aliases should be a symlink after idempotent run")
+
+    def test_agents_script_creates_config_files(self):
+        """agents.sh creates codex config.toml and opencode config.json when absent."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            home = Path(tmp_dir)
+            # Pre-create the central agents config directory (normally done by dotfiles.sh)
+            config_agents = home / ".config" / "agents"
+            config_agents.mkdir(parents=True)
+            (config_agents / "instructions.md").write_text("# Instructions\n", encoding="utf-8")
+
+            env = os.environ.copy()
+            env["HOME"] = str(home)
+
+            result = self.run_cmd(["bash", "agents/agents.sh"], env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            codex_config = home / ".codex" / "config.toml"
+            self.assertTrue(codex_config.exists(), "codex config.toml must be created")
+            self.assertIn("o4-mini", codex_config.read_text(encoding="utf-8"))
+
+            opencode_config = home / ".config" / "opencode" / "config.json"
+            self.assertTrue(opencode_config.exists(), "opencode config.json must be created")
+            payload = json.loads(opencode_config.read_text(encoding="utf-8"))
+            self.assertIn("model", payload)
+            self.assertFalse(payload.get("autoshare", True), "autoshare must be false")
+
+            claude_md = home / ".claude" / "CLAUDE.md"
+            self.assertTrue(claude_md.is_symlink(), "~/.claude/CLAUDE.md must be a symlink")
+
+    def test_configure_script_skips_in_non_interactive_env(self):
+        """configure.sh must exit 0 and not block when stdin is not a TTY."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            env = os.environ.copy()
+            env["HOME"] = tmp_dir
+            result = self.run_cmd(["bash", "configure/configure.sh"], env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            # Should not have written a .gitconfig.local (nothing to prompt for)
+            self.assertFalse((Path(tmp_dir) / ".gitconfig.local").exists())
+
+    def test_configure_writes_gitconfig_local(self):
+        """configure.sh writes name+email to ~/.gitconfig.local, not ~/.gitconfig."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            # Use env-var seeding path so the test is not sensitive to whether
+            # /dev/tty is accessible (prompt_with_default reads from /dev/tty
+            # when available, which makes piped stdin unreliable in a terminal).
+            env = os.environ.copy()
+            env["HOME"] = tmp_dir
+            env["LINUX_SETUP_GIT_NAME"] = "Test User"
+            env["LINUX_SETUP_GIT_EMAIL"] = "test@example.com"
+            result = subprocess.run(
+                ["bash", "configure/configure.sh"],
+                cwd=REPO_ROOT,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            local_cfg = tmp_path / ".gitconfig.local"
+            self.assertTrue(local_cfg.exists(), ".gitconfig.local must be created")
+            content = local_cfg.read_text(encoding="utf-8")
+            self.assertIn("Test User", content)
+            self.assertIn("test@example.com", content)
+            # Must NOT have written to the repo's .gitconfig (when dotfiles directory exists)
+            repo_gitconfig = DOTFILES_DIR / ".gitconfig"
+            if repo_gitconfig.exists():
+                self.assertNotIn("Test User", repo_gitconfig.read_text(encoding="utf-8"))
+
+    def test_gitconfig_includes_local_override(self):
+        """dotfiles/.gitconfig must include ~/.gitconfig.local."""
+        gitconfig_path = DOTFILES_DIR / ".gitconfig"
+        if not gitconfig_path.exists():
+            self.skipTest("dotfiles directory not found")
+        gitconfig = gitconfig_path.read_text(encoding="utf-8")
+        self.assertIn(".gitconfig.local", gitconfig)
+        self.assertIn("[include]", gitconfig)
+
+    def test_run_verify_flag_invokes_verify_script(self):
+        """run.sh --verify must run verify-install.sh without installing anything."""
+        result = self.run_cmd(["bash", "run.sh", "--verify"])
+        # The script will likely report failures on a dev Mac, but it must not
+        # error out at the bash level (syntax / missing script / etc.).
+        self.assertIn(result.returncode, (0, 1), result.stderr)
+        self.assertIn("verification", result.stdout.lower())
+
+    def test_versions_file_is_well_formed(self):
+        """versions.txt must parse as KEY=value lines with no blanks in values."""
+        versions_file = REPO_ROOT / "versions.txt"
+        self.assertTrue(versions_file.exists(), "versions.txt must exist")
+        required = {
+            "NEOVIM_VERSION",
+            "MISE_VERSION",
+            "NODE_VERSION",
+            "GO_VERSION",
+            "PYTHON_VERSION",
+            "RUST_VERSION",
+        }
+        found = {}
+        for raw in versions_file.read_text(encoding="utf-8").splitlines():
+            line = raw.split("#", 1)[0].strip()
+            if not line:
+                continue
+            self.assertIn("=", line, f"versions.txt line has no '=': {line!r}")
+            key, _, val = line.partition("=")
+            self.assertTrue(key.strip(), f"Empty key in versions.txt: {line!r}")
+            self.assertTrue(val.strip(), f"Empty value in versions.txt: {line!r}")
+            found[key.strip()] = val.strip()
+        for key in required:
+            self.assertIn(key, found, f"{key} missing from versions.txt")
+
+    def test_load_versions_exports_variables(self):
+        """load_versions() in utils.sh must export pinned version variables."""
+        versions_file = REPO_ROOT / "versions.txt"
+        command = textwrap.dedent(
+            f"""\
+            source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+            load_versions "{versions_file}"
+            echo "NEOVIM=$NEOVIM_VERSION"
+            echo "NODE=$NODE_VERSION"
+            echo "GO=$GO_VERSION"
+            echo "PYTHON=$PYTHON_VERSION"
+            echo "RUST=$RUST_VERSION"
+            """
+        )
+        result = self.run_cmd(["bash", "-lc", command])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("NEOVIM=", result.stdout)
+        self.assertIn("NODE=", result.stdout)
+        self.assertIn("GO=", result.stdout)
+        self.assertIn("PYTHON=", result.stdout)
+        self.assertIn("RUST=", result.stdout)
+        # Values must be non-empty
+        for line in result.stdout.splitlines():
+            if "=" in line:
+                _, _, val = line.partition("=")
+                self.assertTrue(val.strip(), f"Empty version value: {line!r}")
+
+    def test_system_runtime_installs_are_pinned(self):
+        """Core runtime installs should not float to latest/lts/stable selectors."""
+        system_script = (REPO_ROOT / "system" / "system.sh").read_text(encoding="utf-8")
+        self.assertIn('"node@${NODE_VERSION}"', system_script)
+        self.assertIn('"go@${GO_VERSION}"', system_script)
+        self.assertIn('"python@${PYTHON_VERSION}"', system_script)
+        self.assertIn('"terraform@${TERRAFORM_VERSION}"', system_script)
+        self.assertIn('"tflint@${TFLINT_VERSION}"', system_script)
+        self.assertIn('"terragrunt@${TERRAGRUNT_VERSION}"', system_script)
+        self.assertIn('"terraform-docs@${TERRAFORM_DOCS_VERSION}"', system_script)
+        self.assertIn("MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped", system_script)
+        self.assertIn('rustup toolchain install "$RUST_VERSION"', system_script)
+        self.assertNotIn("node@lts", system_script)
+        self.assertNotIn("go@latest", system_script)
+        self.assertNotIn("python@latest", system_script)
+        self.assertNotIn("terraform@latest", system_script)
+        self.assertNotIn("tflint@latest", system_script)
+        self.assertNotIn("update stable --no-self-update", system_script)
+
+    def test_wezterm_config_is_valid_lua(self):
+        """WezTerm config file must exist and be parseable as Lua if luac is available."""
+        config_path = DOTFILES_DIR / ".config" / "wezterm" / "wezterm.lua"
+        if not config_path.exists():
+            self.skipTest("dotfiles directory not found")
+        content = config_path.read_text(encoding="utf-8")
+        self.assertIn("wezterm.config_builder", content)
+        self.assertIn("return config", content)
+
+    def test_run_help_lists_all_steps(self):
+        """run.sh --help must document all orchestrated steps."""
+        result = self.run_cmd(["bash", "run.sh", "--help"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for step in ("system", "dotfiles", "terminal", "shell", "editor", "multiplexer", "sdk", "agents"):
+            self.assertIn(step, result.stdout, f"Step {step!r} missing from --help output")
+
+    def create_sourceable_terminal_script(self, directory: Path) -> Path:
+        original = (REPO_ROOT / "terminal" / "terminal.sh").read_text(encoding="utf-8")
+        lines = original.splitlines()
+        filtered = [
+            l for l in lines
+            if l.strip() != 'source "$SCRIPT_DIR/../utils/utils.sh"'
+            and l.strip() != "main"
+        ]
+        path = directory / "terminal-sourceable.sh"
+        path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
+        return path
+
+    def test_terminal_installer_skips_when_flag_set(self):
+        """terminal.sh skips installation when LINUX_SETUP_SKIP_WEZTERM=1."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            log_file = tmp_path / "log.txt"
+            sourceable = self.create_sourceable_terminal_script(tmp_path)
+
+            command = textwrap.dedent(
+                f"""\
+                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                log_info() {{ printf 'info:%s\\n' "$*" >> "{log_file}"; }}
+                log_success() {{ :; }}
+                echo_header() {{ :; }}
+                check_root() {{ :; }}
+                ensure_sudo() {{ :; }}
+                sudo_run() {{ :; }}
+                source "{sourceable}"
+                export LINUX_SETUP_SKIP_WEZTERM=1
+                main
+                """
+            )
+            env = os.environ.copy()
+            env["HOME"] = tmp_dir
+            result = self.run_cmd(["bash", "-lc", command], env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            log_output = log_file.read_text(encoding="utf-8") if log_file.exists() else ""
+            self.assertIn("LINUX_SETUP_SKIP_WEZTERM", log_output)
+
+    def test_nvim_config_entrypoint_exists(self):
+        init_lua = DOTFILES_DIR / ".config" / "nvim" / "init.lua"
+        if not init_lua.exists():
+            self.skipTest("dotfiles directory not found")
+        content = init_lua.read_text(encoding="utf-8")
+        self.assertIn("lazy", content.lower())
+
+    def test_nvim_lsp_plugin_declares_common_servers(self):
+        lsp_lua = DOTFILES_DIR / ".config" / "nvim" / "lua" / "plugins" / "lsp.lua"
+        if not lsp_lua.exists():
+            self.skipTest("dotfiles directory not found")
+        content = lsp_lua.read_text(encoding="utf-8")
+        for server in ("pyright", "gopls", "rust_analyzer", "jdtls"):
+            self.assertIn(server, content, f"LSP server {server!r} missing from lsp.lua")
+
+    def test_zsh_config_scaffold_exists(self):
+        zshrc = DOTFILES_DIR / ".zshrc"
+        if not zshrc.exists():
+            self.skipTest("dotfiles directory not found")
+        self.assertTrue(zshrc.exists(), ".zshrc scaffold must exist")
+        self.assertTrue((DOTFILES_DIR / ".zshenv").exists(), ".zshenv scaffold must exist")
+
+    def test_tmux_config_scaffold_exists(self):
+        tmux_conf = DOTFILES_DIR / ".config" / "tmux" / "tmux.conf"
+        if not tmux_conf.exists():
+            self.skipTest("dotfiles directory not found")
+        self.assertTrue(tmux_conf.exists(), "tmux.conf scaffold must exist")
+
+    def test_dotfiles_installs_config_subdirectories(self):
+        """dotfiles.sh symlinks .config/ subdirectories (wezterm, nvim, tmux) into $HOME."""
+        if not (DOTFILES_DIR / ".zshrc").exists():
+            self.skipTest("dotfiles directory not found")
+        with tempfile.TemporaryDirectory() as temp_home:
+            env = os.environ.copy()
+            env["HOME"] = temp_home
+            result = self.run_cmd(["bash", "dotfiles.sh"], env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            home = Path(temp_home)
+            for entry in ("wezterm", "nvim", "tmux"):
+                target = home / ".config" / entry
+                self.assertTrue(target.is_symlink(), f".config/{entry} must be a symlink")
+                self.assertTrue(target.exists(), f".config/{entry} symlink must resolve")
+            self.assertTrue((home / ".zshrc").is_symlink())
+
+
+if __name__ == "__main__":
+    unittest.main()

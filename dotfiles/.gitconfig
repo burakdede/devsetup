@@ -1,0 +1,124 @@
+[color]
+	ui = true
+	branch = auto
+	status = auto
+	interactive = auto
+[core]
+	excludesfile = ~/.gitignore_global
+	editor = nvim
+	autocrlf = input
+	quotepath = false
+	whitespace = trailing-space,space-before-tab,indent-with-non-tab,cr-at-eol
+	packedGitLimit = 512m
+	packedGitWindowSize = 512m
+
+# Best practices for git
+[init]
+	defaultBranch = main
+	templateDir = ~/.git_template
+
+# Git config
+[advice]
+	# Disable some verbose messages
+	addIgnoredFile = false
+	addEmbeddedRepo = false
+	commitBeforeMerge = false
+
+# Git push
+[push]
+	# Always use --set-upstream when pushing
+	default = current
+	# Auto follow tags
+	followTags = true
+
+# Git pull
+[pull]
+	# Always rebase instead of merge
+	rebase = true
+
+# Git merge
+[merge]
+	strategy = ort
+	conflictstyle = diff3
+
+# Git format
+[format]
+	# Always use --pretty=format
+	pretty = format:%C(auto)%h%Creset %s %C(cyan)(%cr)%Creset%C(auto)%d%Creset
+
+# Git log
+[log]
+	# Default log format
+	date = relative
+
+# Git diff
+[diff]
+	# Use color
+	color = true
+	# Show word differences
+	word-diff = true
+
+# Git alias (existing section remains unchanged)
+[alias]
+	# Status and Branch Operations
+	st = status
+	s = status -s
+	br = branch
+	co = checkout
+	cob = checkout -b
+	del = branch -D
+
+	# Log and History
+	l = log --oneline --graph
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lga = log --all --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lgs = log --stat
+	lols = log --all --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --stat
+
+	# Staging and Commit
+	ci = commit
+	cm = commit -m
+	am = commit --amend
+	amn = commit --amend --no-edit
+	add = add
+	unstage = reset HEAD --
+	undo = reset --soft HEAD~1
+
+	# Push and Pull
+	pu = push
+	pufo = push -f origin
+	pull = pull --rebase
+
+	# Remote and Fetch
+	f = fetch
+	fa = fetch --all
+	remote = remote -v
+
+	# Cleanup
+	cleanup = gc --prune=now
+	cleanupb = branch --merged | grep -v "^\\*" | xargs -n 1 git branch -d
+	cleanf = clean -fd
+
+	# Diff and Compare
+	diff = diff --color
+	dw = diff --word-diff
+	dc = diff --cached
+	dh = diff HEAD
+
+	# Stash
+	sa = stash
+	sap = stash pop
+	sal = stash list
+	ss = stash show -p
+
+	# Tag
+	tag = tag -a
+	tagd = tag -d
+	tagl = tag -l
+# Machine-local identity and overrides — not committed to the repo.
+# Tip: set credential.helper in ~/.gitconfig.local for OS-specific keychain
+#   macOS: git config --file ~/.gitconfig.local credential.helper osxkeychain
+#   Linux: git config --file ~/.gitconfig.local credential.helper store
+# configure/configure.sh writes your name/email here during bootstrap.
+[include]
+    path = ~/.gitconfig.local

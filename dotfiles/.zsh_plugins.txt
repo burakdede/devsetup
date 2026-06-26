@@ -1,0 +1,10 @@
+# antidote plugin spec
+# Format: owner/repo [kind:<kind>] [path:<subpath>] [branch:<name>]
+#
+# Order matters for prompt/editor hooks:
+# - autosuggestions before syntax-highlighting
+# - syntax-highlighting should remain last
+
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-completions
+zsh-users/zsh-syntax-highlighting

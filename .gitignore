@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo
+*~
+
+# Agent scratch memory — not committed; each machine populates its own
+dotfiles/.config/agents/memory/*
+!dotfiles/.config/agents/memory/.gitkeep
+
+# Compiled / cached zsh plugin bundles — regenerated on first shell launch
+dotfiles/.zsh_plugins.zsh
+dotfiles/.zsh_plugins.clean.txt
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

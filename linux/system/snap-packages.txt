@@ -1,0 +1,15 @@
+# Format:
+# package [channel|-] [classic]
+
+# Collaboration and productivity
+discord - classic
+obsidian - classic
+localsend
+postman
+
+# Development tools
+insomnia
+slack - classic
+
+# Media
+obs-studio
