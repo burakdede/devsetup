@@ -35,8 +35,6 @@ check_cmd() {
     local label="$1"
     local cmd="$2"
     if command_exists "$cmd"; then
-        local ver
-        ver="$("$cmd" --version 2>/dev/null | head -1 || echo "installed")"
         check "$label" "ok"
     else
         check "$label" "not found"
@@ -113,17 +111,17 @@ check_dir "powerlevel10k" "$HOME/.local/share/powerlevel10k"
 
 # ── Dotfiles ──────────────────────────────────────────────────────────────────
 echo_header "Dotfiles (symlinks)"
-check_symlink "~/.zshrc"           "$HOME/.zshrc"
-check_symlink "~/.zshenv"          "$HOME/.zshenv"
-check_symlink "~/.zprofile"        "$HOME/.zprofile"
-check_symlink "~/.p10k.zsh"        "$HOME/.p10k.zsh"
-check_symlink "~/.zsh_plugins.txt" "$HOME/.zsh_plugins.txt"
-check_symlink "~/.gitconfig"       "$HOME/.gitconfig"
-check_symlink "~/.vimrc"           "$HOME/.vimrc"
+check_symlink "$HOME/.zshrc"           "$HOME/.zshrc"
+check_symlink "$HOME/.zshenv"          "$HOME/.zshenv"
+check_symlink "$HOME/.zprofile"        "$HOME/.zprofile"
+check_symlink "$HOME/.p10k.zsh"        "$HOME/.p10k.zsh"
+check_symlink "$HOME/.zsh_plugins.txt" "$HOME/.zsh_plugins.txt"
+check_symlink "$HOME/.gitconfig"       "$HOME/.gitconfig"
+check_symlink "$HOME/.vimrc"           "$HOME/.vimrc"
 
-check_symlink "~/.config/nvim"     "$HOME/.config/nvim"
-check_symlink "~/.config/tmux"     "$HOME/.config/tmux"
-check_symlink "~/.config/wezterm"  "$HOME/.config/wezterm"
+check_symlink "$HOME/.config/nvim"     "$HOME/.config/nvim"
+check_symlink "$HOME/.config/tmux"     "$HOME/.config/tmux"
+check_symlink "$HOME/.config/wezterm"  "$HOME/.config/wezterm"
 
 # ── Neovim ────────────────────────────────────────────────────────────────────
 echo_header "Neovim"
@@ -151,12 +149,12 @@ fi
 echo_header "Tmux"
 check_cmd "tmux" "tmux"
 check_dir "TPM" "$HOME/.local/share/tmux/plugins/tpm"
-check_symlink "~/.config/tmux (symlink)" "$HOME/.config/tmux"
+check_symlink "$HOME/.config/tmux (symlink)" "$HOME/.config/tmux"
 
 # ── WezTerm ───────────────────────────────────────────────────────────────────
 echo_header "WezTerm"
 check_cmd "wezterm" "wezterm"
-check_symlink "~/.config/wezterm (symlink)" "$HOME/.config/wezterm"
+check_symlink "$HOME/.config/wezterm (symlink)" "$HOME/.config/wezterm"
 
 # ── SDKMAN ────────────────────────────────────────────────────────────────────
 echo_header "SDKMAN"
@@ -171,15 +169,15 @@ echo_header "Coding agents"
 check_cmd "claude (Claude Code)" "claude"
 check_cmd "codex"                "codex"
 check_cmd "opencode"             "opencode"
-check_symlink "~/.config/agents"             "$HOME/.config/agents"
-check_symlink "~/.config/mise"               "$HOME/.config/mise"
+check_symlink "$HOME/.config/agents"             "$HOME/.config/agents"
+check_symlink "$HOME/.config/mise"               "$HOME/.config/mise"
 
 if [[ -L "$HOME/.claude/CLAUDE.md" ]]; then
-    check "~/.claude/CLAUDE.md → central instructions" "ok"
+    check "$HOME/.claude/CLAUDE.md → central instructions" "ok"
 elif [[ -f "$HOME/.claude/CLAUDE.md" ]]; then
-    check "~/.claude/CLAUDE.md → central instructions" "exists but not a symlink — re-run agents step"
+    check "$HOME/.claude/CLAUDE.md → central instructions" "exists but not a symlink — re-run agents step"
 else
-    check "~/.claude/CLAUDE.md → central instructions" "missing — run agents step"
+    check "$HOME/.claude/CLAUDE.md → central instructions" "missing — run agents step"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────

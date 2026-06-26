@@ -83,7 +83,7 @@ bootstrap_plugins() {
 
     local nvim_config="$HOME/.config/nvim/init.lua"
     if [[ ! -f "$nvim_config" ]]; then
-        log_warn "~/.config/nvim/init.lua not found; run dotfiles step first."
+        log_warn "$HOME/.config/nvim/init.lua not found; run dotfiles step first."
         return 0
     fi
 

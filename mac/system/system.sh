@@ -82,7 +82,7 @@ install_mise() {
     fi
 
     log_info "Installing mise via official installer..."
-    curl -fsSL https://mise.run | sh
+    curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
     log_success "mise installed to ~/.local/bin/mise"
     log_info "Reload your shell or run: eval \"\$(~/.local/bin/mise activate zsh)\""
 }

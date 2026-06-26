@@ -567,17 +567,17 @@ install_mise() {
         else
             log_info "mise installed: $got  pinned: $want — reinstalling."
             if [[ -n "$want" ]]; then
-                MISE_VERSION="$want" curl -fsSL https://mise.run | sh
+                MISE_VERSION="$want" curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
             else
-                curl -fsSL https://mise.run | sh
+                curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
             fi
         fi
     elif [[ ! -x "$MISE_BIN" ]]; then
         if [[ -n "$want" ]]; then
             log_info "Installing mise $want (pinned)..."
-            MISE_VERSION="$want" curl -fsSL https://mise.run | sh
+            MISE_VERSION="$want" curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
         else
-            curl -fsSL https://mise.run | sh
+            curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
         fi
     fi
 

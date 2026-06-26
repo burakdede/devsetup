@@ -98,7 +98,7 @@ main() {
 
     echo_header "SDKMAN setup complete"
     log_success "SDKMAN initialised via ~/.sdkman/bin/sdkman-init.sh"
-    log_info "~/.zshrc sources SDKMAN automatically on interactive shells."
+    log_info "$HOME/.zshrc sources SDKMAN automatically on interactive shells."
 }
 
 main
