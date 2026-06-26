@@ -519,7 +519,7 @@ install_uv() {
         return 0
     fi
 
-    curl -LsSf --retry 3 --retry-delay 2 https://astral.sh/uv/install.sh | sh
+    curl --proto '=https' --tlsv1.2 -LsSf --retry 3 --retry-delay 2 https://astral.sh/uv/install.sh | sh
 }
 
 install_uv_tools() {
@@ -549,7 +549,7 @@ install_claude_code() {
         return 0
     fi
 
-    curl -fsSL https://claude.ai/install.sh | bash
+    curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 2 https://claude.ai/install.sh | bash
 }
 
 install_mise() {

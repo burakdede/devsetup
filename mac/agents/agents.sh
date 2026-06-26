@@ -77,7 +77,9 @@ CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 
 mkdir -p "$CLAUDE_DIR"
 
-if [[ -L "$CLAUDE_MD" ]]; then
+if [[ ! -f "$CENTRAL_INSTRUCTIONS" ]]; then
+    log_warn "Claude Code: $CENTRAL_INSTRUCTIONS not found — run dotfiles step first, then re-run --only agents."
+elif [[ -L "$CLAUDE_MD" ]]; then
     log_info "Claude Code: CLAUDE.md symlink already in place"
 elif [[ -f "$CLAUDE_MD" ]]; then
     # Existing file — back it up then replace with symlink.

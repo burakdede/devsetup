@@ -6,4 +6,4 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
 echo "[pre-push] Running bootstrap checks"
-bash scripts/test.sh
+bash linux/scripts/test.sh

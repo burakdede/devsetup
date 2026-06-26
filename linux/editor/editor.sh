@@ -130,6 +130,12 @@ bootstrap_plugins() {
         return 0
     fi
 
+    local nvim_config="$HOME/.config/nvim/init.lua"
+    if [[ ! -f "$nvim_config" ]]; then
+        log_warn "~/.config/nvim/init.lua not found; run dotfiles step first."
+        return 0
+    fi
+
     log_info "Bootstrapping Neovim plugins (headless)..."
     nvim --headless "+Lazy! sync" +qa 2>&1 | grep -v "^$" || true
     log_success "Neovim plugins installed."

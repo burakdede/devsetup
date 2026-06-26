@@ -89,9 +89,11 @@ sync_git_repo() {
     local dest_dir="$2"
 
     if [[ -d "$dest_dir/.git" ]]; then
-        log_info "Updating $(basename "$dest_dir")..."
-        if ! git -C "$dest_dir" pull --ff-only >/dev/null 2>&1; then
-            log_warn "Could not fast-forward $dest_dir."
+        if upgrade_enabled; then
+            log_info "Upgrading $(basename "$dest_dir")..."
+            git -C "$dest_dir" pull --ff-only >/dev/null 2>&1 || log_warn "Could not fast-forward $dest_dir."
+        else
+            log_info "$(basename "$dest_dir") already present."
         fi
         return 0
     fi
