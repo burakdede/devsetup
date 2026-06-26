@@ -3,12 +3,12 @@
 #
 # Creates symlinks from $HOME (and $HOME/.config) to the shared dotfiles
 # that live in the repo's top-level dotfiles/ directory.  Editing files
-# there is immediately reflected everywhere — no copy step needed.
+# there is immediately reflected everywhere -- no copy step needed.
 #
 # ── Shared dotfiles ───────────────────────────────────────────────────────────
 # dotfiles/ is at the repository root, shared between mac/ and linux/.
 # A config change committed there takes effect on both machines after a
-# `git pull` — no submodule bumping required.
+# `git pull` -- no submodule bumping required.
 #
 # To edit a config:
 #   $EDITOR ~/Projects/devsetup/dotfiles/.config/nvim/init.lua
@@ -18,7 +18,7 @@
 # 1. Backs up any existing non-symlink files before overwriting them.
 # 2. Symlinks each top-level dotfile (.*) in dotfiles/ → $HOME/
 # 3. Symlinks each .config sub-directory individually (never symlinks
-#    ~/.config itself — other tools own entries there).
+#    ~/.config itself -- other tools own entries there).
 #
 # Safe to re-run: idempotent.
 #
@@ -91,7 +91,7 @@ install_home_dotfiles() {
 
         # Skip the .config sub-directory (handled separately above).
         [[ "$name" == ".config" ]] && continue
-        # Skip the repo's own .gitignore — it's internal to the dotfiles repo.
+        # Skip the repo's own .gitignore -- it's internal to the dotfiles repo.
         # The global gitignore is .gitignore_global (referenced in .gitconfig).
         [[ "$name" == ".gitignore" ]] && continue
 

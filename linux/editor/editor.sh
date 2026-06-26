@@ -44,7 +44,7 @@ install_neovim() {
             log_info "Neovim $got is already installed. (LINUX_SETUP_UPGRADE=1 to reinstall)"
             return 0
         fi
-        log_info "Installed: $got  Pinned: $want — reinstalling to match pin."
+        log_info "Installed: $got  Pinned: $want -- reinstalling to match pin."
     fi
 
     log_info "Installing Neovim build dependencies..."
@@ -64,7 +64,7 @@ install_neovim() {
         download_url="https://github.com/neovim/neovim/releases/download/${tag}/${asset}"
         log_info "Downloading Neovim ${want} (pinned)..."
     else
-        log_info "No version pinned — fetching latest Neovim release metadata..."
+        log_info "No version pinned -- fetching latest Neovim release metadata..."
         local metadata_file="$temp_dir/release.json"
         curl -fsSL "https://api.github.com/repos/neovim/neovim/releases/latest" \
             -o "$metadata_file"

@@ -396,7 +396,7 @@ setup_docker_repo() {
     # Add current user to docker group so docker can be used without sudo.
     if ! id -nG "$USER" | grep -qw docker; then
         sudo_run usermod -aG docker "$USER"
-        log_info "Added $USER to docker group — re-login or run 'newgrp docker' to apply."
+        log_info "Added $USER to docker group -- re-login or run 'newgrp docker' to apply."
     else
         log_info "$USER is already in the docker group."
     fi
@@ -417,7 +417,7 @@ download_latest_release_asset() {
 
     # Use --retry so transient network errors don't abort the bootstrap.
     # --fail-with-body (-f) is not used here so the response body is captured
-    # even on 4xx/5xx — the jq guard below handles API error payloads.
+    # even on 4xx/5xx -- the jq guard below handles API error payloads.
     if ! curl -sSL --retry 3 --retry-delay 2 \
             "${auth_header[@]}" \
             "https://api.github.com/repos/${repo}/releases/latest" \
@@ -565,7 +565,7 @@ install_mise() {
         if [[ -z "$want" || "$got" == "$want" ]]; then
             log_info "mise $got is already installed."
         else
-            log_info "mise installed: $got  pinned: $want — reinstalling."
+            log_info "mise installed: $got  pinned: $want -- reinstalling."
             if [[ -n "$want" ]]; then
                 MISE_VERSION="$want" curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
             else
@@ -598,7 +598,7 @@ install_node_runtime() {
 setup_ufw() {
     echo_header "ufw firewall"
 
-    # Skip the destructive reset if ufw is already active — resetting wipes all
+    # Skip the destructive reset if ufw is already active -- resetting wipes all
     # user-added rules and is only necessary on a fresh machine.
     if sudo ufw status | grep -q "^Status: active"; then
         log_info "ufw is already active; skipping reset to preserve existing rules."

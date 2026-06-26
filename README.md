@@ -11,7 +11,7 @@ devsetup/
 └── linux/             Ubuntu setup scripts (APT/snap/GitHub-release-based)
 ```
 
-`dotfiles/` is a plain directory — no submodule. Edit a file, commit, push. Both machines pull the same change with `git pull`.
+`dotfiles/` is a plain directory -- no submodule. Edit a file, commit, push. Both machines pull the same change with `git pull`.
 
 ---
 
@@ -50,8 +50,8 @@ Both scripts are interactive on first run. Use `--skip-git` to skip the SSH key 
 | `editor` | Neovim via Homebrew, `vi`/`vim` shims, lazy.nvim plugin bootstrap |
 | `multiplexer` | Tmux config wiring + TPM (Tmux Plugin Manager) |
 | `terminal` | WezTerm via Homebrew Cask |
-| `sdk` | SDKMAN — Java, Kotlin |
-| `agents` | Claude Code, Codex, OpenCode — install checks + central config symlinks |
+| `sdk` | SDKMAN -- Java, Kotlin |
+| `agents` | Claude Code, Codex, OpenCode -- install checks + central config symlinks |
 | `git` | GitHub SSH key generation and connection test |
 | `macos` | macOS system defaults via `defaults write` |
 
@@ -70,8 +70,8 @@ Re-install: `MACSETUP_UPGRADE=1 ./run.sh --only neovim`
 | `editor` | Neovim from GitHub releases, `vi`/`vim`/`editor` alternatives |
 | `multiplexer` | Tmux config wiring + TPM |
 | `terminal` | WezTerm from GitHub releases, sets as default terminal |
-| `sdk` | SDKMAN — Java, Kotlin |
-| `agents` | Claude Code, Codex, OpenCode — install checks + central config symlinks |
+| `sdk` | SDKMAN -- Java, Kotlin |
+| `agents` | Claude Code, Codex, OpenCode -- install checks + central config symlinks |
 | `git` | GitHub SSH key generation and connection test |
 | `settings` | GNOME desktop settings (font, scaling, cursor) |
 
@@ -85,11 +85,11 @@ Re-install: `LINUX_SETUP_UPGRADE=1 ./run.sh --only editor`
 
 Everything in `dotfiles/` is cross-platform. OS-specific paths are handled inside each config file at runtime:
 
-- **`.zshenv`** — loads Homebrew shellenv on macOS; PATH additions work on both
-- **`.zshrc`** — fzf key-bindings source differs by OS (detected at runtime)
-- **`wezterm.lua`** — uses `wezterm.target_triple:find("darwin")` to switch modifier keys
-- **`tmux.conf`** — fully cross-platform
-- **`nvim/`** — fully cross-platform
+- **`.zshenv`** -- loads Homebrew shellenv on macOS; PATH additions work on both
+- **`.zshrc`** -- fzf key-bindings source differs by OS (detected at runtime)
+- **`wezterm.lua`** -- uses `wezterm.target_triple:find("darwin")` to switch modifier keys
+- **`tmux.conf`** -- fully cross-platform
+- **`nvim/`** -- fully cross-platform
 
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 
@@ -99,7 +99,7 @@ macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are syml
 # edit from anywhere
 $EDITOR ~/Projects/devsetup/dotfiles/.config/nvim/init.lua
 
-# commit and push — both machines pick it up on next git pull
+# commit and push -- both machines pick it up on next git pull
 cd ~/Projects/devsetup
 git commit -am "nvim: add keymap for telescope"
 git push
@@ -110,7 +110,7 @@ git push
 ```bash
 cd ~/Projects/devsetup
 git pull
-# dotfiles are symlinks — changes are live immediately, no re-run needed
+# dotfiles are symlinks -- changes are live immediately, no re-run needed
 # unless you added a new dotfile that requires a new symlink:
 ./mac/run.sh --only dotfiles   # or ./linux/run.sh --only dotfiles
 ```
@@ -124,8 +124,8 @@ git pull
 | Agent | Config location |
 |---|---|
 | Claude Code | `~/.claude/CLAUDE.md` → symlinked to `agents/instructions.md` |
-| Codex | `~/.codex/config.toml` — model `o4-mini`, written by agents step |
-| OpenCode | `~/.config/opencode/config.json` — written by agents step |
+| Codex | `~/.codex/config.toml` -- model `o4-mini`, written by agents step |
+| OpenCode | `~/.config/opencode/config.json` -- written by agents step |
 
 Edit `dotfiles/.config/agents/instructions.md` to update instructions for all agents at once.
 
@@ -135,8 +135,8 @@ Edit `dotfiles/.config/agents/instructions.md` to update instructions for all ag
 
 Runtime versions are pinned in platform-specific `versions.txt` files:
 
-- `mac/versions.txt` — Neovim, mise, Node, Nerd Fonts
-- `linux/versions.txt` — Neovim, mise, Node, Go, Python, Rust, Nerd Fonts, IaC tools
+- `mac/versions.txt` -- Neovim, mise, Node, Nerd Fonts
+- `linux/versions.txt` -- Neovim, mise, Node, Go, Python, Rust, Nerd Fonts, IaC tools
 
 Global mise tool versions (Python, Node, Go) are in `dotfiles/.config/mise/config.toml` and override these defaults per-project via `.mise.toml` files.
 
@@ -189,6 +189,6 @@ cd ~/Projects/devsetup/linux && ./run.sh --verify
 
 - **New macOS step:** add a script under `mac/<stepname>/<stepname>.sh`, wire it into `mac/run.sh` steps array.
 - **New Linux step:** add a script under `linux/<stepname>/<stepname>.sh`, wire it into `linux/run.sh` steps array.
-- **Shared config:** add files under `dotfiles/` — they are automatically symlinked by both platform dotfiles scripts.
-- **macOS-only config:** add under `mac/configs/.config/<toolname>/` — symlinked by `mac/dotfiles.sh`.
+- **Shared config:** add files under `dotfiles/` -- they are automatically symlinked by both platform dotfiles scripts.
+- **macOS-only config:** add under `mac/configs/.config/<toolname>/` -- symlinked by `mac/dotfiles.sh`.
 

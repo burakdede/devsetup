@@ -179,7 +179,7 @@ should_skip_step() {
     flag_enabled "${!var_name:-0}"
 }
 
-# Check LINUX_SETUP_UPGRADE=1 env var — forces reinstall even if tool is present.
+# Check LINUX_SETUP_UPGRADE=1 env var -- forces reinstall even if tool is present.
 upgrade_enabled() {
     flag_enabled "${LINUX_SETUP_UPGRADE:-0}"
 }

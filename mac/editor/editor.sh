@@ -6,12 +6,12 @@
 #
 # ── Neovim configuration ──────────────────────────────────────────────────────
 # Config lives in the shared dotfiles/ directory:
-#   dotfiles/.config/nvim/init.lua         — entry point
-#   dotfiles/.config/nvim/lua/config/      — options, keymaps, autocmds
-#   dotfiles/.config/nvim/lua/plugins/     — lazy.nvim plugin specs
-#     tools.lua  — core tools (telescope, treesitter, tmux-navigator, …)
-#     lsp.lua    — language server configs
-#     ui.lua     — theme, statusline, etc.
+#   dotfiles/.config/nvim/init.lua         -- entry point
+#   dotfiles/.config/nvim/lua/config/      -- options, keymaps, autocmds
+#   dotfiles/.config/nvim/lua/plugins/     -- lazy.nvim plugin specs
+#     tools.lua  -- core tools (telescope, treesitter, tmux-navigator, …)
+#     lsp.lua    -- language server configs
+#     ui.lua     -- theme, statusline, etc.
 #
 # ── Adding plugins ────────────────────────────────────────────────────────────
 # Add a spec to the relevant lua/plugins/*.lua file, then run:

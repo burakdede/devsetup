@@ -25,7 +25,7 @@ run_precommit() {
         return 0
     fi
 
-    # Bail out gracefully if the config is missing — look in linux/ subdirectory
+    # Bail out gracefully if the config is missing -- look in linux/ subdirectory
     local config_file="$ROOT_DIR/linux/.pre-commit-config.yaml"
     if [[ ! -f "$config_file" ]]; then
         warn "No linux/.pre-commit-config.yaml found; skipping pre-commit."

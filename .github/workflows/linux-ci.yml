@@ -14,7 +14,7 @@ on:
       - 'linux/**'
       - 'dotfiles/**'
   schedule:
-    # Weekly full test every Monday at 06:00 UTC — catches upstream breakage
+    # Weekly full test every Monday at 06:00 UTC -- catches upstream breakage
     # (snap removals, GitHub release asset renames, npm package changes, etc.)
     - cron: '0 6 * * 1'
 
@@ -46,8 +46,8 @@ jobs:
         uses: actions/checkout@v4
 
       # Run the full system step on a real Ubuntu 24.04 VM.
-      # Snaps are skipped — snapd requires systemd which GitHub runners don't provide.
-      # UFW is skipped — enabling it would block the runner's own network access.
+      # Snaps are skipped -- snapd requires systemd which GitHub runners don't provide.
+      # UFW is skipped -- enabling it would block the runner's own network access.
       # Everything else (apt, GitHub tools, uv, mise, npm, Docker, Chrome, runtimes) runs for real.
       - name: System bootstrap
         env:

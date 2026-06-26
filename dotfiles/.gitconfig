@@ -115,7 +115,7 @@
 	tag = tag -a
 	tagd = tag -d
 	tagl = tag -l
-# Machine-local identity and overrides — not committed to the repo.
+# Machine-local identity and overrides -- not committed to the repo.
 # Tip: set credential.helper in ~/.gitconfig.local for OS-specific keychain
 #   macOS: git config --file ~/.gitconfig.local credential.helper osxkeychain
 #   Linux: git config --file ~/.gitconfig.local credential.helper store

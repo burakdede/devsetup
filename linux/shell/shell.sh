@@ -47,7 +47,7 @@ set_default_shell() {
         printf '%s\n' "$zsh_path" | sudo tee -a /etc/shells >/dev/null
     fi
 
-    # Check current shell — skip if already correct
+    # Check current shell -- skip if already correct
     local current_shell
     current_shell="$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || true)"
 
@@ -74,7 +74,7 @@ wire_mise_activation() {
     local zshrc="$HOME/.zshrc"
 
     # If .zshrc is already a symlink back into our dotfiles repo, the activation
-    # line is already present in the source file — don't append to the repo copy.
+    # line is already present in the source file -- don't append to the repo copy.
     if [[ -L "$zshrc" ]]; then
         log_info "$HOME/.zshrc is a symlink; mise activation line already present in source."
         return 0

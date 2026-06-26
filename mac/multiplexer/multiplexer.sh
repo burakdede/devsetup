@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tmux multiplexer setup — identical on macOS and Linux.
+# Tmux multiplexer setup -- identical on macOS and Linux.
 #
 # tmux is installed via Brewfile (system step).  This script wires up the
 # XDG-compatible config path and installs TPM (Tmux Plugin Manager).

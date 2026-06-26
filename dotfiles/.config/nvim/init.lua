@@ -5,10 +5,10 @@
 -- On the very first launch, lazy.nvim bootstraps itself automatically.
 --
 -- Layout:
---   lua/config/options.lua   — vim options (set …)
---   lua/config/keymaps.lua   — key mappings
---   lua/config/autocmds.lua  — autocommands
---   lua/plugins/             — one file per plugin group
+--   lua/config/options.lua   -- vim options (set …)
+--   lua/config/keymaps.lua   -- key mappings
+--   lua/config/autocmds.lua  -- autocommands
+--   lua/plugins/             -- one file per plugin group
 
 -- ─── Bootstrap lazy.nvim ──────────────────────────────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

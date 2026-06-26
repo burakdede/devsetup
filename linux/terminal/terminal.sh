@@ -96,7 +96,7 @@ install_wezterm() {
             log_info "WezTerm $got is already installed. (LINUX_SETUP_UPGRADE=1 to reinstall)"
             return 0
         fi
-        log_info "Installed: $got  Pinned: $want — reinstalling to match pin."
+        log_info "Installed: $got  Pinned: $want -- reinstalling to match pin."
     fi
 
     local temp_dir deb_path download_url metadata_file
@@ -109,7 +109,7 @@ install_wezterm() {
         log_info "Resolving WezTerm ${want} (pinned) release asset..."
         download_url="$(resolve_wezterm_download_url "$want" "$metadata_file")"
     else
-        log_info "No version pinned — fetching latest WezTerm release metadata..."
+        log_info "No version pinned -- fetching latest WezTerm release metadata..."
         download_url="$(resolve_wezterm_download_url "" "$metadata_file")"
     fi
 
@@ -132,7 +132,7 @@ install_wezterm_desktop_override() {
     # WezTerm's winit backend connects to the iBus XIM server based on this env
     # var before the Lua config is read, causing double key-event processing
     # (duplicate/dropped keystrokes).  use_ime=false in wezterm.lua is not
-    # sufficient — it only prevents IME text composition, not the XIM connection.
+    # sufficient -- it only prevents IME text composition, not the XIM connection.
     #
     # Fix: user-level .desktop override that launches WezTerm with XMODIFIERS
     # cleared, scoped only to WezTerm so iBus still works for other apps.

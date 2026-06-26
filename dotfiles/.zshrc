@@ -1,4 +1,4 @@
-# ~/.zshrc — interactive zsh configuration.
+# ~/.zshrc -- interactive zsh configuration.
 #
 # This file is sourced for interactive shells only.
 # Cross-platform defaults are tuned for low latency.
@@ -69,9 +69,9 @@ if command -v eza &>/dev/null; then
     alias ll='eza -lah --group-directories-first'
     alias lt='eza --tree --level=2'
 fi
-# bat is available as its own command — not aliased over cat because it adds
+# bat is available as its own command -- not aliased over cat because it adds
 # decorations that interfere with piping and copy-pasting output.
-# rg and fd are available as their own commands — not aliased over grep/find
+# rg and fd are available as their own commands -- not aliased over grep/find
 # because they have different flags and aliasing breaks scripts that rely on
 # standard grep/find behaviour.
 

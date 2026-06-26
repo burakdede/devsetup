@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# macOS Setup — Orchestration Script
+# macOS Setup -- Orchestration Script
 #
 # ── Quick start ───────────────────────────────────────────────────────────────
 #   git clone git@github.com:burakdede/devsetup.git ~/Projects/devsetup
@@ -8,17 +8,17 @@
 #   ./run.sh
 #
 # ── Step overview ─────────────────────────────────────────────────────────────
-#  1. system      — Homebrew, Brewfile packages, mise runtime manager
-#  2. dotfiles    — symlink shared configs into $HOME from dotfiles/
-#  3. configure   — interactive git identity prompts → ~/.gitconfig.local
-#  4. shell       — set zsh as default shell, install antidote + powerlevel10k
-#  5. editor      — neovim + lazy.nvim plugin bootstrap, vi/vim shims
-#  6. multiplexer — tmux config wiring + TPM (Tmux Plugin Manager)
-#  7. terminal    — WezTerm via Homebrew Cask
-#  8. sdk         — SDKMAN (Java, Kotlin, …)
-#  9. agents      — Claude Code, Codex, OpenCode — install checks + central config symlinks
-# 10. git         — GitHub SSH key setup (interactive; skippable)
-# 11. macos       — macOS system defaults via `defaults write` (skippable)
+#  1. system      -- Homebrew, Brewfile packages, mise runtime manager
+#  2. dotfiles    -- symlink shared configs into $HOME from dotfiles/
+#  3. configure   -- interactive git identity prompts → ~/.gitconfig.local
+#  4. shell       -- set zsh as default shell, install antidote + powerlevel10k
+#  5. editor      -- neovim + lazy.nvim plugin bootstrap, vi/vim shims
+#  6. multiplexer -- tmux config wiring + TPM (Tmux Plugin Manager)
+#  7. terminal    -- WezTerm via Homebrew Cask
+#  8. sdk         -- SDKMAN (Java, Kotlin, …)
+#  9. agents      -- Claude Code, Codex, OpenCode -- install checks + central config symlinks
+# 10. git         -- GitHub SSH key setup (interactive; skippable)
+# 11. macos       -- macOS system defaults via `defaults write` (skippable)
 #
 # ── Syncing shared dotfiles ───────────────────────────────────────────────────
 # The dotfiles/ directory lives at the repo root, shared between mac/ and linux/.
@@ -30,10 +30,10 @@
 #   
 #
 # ── Environment variable overrides ───────────────────────────────────────────
-# MACSETUP_UPGRADE=1           — re-install tools even if already present
-# MACSETUP_SKIP_<STEP>=1       — skip a specific step (e.g. MACSETUP_SKIP_SDK)
-# MACSETUP_GIT_NAME / _EMAIL   — pre-seed git identity (non-interactive CI use)
-# MACSETUP_PROMPT_TIMEOUT_SECONDS=N — timeout for configure prompts (default 60)
+# MACSETUP_UPGRADE=1           -- re-install tools even if already present
+# MACSETUP_SKIP_<STEP>=1       -- skip a specific step (e.g. MACSETUP_SKIP_SDK)
+# MACSETUP_GIT_NAME / _EMAIL   -- pre-seed git identity (non-interactive CI use)
+# MACSETUP_PROMPT_TIMEOUT_SECONDS=N -- timeout for configure prompts (default 60)
 
 set -euo pipefail
 
@@ -71,13 +71,13 @@ Options:
 Valid STEP values (run in this order on a fresh machine):
   system          Homebrew, Brewfile packages, mise runtime manager
   dotfiles        Symlink shared configs from dotfiles/ into $HOME
-  configure       Git identity prompts — writes to ~/.gitconfig.local
+  configure       Git identity prompts -- writes to ~/.gitconfig.local
   shell           Set zsh as default shell, install antidote + powerlevel10k
   editor          Neovim via Homebrew + lazy.nvim bootstrap, vi/vim shims
   multiplexer     Tmux config wiring + TPM (Tmux Plugin Manager)
   terminal        WezTerm via Homebrew Cask
   sdk             SDKMAN toolchain (Java, Kotlin, …)
-  agents          Claude Code, Codex, OpenCode — install checks + central config symlinks
+  agents          Claude Code, Codex, OpenCode -- install checks + central config symlinks
   git             GitHub SSH key setup (interactive)
   macos           macOS system defaults via 'defaults write'
 

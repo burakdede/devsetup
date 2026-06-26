@@ -169,7 +169,7 @@ should_skip_step() {
     flag_enabled "${!var_name:-0}"
 }
 
-# Check MACSETUP_UPGRADE=1 env var — forces reinstall even if tool is present.
+# Check MACSETUP_UPGRADE=1 env var -- forces reinstall even if tool is present.
 upgrade_enabled() {
     flag_enabled "${MACSETUP_UPGRADE:-0}"
 }

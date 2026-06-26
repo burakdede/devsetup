@@ -64,7 +64,7 @@ wait_for_schema() {
     while ! schema_is_readable "$schema" "$schema_dir"; do
         (( attempts++ ))
         if (( attempts >= timeout_seconds )); then
-            log_warn "Schema $schema not available after ${timeout_seconds} seconds — skipping."
+            log_warn "Schema $schema not available after ${timeout_seconds} seconds -- skipping."
             return 1
         fi
         sleep 1
@@ -251,7 +251,7 @@ configure_gnome_extensions() {
         log_success "Successfully installed and enabled: $ext"
     done
 
-    # gext installs schemas into the extension directory under ~/.local — GNOME Shell
+    # gext installs schemas into the extension directory under ~/.local -- GNOME Shell
     # reads them from there directly. No need to copy to /usr/share or recompile
     # system schemas. Schema availability is checked per-extension before gsettings
     # calls via wait_for_schema below.
@@ -276,7 +276,7 @@ echo_header "Configuring display scaling (HiDPI)"
 # Tuned for dual 27" 4K (3840×2160, ~162 DPI) on X11 with NVIDIA.
 #
 # GNOME's fractional scaling (scale-monitor-framebuffer) on X11 renders an
-# internal 2x framebuffer and downscales — on NVIDIA this causes a significant
+# internal 2x framebuffer and downscales -- on NVIDIA this causes a significant
 # GPU/performance hit at 144 Hz.  The pragmatic X11 approach is:
 #   - 1x integer scale (no framebuffer overhead)
 #   - text-scaling-factor to bring text to a comfortable size
@@ -568,7 +568,7 @@ gsettings set org.gnome.desktop.screensaver lock-delay 0
 
 # Prevent the system from suspending due to inactivity on AC power.
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-# Same for battery — keeps compute running even when unplugged.
+# Same for battery -- keeps compute running even when unplugged.
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
 
 log_success "Power management configured: lock screen after ${IDLE_DELAY}s idle, suspend disabled."

@@ -2,7 +2,7 @@
 # Post-install health check for macOS developer setup.
 #
 # Prints a ✓/✗ summary for every tool and config file managed by macsetup.
-# Does not install anything — safe to run at any time.
+# Does not install anything -- safe to run at any time.
 #
 # Usage:
 #   ./run.sh --verify
@@ -48,9 +48,9 @@ check_symlink() {
     if [[ -L "$path" ]]; then
         check "$label" "ok"
     elif [[ -e "$path" ]]; then
-        check "$label" "exists but is not a symlink — re-run dotfiles step"
+        check "$label" "exists but is not a symlink -- re-run dotfiles step"
     else
-        check "$label" "missing — run dotfiles step"
+        check "$label" "missing -- run dotfiles step"
     fi
 }
 
@@ -92,7 +92,7 @@ echo_header "mise"
 if [[ -x "$HOME/.local/bin/mise" ]]; then
     check "mise binary at ~/.local/bin/mise" "ok"
 else
-    check "mise binary at ~/.local/bin/mise" "not found — run system step"
+    check "mise binary at ~/.local/bin/mise" "not found -- run system step"
 fi
 
 # ── Shell ─────────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ default_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print
 if echo "$default_shell" | grep -q "zsh"; then
     check "default shell is zsh ($default_shell)" "ok"
 else
-    check "default shell is zsh" "current: $default_shell — run shell step"
+    check "default shell is zsh" "current: $default_shell -- run shell step"
 fi
 
 check_dir "antidote"     "$HOME/.local/share/antidote"
@@ -142,7 +142,7 @@ vi_target="$(readlink "$HOME/.local/bin/vi" 2>/dev/null || true)"
 if echo "$vi_target" | grep -q "nvim"; then
     check "vi → nvim shim" "ok"
 else
-    check "vi → nvim shim" "missing — run editor step"
+    check "vi → nvim shim" "missing -- run editor step"
 fi
 
 # ── Tmux ──────────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ echo_header "SDKMAN"
 if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     check "SDKMAN init script" "ok"
 else
-    check "SDKMAN init script" "missing — run sdk step"
+    check "SDKMAN init script" "missing -- run sdk step"
 fi
 
 # ── Agents ────────────────────────────────────────────────────────────────────
@@ -175,9 +175,9 @@ check_symlink "$HOME/.config/mise"               "$HOME/.config/mise"
 if [[ -L "$HOME/.claude/CLAUDE.md" ]]; then
     check "$HOME/.claude/CLAUDE.md → central instructions" "ok"
 elif [[ -f "$HOME/.claude/CLAUDE.md" ]]; then
-    check "$HOME/.claude/CLAUDE.md → central instructions" "exists but not a symlink — re-run agents step"
+    check "$HOME/.claude/CLAUDE.md → central instructions" "exists but not a symlink -- re-run agents step"
 else
-    check "$HOME/.claude/CLAUDE.md → central instructions" "missing — run agents step"
+    check "$HOME/.claude/CLAUDE.md → central instructions" "missing -- run agents step"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────

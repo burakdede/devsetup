@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# macOS system defaults — sets sensible defaults via the `defaults` command.
+# macOS system defaults -- sets sensible defaults via the `defaults` command.
 #
 # Source: adapted from github.com/mathiasbynens/dotfiles/.macos
 #
@@ -15,7 +15,7 @@
 #
 # ── Customising ───────────────────────────────────────────────────────────────
 # Each `defaults write` call is self-contained and commented.  Edit the value
-# inline and re-run this script — changes take effect after the app restart at
+# inline and re-run this script -- changes take effect after the app restart at
 # the bottom of the script.
 #
 # ── Hot corners ───────────────────────────────────────────────────────────────

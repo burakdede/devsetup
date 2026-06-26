@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Coding agent setup — Claude Code, Codex, OpenCode.
+# Coding agent setup -- Claude Code, Codex, OpenCode.
 #
 # What this does:
 #   1. Verifies each agent CLI is installed (install instructions printed if not).
@@ -9,8 +9,8 @@
 #
 # Central config layout (in dotfiles directory):
 #   ~/.config/agents/
-#   ├── instructions.md   — shared system prompt / coding guidelines
-#   └── memory/           — shared scratch memory (ignored by git via .gitkeep)
+#   ├── instructions.md   -- shared system prompt / coding guidelines
+#   └── memory/           -- shared scratch memory (ignored by git via .gitkeep)
 #
 # Agent-specific locations:
 #   Claude Code : ~/.claude/CLAUDE.md          → ~/.config/agents/instructions.md
@@ -40,21 +40,21 @@ echo_header "Coding agents (Claude Code · Codex · OpenCode)"
 agents_ok=1
 
 if ! command -v claude &>/dev/null; then
-    log_warn "claude not found — install: brew install claude-code  or  npm install -g @anthropic-ai/claude-code"
+    log_warn "claude not found -- install: brew install claude-code  or  npm install -g @anthropic-ai/claude-code"
     agents_ok=0
 else
     log_success "claude $(claude --version 2>/dev/null | head -1)"
 fi
 
 if ! command -v codex &>/dev/null; then
-    log_warn "codex not found — install via Brewfile: brew install --cask codex"
+    log_warn "codex not found -- install via Brewfile: brew install --cask codex"
     agents_ok=0
 else
     log_success "codex found"
 fi
 
 if ! command -v opencode &>/dev/null; then
-    log_warn "opencode not found — install via Brewfile: brew install opencode"
+    log_warn "opencode not found -- install via Brewfile: brew install opencode"
     agents_ok=0
 else
     log_success "opencode $(opencode --version 2>/dev/null | head -1)"
@@ -78,11 +78,11 @@ CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 mkdir -p "$CLAUDE_DIR"
 
 if [[ ! -f "$CENTRAL_INSTRUCTIONS" ]]; then
-    log_warn "Claude Code: $CENTRAL_INSTRUCTIONS not found — run dotfiles step first, then re-run --only agents."
+    log_warn "Claude Code: $CENTRAL_INSTRUCTIONS not found -- run dotfiles step first, then re-run --only agents."
 elif [[ -L "$CLAUDE_MD" ]]; then
     log_info "Claude Code: CLAUDE.md symlink already in place"
 elif [[ -f "$CLAUDE_MD" ]]; then
-    # Existing file — back it up then replace with symlink.
+    # Existing file -- back it up then replace with symlink.
     mv "$CLAUDE_MD" "${CLAUDE_MD}.bak"
     log_info "Claude Code: backed up existing CLAUDE.md to CLAUDE.md.bak"
     ln -s "$CENTRAL_INSTRUCTIONS" "$CLAUDE_MD"
@@ -109,7 +109,7 @@ if [[ ! -f "$OPENCODE_CONFIG" ]]; then
 EOF
     log_success "OpenCode: created $OPENCODE_CONFIG"
 else
-    log_info "OpenCode: $OPENCODE_CONFIG already exists — skipping"
+    log_info "OpenCode: $OPENCODE_CONFIG already exists -- skipping"
 fi
 
 # ─── Codex: config.toml ───────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ approvals_reviewer     = "user"
 EOF
     log_success "Codex: created $CODEX_CONFIG"
 else
-    log_info "Codex: $CODEX_CONFIG already exists — skipping"
+    log_info "Codex: $CODEX_CONFIG already exists -- skipping"
 fi
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
@@ -136,5 +136,5 @@ log_success "Central agent config: $AGENTS_CONFIG_DIR"
 log_success "  Edit $CENTRAL_INSTRUCTIONS to update instructions for all agents."
 
 if [[ "$agents_ok" -eq 0 ]]; then
-    log_warn "One or more agents were not found — install them and re-run: ./run.sh --only agents"
+    log_warn "One or more agents were not found -- install them and re-run: ./run.sh --only agents"
 fi

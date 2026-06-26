@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# SDKMAN installation and package bootstrap — identical on macOS and Linux.
+# SDKMAN installation and package bootstrap -- identical on macOS and Linux.
 #
 # SDKMAN manages JVM-ecosystem SDKs (Java, Kotlin, Gradle, …).
 # It is separate from mise because SDKMAN has richer JVM tooling (switching
 # between vendors, GraalVM, etc.) whereas mise is better for other runtimes.
 #
 # ── Adding SDK candidates ─────────────────────────────────────────────────────
-# Edit sdk/packages.txt — one candidate per line, comments with #.
+# Edit sdk/packages.txt -- one candidate per line, comments with #.
 # Then run: ./run.sh --only sdk
 #
 # ── Installing a specific version ────────────────────────────────────────────

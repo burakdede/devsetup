@@ -29,8 +29,6 @@ base_commands=(
     jq
     yq
     eza
-    sd
-    scc
     uv
     mise
     claude

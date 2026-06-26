@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Linux Setup — Orchestration Script
+# Linux Setup -- Orchestration Script
 
 set -euo pipefail
 
@@ -35,13 +35,13 @@ Options:
 Valid STEP values (run in this order on a fresh machine):
   system          APT packages, runtimes, fonts, core CLI tooling
   dotfiles        Symlink config files into \$HOME
-  configure       Git identity prompts — writes to ~/.gitconfig.local
+  configure       Git identity prompts -- writes to ~/.gitconfig.local
   shell           Install zsh and set it as the default login shell
   editor          Install Neovim, register as vim/vi/editor
   multiplexer     Tmux TPM bootstrap and config wiring
   terminal        Install WezTerm, set as default terminal
   sdk             SDKMAN toolchain (Java, Kotlin, …)
-  agents          Claude Code, Codex, OpenCode — install checks + central config symlinks
+  agents          Claude Code, Codex, OpenCode -- install checks + central config symlinks
   git             GitHub SSH key setup (interactive)
   settings        GNOME desktop preferences (requires desktop session)
 
@@ -51,8 +51,8 @@ Dependencies:
   - Run system first on a fresh machine; all other steps need its packages.
   - configure needs dotfiles (for the .gitconfig symlink).
   - terminal picks up zsh as its default shell only after shell has run.
-  - editor's Java LSP (jdtls) needs a JDK — run sdk before opening Java files.
-  - agents needs system packages (npm for claude-code, etc.) — run system first.
+  - editor's Java LSP (jdtls) needs a JDK -- run sdk before opening Java files.
+  - agents needs system packages (npm for claude-code, etc.) -- run system first.
 EOF
 }
 
@@ -214,22 +214,22 @@ main() {
 
     local step_name
     local -a steps=(
-        # 1. Base system — everything else depends on this
+        # 1. Base system -- everything else depends on this
         "system|$ROOT_DIR/system/system.sh|System packages and developer tooling"
-        # 2. Dotfiles — configs in place before any tool is configured
+        # 2. Dotfiles -- configs in place before any tool is configured
         "dotfiles|$ROOT_DIR/dotfiles.sh|Dotfiles"
-        # 3. Identity — needs .gitconfig symlinked by dotfiles
+        # 3. Identity -- needs .gitconfig symlinked by dotfiles
         "configure|$ROOT_DIR/configure/configure.sh|Interactive configuration"
-        # 4. Shell — change default shell early; later tools benefit from zsh being active
+        # 4. Shell -- change default shell early; later tools benefit from zsh being active
         "shell|$ROOT_DIR/shell/shell.sh|Zsh shell"
-        # 5. Editor + multiplexer — independent of each other, depend on system
+        # 5. Editor + multiplexer -- independent of each other, depend on system
         "editor|$ROOT_DIR/editor/editor.sh|Neovim editor"
         "multiplexer|$ROOT_DIR/multiplexer/multiplexer.sh|Tmux multiplexer"
-        # 6. Terminal — launched last so it picks up zsh as default shell
+        # 6. Terminal -- launched last so it picks up zsh as default shell
         "terminal|$ROOT_DIR/terminal/terminal.sh|WezTerm terminal emulator"
-        # 7. Language SDKs — heavy, some LSP servers (jdtls) need this
+        # 7. Language SDKs -- heavy, some LSP servers (jdtls) need this
         "sdk|$ROOT_DIR/sdk/sdk.sh|SDKMAN toolchain"
-        # 8. Agent tooling — needs npm/node from system
+        # 8. Agent tooling -- needs npm/node from system
         "agents|$ROOT_DIR/agents/agents.sh|Coding agents (Claude Code, Codex, OpenCode)"
     )
 
@@ -256,11 +256,11 @@ main() {
                 check_step_deps "$step_name" system
             fi
         done
-        # configure writes to .gitconfig.local — only useful after dotfiles symlinks .gitconfig
+        # configure writes to .gitconfig.local -- only useful after dotfiles symlinks .gitconfig
         if contains_step configure; then
             check_step_deps configure dotfiles
         fi
-        # terminal default_prog is zsh — more useful once shell has set zsh as default
+        # terminal default_prog is zsh -- more useful once shell has set zsh as default
         if contains_step terminal; then
             check_step_deps terminal shell
         fi

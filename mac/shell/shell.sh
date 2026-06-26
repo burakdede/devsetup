@@ -5,11 +5,11 @@
 # and powerlevel10k (prompt theme), and pre-bundles plugins for fast first-launch.
 #
 # ── How the shell stack works ─────────────────────────────────────────────────
-# .zshenv  — sourced for every zsh process; sets PATH, XDG dirs, EDITOR
-# .zprofile — sourced for login shells; Homebrew shellenv lives here on macOS
-# .zshrc   — sourced for interactive shells; plugins, aliases, prompt
-# .p10k.zsh — powerlevel10k theme config (run `p10k configure` to regenerate)
-# .zsh_plugins.txt — antidote plugin spec (one plugin per line)
+# .zshenv  -- sourced for every zsh process; sets PATH, XDG dirs, EDITOR
+# .zprofile -- sourced for login shells; Homebrew shellenv lives here on macOS
+# .zshrc   -- sourced for interactive shells; plugins, aliases, prompt
+# .p10k.zsh -- powerlevel10k theme config (run `p10k configure` to regenerate)
+# .zsh_plugins.txt -- antidote plugin spec (one plugin per line)
 #
 # All of the above live in the shared dotfiles/ directory so they are
 # identical across macOS and Linux.

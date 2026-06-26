@@ -2,11 +2,11 @@
 -- lua/plugins/lsp.lua
 --
 -- Stack:
---   mason.nvim          — installs/manages LSP servers, formatters, linters
---   mason-lspconfig     — bridges mason ↔ nvim-lspconfig
---   nvim-lspconfig      — configures each LSP server
---   nvim-cmp            — completion engine
---   LuaSnip             — snippet engine (required by cmp)
+--   mason.nvim          -- installs/manages LSP servers, formatters, linters
+--   mason-lspconfig     -- bridges mason ↔ nvim-lspconfig
+--   nvim-lspconfig      -- configures each LSP server
+--   nvim-cmp            -- completion engine
+--   LuaSnip             -- snippet engine (required by cmp)
 --
 -- Adding a new language
 -- ─────────────────────
@@ -133,7 +133,7 @@ return {
                 map("n", "gy",         vim.lsp.buf.type_definition,   "Go to type definition")
 
                 -- Hover / signature
-                -- <C-k> is reserved for vim-tmux-navigator (TmuxNavigateUp) — do NOT
+                -- <C-k> is reserved for vim-tmux-navigator (TmuxNavigateUp) -- do NOT
                 -- bind it in normal mode here or pane navigation breaks when LSP is active.
                 -- Signature help is available in insert mode or via :lua vim.lsp.buf.signature_help()
                 map("n", "K",          vim.lsp.buf.hover,             "Hover docs")

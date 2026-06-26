@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# GitHub SSH key setup — works on macOS and Linux.
+# GitHub SSH key setup -- works on macOS and Linux.
 #
 # Generates an ed25519 SSH key, loads it into the agent, copies the public key
 # to the clipboard (pbcopy on macOS), and tests the GitHub connection.

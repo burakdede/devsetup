@@ -17,7 +17,7 @@ local login_shell = os.getenv("SHELL") or "/bin/zsh"
 config.default_prog = { login_shell, "-l" }
 
 -- ─── Terminal colour support ──────────────────────────────────────────────────
--- xterm-256color is the safest cross-platform default — wezterm-256color
+-- xterm-256color is the safest cross-platform default -- wezterm-256color
 -- terminfo is missing from many systems and causes garbled output.
 config.term = "xterm-256color"
 
@@ -100,8 +100,8 @@ end
 -- WezTerm's defaults intercept many Ctrl+letter combos that readline/zsh rely
 -- on (Ctrl+R history search, Ctrl+W kill-word, Ctrl+K kill-line, etc.).
 -- Disable conflicting defaults and use platform-native modifier keys:
---   macOS  → CMD        (Cmd+C/V/T/W — standard Mac conventions)
---   Linux  → CTRL+SHIFT (Ctrl+Shift+C/V/T/W — standard Linux conventions)
+--   macOS  → CMD        (Cmd+C/V/T/W -- standard Mac conventions)
+--   Linux  → CTRL+SHIFT (Ctrl+Shift+C/V/T/W -- standard Linux conventions)
 config.disable_default_key_bindings = true
 
 local act = wezterm.action

@@ -11,13 +11,13 @@ creating new ones. No unnecessary abstractions.
 ## Code style
 
 - Write no comments by default. Only comment the WHY when it would surprise a reader.
-- No trailing summaries ("I updated X to do Y") — the diff speaks for itself.
+- No trailing summaries ("I updated X to do Y") -- the diff speaks for itself.
 - Prefer small, focused commits. One logical change per commit.
 - Prefer `snake_case` for files, `camelCase` for JS/TS identifiers, language conventions elsewhere.
 
 ## Behaviour
 
-- When asked to fix a bug, fix the root cause — do not add fallbacks that hide it.
+- When asked to fix a bug, fix the root cause -- do not add fallbacks that hide it.
 - When in doubt about scope, ask rather than assume.
 - Do not add error handling for impossible cases. Trust framework and language guarantees.
 - Do not add feature flags or backwards-compat shims unless explicitly asked.

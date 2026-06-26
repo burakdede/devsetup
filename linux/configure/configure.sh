@@ -2,7 +2,7 @@
 # Interactive configuration step.
 #
 # Prompts for anything that cannot have a machine-independent default:
-#   - Git identity (name + email) — written to ~/.gitconfig.local so the
+#   - Git identity (name + email) -- written to ~/.gitconfig.local so the
 #     symlinked ~/.gitconfig stays clean and uncommitted.
 #
 # Safe to re-run: existing values are shown as defaults; pressing Enter keeps them.
@@ -150,7 +150,7 @@ main() {
         configure_git_identity
         echo_header "Configuration complete"
         log_success "Your machine-local settings are in $LOCAL_GITCONFIG"
-        log_info "This file is not committed — it stays on this machine only."
+        log_info "This file is not committed -- it stays on this machine only."
         return 0
     fi
 
@@ -164,7 +164,7 @@ main() {
 
     echo_header "Configuration complete"
     log_success "Your machine-local settings are in $LOCAL_GITCONFIG"
-    log_info "This file is not committed — it stays on this machine only."
+    log_info "This file is not committed -- it stays on this machine only."
 }
 
 main

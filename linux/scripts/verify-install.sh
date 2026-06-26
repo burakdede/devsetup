@@ -47,7 +47,7 @@ check_cmd_optional() {
         ver="$(command "$1" --version 2>/dev/null | head -n1 || true)"
         ok "$label${ver:+  ($ver)}"
     else
-        warn "$label  (not found — optional)"
+        warn "$label  (not found -- optional)"
     fi
 }
 

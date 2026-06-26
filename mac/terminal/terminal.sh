@@ -2,14 +2,14 @@
 # WezTerm terminal emulator installation for macOS.
 #
 # Installs WezTerm via Homebrew Cask.  On macOS there is no concept of a
-# "default terminal" the way GNOME has — WezTerm is just launched like any
+# "default terminal" the way GNOME has -- WezTerm is just launched like any
 # other .app from the Applications folder or Spotlight.
 #
 # ── WezTerm configuration ─────────────────────────────────────────────────────
 # Config lives in the shared dotfiles/ directory:
 #   dotfiles/.config/wezterm/wezterm.lua
 #
-# The config is already cross-platform — it detects macOS vs Linux at runtime:
+# The config is already cross-platform -- it detects macOS vs Linux at runtime:
 #   local is_mac = wezterm.target_triple:find("darwin") ~= nil
 # macOS uses SUPER (Cmd) as the modifier; Linux uses SHIFT|CTRL.
 #

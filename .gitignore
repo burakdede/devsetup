@@ -8,11 +8,11 @@ Thumbs.db
 *.swo
 *~
 
-# Agent scratch memory — not committed; each machine populates its own
+# Agent scratch memory -- not committed; each machine populates its own
 dotfiles/.config/agents/memory/*
 !dotfiles/.config/agents/memory/.gitkeep
 
-# Compiled / cached zsh plugin bundles — regenerated on first shell launch
+# Compiled / cached zsh plugin bundles -- regenerated on first shell launch
 dotfiles/.zsh_plugins.zsh
 dotfiles/.zsh_plugins.clean.txt
 

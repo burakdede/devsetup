@@ -1,10 +1,10 @@
 ########################################################################
 # CLI essentials                                                       #
 ########################################################################
-brew "cmake"             # native build tool — needed for many native extensions
-brew "coreutils"         # GNU coreutils (gls, gcat, …) — consistent behaviour vs BSD
+brew "cmake"             # native build tool -- needed for many native extensions
+brew "coreutils"         # GNU coreutils (gls, gcat, …) -- consistent behaviour vs BSD
 brew "curl", link: true  # ensure modern curl overrides system version
-brew "findutils"         # GNU find — more powerful than BSD find
+brew "findutils"         # GNU find -- more powerful than BSD find
 brew "gh"
 brew "git"
 brew "htop"
@@ -23,23 +23,23 @@ brew "zsh"
 # Modern CLI tools (battle-tested, high daily value)                  #
 ########################################################################
 brew "bat"     # cat with syntax highlighting and git diff integration
-brew "eza"     # ls replacement — tree view, git status, icons
-brew "fd"      # find replacement — faster, simpler syntax
-brew "fzf"     # fuzzy finder — shell history, file search, ctrl-r
-brew "yq"      # YAML/JSON/TOML processor — used in CI and dotfile automation
+brew "eza"     # ls replacement -- tree view, git status, icons
+brew "fd"      # find replacement -- faster, simpler syntax
+brew "fzf"     # fuzzy finder -- shell history, file search, ctrl-r
+brew "yq"      # YAML/JSON/TOML processor -- used in CI and dotfile automation
 
 ########################################################################
 # Runtime and package management                                       #
 ########################################################################
 brew "mise"    # single tool for node/python/go/java version management
-brew "uv"      # Python package manager — replaces pip/venv/pyenv
+brew "uv"      # Python package manager -- replaces pip/venv/pyenv
 
 ########################################################################
 # Agentic engineering productivity                                     #
 ########################################################################
-brew "direnv"  # per-directory env vars — agents cd in and env is set automatically
-brew "just"    # task runner — cleaner than Makefiles, agents call `just <task>`
-brew "shfmt"   # shell formatter — agents write shell; keeps it well-formatted
+brew "direnv"  # per-directory env vars -- agents cd in and env is set automatically
+brew "just"    # task runner -- cleaner than Makefiles, agents call `just <task>`
+brew "shfmt"   # shell formatter -- agents write shell; keeps it well-formatted
 
 ########################################################################
 # Apps                                                                 #

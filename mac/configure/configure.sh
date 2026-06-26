@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Interactive configuration — git identity setup.
+# Interactive configuration -- git identity setup.
 #
 # Prompts for git name and email and writes them to ~/.gitconfig.local,
 # which is included by the shared .gitconfig via [include] directive.
@@ -161,7 +161,7 @@ main() {
 
     echo_header "Configuration complete"
     log_success "Machine-local settings are in $LOCAL_GITCONFIG"
-    log_info "This file is not committed — it stays on this machine only."
+    log_info "This file is not committed -- it stays on this machine only."
 }
 
 main
