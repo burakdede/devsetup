@@ -6,10 +6,7 @@ discord - classic
 obsidian - classic
 localsend
 postman
-
-# Development tools
-insomnia
 slack - classic
 
-# Media
+# Media and screen capture
 obs-studio
