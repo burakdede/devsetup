@@ -142,6 +142,25 @@ Global mise tool versions (Python, Node, Go) are in `dotfiles/.config/mise/confi
 
 ---
 
+## Post-install state
+
+Most tools work immediately after the run completes. Two things require a session restart:
+
+| Trigger | Reason | Action |
+|---|---|---|
+| **New login shell** | `chsh`/`usermod` changes only apply on next login | Log out and back in |
+| **New terminal window** | Homebrew/mise PATH additions are sourced from `.zshenv` | Open a fresh terminal |
+
+Everything else is live without restart:
+- Dotfile changes take effect in the next new shell (symlinks are immediate)
+- Neovim plugins are bootstrapped headlessly by the `editor` step
+- Tmux plugins are installed by the `multiplexer` step (TPM runs at next `tmux` start)
+- Agent configs (CLAUDE.md, config.toml, config.json) are written and ready
+
+**Dotfiles step on a machine with existing configs:** existing files are backed up to `~/.local/state/devsetup/dotfiles-backups/<timestamp>/` before being replaced with symlinks.
+
+---
+
 ## Verification
 
 ```bash

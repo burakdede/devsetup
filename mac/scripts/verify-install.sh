@@ -132,9 +132,9 @@ if command_exists nvim; then
     load_versions
     wanted="${NEOVIM_VERSION:-}"
     if [[ -n "$wanted" && "$local_ver" != "$wanted" ]]; then
-        check "neovim version $wanted" "installed: $local_ver (run: brew upgrade neovim)"
+        check "neovim version (want $wanted, got $local_ver)" "run: brew upgrade neovim"
     else
-        check "neovim version" "ok ($local_ver)"
+        check "neovim version ($local_ver)" "ok"
     fi
 fi
 

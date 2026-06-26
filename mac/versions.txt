@@ -7,7 +7,7 @@
 # controlled by Homebrew, not this file.  The versions below are used only
 # for health-check comparisons in verify-install.sh.
 
-NEOVIM_VERSION=0.11.5
+NEOVIM_VERSION=0.12.3
 MISE_VERSION=2025.11.11
 NODE_VERSION=24.14.1
 NERD_FONTS_VERSION=3.3.0
