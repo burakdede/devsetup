@@ -39,6 +39,19 @@ installed_wezterm_version() {
     fi
 }
 
+install_nerd_font() {
+    echo_header "JetBrainsMono Nerd Font"
+
+    if brew list --cask font-jetbrains-mono-nerd-font &>/dev/null && ! upgrade_enabled; then
+        log_info "font-jetbrains-mono-nerd-font already installed."
+        return 0
+    fi
+
+    log_info "Installing JetBrainsMono Nerd Font..."
+    brew install --cask font-jetbrains-mono-nerd-font
+    log_success "JetBrainsMono Nerd Font installed."
+}
+
 install_wezterm() {
     echo_header "WezTerm terminal emulator"
 
@@ -64,6 +77,7 @@ main() {
         return 0
     fi
 
+    install_nerd_font
     install_wezterm
 
     echo_header "Terminal setup complete"
