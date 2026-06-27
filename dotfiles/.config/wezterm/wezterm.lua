@@ -83,7 +83,14 @@ wezterm.on("format-tab-title", function(tab, _tabs, _panes, _config, _hover, max
 end)
 
 -- ─── Font ─────────────────────────────────────────────────────────────────────
-config.font = wezterm.font("JetBrainsMono Nerd Font")
+-- Prefer JetBrainsMono Nerd Font (installed via brew cask / system step).
+-- Falls back to common system monospaced fonts so WezTerm starts cleanly on a
+-- machine where the Nerd Font hasn't been installed yet.
+config.font = wezterm.font_with_fallback({
+    "JetBrainsMono Nerd Font",
+    is_mac and "Menlo" or "DejaVu Sans Mono",
+    "monospace",
+})
 config.font_size = 13.0
 
 -- Font rendering quality.
