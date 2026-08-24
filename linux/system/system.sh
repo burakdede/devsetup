@@ -705,6 +705,42 @@ install_npm_clis() {
     done
 }
 
+# Playwright drives a real browser for visual verification; the npm package
+# alone cannot do anything without one. Browser binaries are pinned to the
+# playwright package version, so this runs after every upgrade -- `install` is
+# a no-op when the matching browser is already cached.
+#
+# Chromium only: it covers screenshots, navigation and DOM assertions, and
+# adding Firefox plus WebKit would triple the ~400MB for little day-to-day
+# gain. Projects needing cross-browser run `npx playwright install` themselves.
+install_playwright_browser() {
+    echo_header "Playwright browser"
+
+    if ! "$MISE_BIN" exec -- playwright --version >/dev/null 2>&1; then
+        log_warn "playwright CLI not found; skipping the browser download."
+        log_info "It comes from packages/npm-packages.txt -- re-run the system step."
+        return 0
+    fi
+
+    # --with-deps pulls the shared libraries headless Chromium needs on
+    # Ubuntu (fonts, libnss3, libasound2 and friends). It uses apt, so it
+    # needs sudo; fall back to the browser alone if that is unavailable.
+    if sudo -n true 2>/dev/null || [[ -n "${DEVSETUP_SUDO_OK:-}" ]]; then
+        if "$MISE_BIN" exec -- playwright install --with-deps chromium; then
+            log_success "Chromium and its system deps ready"
+            return 0
+        fi
+    fi
+
+    if "$MISE_BIN" exec -- playwright install chromium; then
+        log_success "Chromium ready (system deps not installed)"
+        log_info "If it fails to launch, run: playwright install-deps chromium"
+    else
+        log_warn "Could not install the Chromium build. Retry with:"
+        log_info "  playwright install --with-deps chromium"
+    fi
+}
+
 install_nerd_fonts() {
     echo_header "JetBrains Mono Nerd Font"
 
@@ -810,6 +846,7 @@ main() {
 
     if ! should_skip_step NPM_TOOLS; then
         install_npm_clis
+        install_playwright_browser
     fi
 
     # python, node, go and the IaC tooling all come from the shared mise

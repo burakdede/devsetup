@@ -27,6 +27,7 @@ equivalent, and rather than asking whether they exist:
 | Shell lint / format | `shellcheck`, `shfmt` |
 | Python | `uv`, `ruff` |
 | Secrets, workflows | `gitleaks`, `actionlint` |
+| Browser / visual checks | `playwright` (Chromium installed) |
 | Runtimes | `mise` (JVM: `sdk`) |
 
 If something genuinely useful is missing, install it (`brew` on macOS, `apt`
@@ -76,9 +77,15 @@ Then state plainly what you ran and what happened. Never describe work as
 passing, complete, or verified unless you executed it and read the output. If
 you could not run something, say which part and why.
 
-When a change is visible in a UI, verify it visually as well as functionally —
-a browser via Playwright, a simulator, a screenshot. Functional tests passing
-is not evidence that the screen looks right.
+When a change is visible in a UI, verify it visually as well as functionally.
+`playwright screenshot <url> <file>` is the quickest path; a simulator works
+for native. Then actually look at the image. Functional tests passing is not
+evidence that the screen looks right, and attaching the screenshot to the PR
+is what lets a reviewer skip reproducing it.
+
+Inside a project that has its own Playwright, use that one: browser binaries
+are pinned to the package version, so the global install and a project's may
+disagree.
 
 ## Testing
 

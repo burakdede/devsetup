@@ -47,6 +47,7 @@ base_commands=(
     yamllint
     eslint
     prettier
+    playwright
     just
     direnv
     shfmt

@@ -156,6 +156,32 @@ install_rust() {
     rustup default "$RUST_VERSION"
 }
 
+# Playwright drives a real browser for visual verification; the npm package
+# alone cannot do anything without one. Browser binaries are pinned to the
+# playwright package version, so this runs after every upgrade -- `install` is
+# a no-op when the matching browser is already cached.
+#
+# Chromium only: it covers screenshots, navigation and DOM assertions, and
+# adding Firefox plus WebKit would triple the ~400MB for little day-to-day
+# gain. Projects needing cross-browser run `npx playwright install` themselves.
+install_playwright_browser() {
+    echo_header "Playwright browser"
+
+    if ! "$MISE_BIN" exec -- playwright --version >/dev/null 2>&1; then
+        log_warn "playwright CLI not found; skipping the browser download."
+        log_info "It comes from packages/npm-packages.txt -- re-run the system step."
+        return 0
+    fi
+
+    # macOS needs no extra system packages, so plain `install`.
+    if "$MISE_BIN" exec -- playwright install chromium; then
+        log_success "Chromium ready ($("$MISE_BIN" exec -- playwright --version))"
+    else
+        log_warn "Could not install the Chromium build. Retry with:"
+        log_info "  playwright install chromium"
+    fi
+}
+
 install_uv_tools() {
     echo_header "uv tools"
 
@@ -200,6 +226,7 @@ main() {
     install_rust
     install_uv_tools
     install_npm_clis
+    install_playwright_browser
 
     echo_header "System setup complete"
     log_success "Homebrew packages, mise runtimes and CLI tooling are ready."

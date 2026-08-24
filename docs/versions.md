@@ -64,6 +64,7 @@ mise trust ~/Projects/devsetup/dotfiles/.config/mise/config.toml
 | Language runtime or IaC tool | `dotfiles/.config/mise/config.toml` |
 | Python CLI | `packages/uv-tools.txt` |
 | Node CLI | `packages/npm-packages.txt` |
+| Browser for visual checks | `playwright`, in the same npm manifest |
 | JVM SDK | `packages/sdkman.txt` |
 | Version pin for something mise does not manage | `packages/versions.txt` |
 

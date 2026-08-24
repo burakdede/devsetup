@@ -344,6 +344,27 @@ verify_shared() {
         fi
     fi
 
+    # Visual verification. The agent instructions expect a browser here, so a
+    # missing one is a real gap rather than a nice-to-have.
+    section "Visual verification"
+    if command -v playwright >/dev/null 2>&1 || (command -v mise >/dev/null 2>&1 && mise which playwright >/dev/null 2>&1); then
+        ok "playwright  ($(mise exec -- playwright --version 2>/dev/null || playwright --version 2>/dev/null))"
+        local pw_cache="$HOME/Library/Caches/ms-playwright"
+        [[ -d "$pw_cache" ]] || pw_cache="$HOME/.cache/ms-playwright"
+        # Plain bash: an unmatched glob stays literal, and the -d test drops it.
+        local pw_chromium=() pw_dir
+        for pw_dir in "$pw_cache"/chromium*; do
+            [[ -d "$pw_dir" ]] && pw_chromium+=("$pw_dir")
+        done
+        if (( ${#pw_chromium[@]} )); then
+            ok "chromium installed ($(du -sh "$pw_cache" 2>/dev/null | cut -f1))"
+        else
+            fail "playwright has no browser -- run: playwright install chromium"
+        fi
+    else
+        fail "playwright not installed (see packages/npm-packages.txt)"
+    fi
+
     section "Editor"
     check_cmd nvim
     check_file "$HOME/.config/nvim/init.lua" "nvim init.lua"

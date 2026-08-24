@@ -5,3 +5,12 @@
 
 eslint
 prettier
+
+# Visual verification. The agent instructions expect a browser to be available
+# for checking UI changes, so this is installed machine-wide rather than left to
+# each project.
+#
+# NOTE: browser binaries are pinned to the playwright package version, so the
+# browsers must be reinstalled when this is upgraded. install_playwright_browser
+# in the system step handles that.
+playwright
