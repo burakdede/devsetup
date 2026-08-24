@@ -85,11 +85,30 @@ Re-install: `LINUX_SETUP_UPGRADE=1 ./run.sh --only editor`
 
 Everything in `dotfiles/` is cross-platform. OS-specific paths are handled inside each config file at runtime:
 
-- **`.zshenv`** -- loads Homebrew shellenv on macOS; PATH additions work on both
+- **`.zshenv`** -- XDG dirs, `$EDITOR`, and user PATH entries; sourced by every zsh process
+- **`.zprofile`** -- Homebrew init on macOS, mise shims; sourced by login shells only
 - **`.zshrc`** -- fzf key-bindings source differs by OS (detected at runtime)
 - **`wezterm.lua`** -- uses `wezterm.target_triple:find("darwin")` to switch modifier keys
 - **`tmux.conf`** -- fully cross-platform
 - **`nvim/`** -- fully cross-platform
+
+### Shell environment: what this setup decides for you
+
+Two deliberate choices in the zsh files that are easy to get wrong:
+
+**Homebrew is initialised in `.zprofile`, not `.zshenv`.** zsh sources files in the
+order `/etc/zshenv` → `~/.zshenv` → `/etc/zprofile` → `~/.zprofile` → `~/.zshrc`.
+macOS ships an `/etc/zprofile` that runs `/usr/libexec/path_helper`, which rebuilds
+PATH and hoists `/usr/bin` to the front. A `brew shellenv` in `~/.zshenv` runs before
+that and is silently undone, leaving you on Apple's `git`, `curl` and `jq` even though
+the Homebrew ones are installed. Running it from `~/.zprofile` (after `path_helper`)
+is what actually makes Homebrew win. If you add PATH entries of your own and expect
+them to beat the system ones on macOS, put them in `.zprofile` too.
+
+**`typeset -U path PATH` is set in `.zshenv`.** This setup nests login shells on
+purpose (WezTerm spawns `$SHELL -l`, tmux spawns `$SHELL -l` again per pane), so
+without de-duplication PATH grows at every nesting level. macOS hides this via
+`path_helper`; Ubuntu does not, so it is made explicit for both.
 
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 

@@ -5,16 +5,8 @@
 # Interactive customisations belong in ~/.zshrc.
 
 # ─── PATH ─────────────────────────────────────────────────────────────────────
-# Homebrew must be initialised before PATH extensions on macOS so that
-# brew-managed binaries (zsh, nvim, mise, …) are found first.
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -x /opt/homebrew/bin/brew ]]; then        # Apple Silicon
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -x /usr/local/bin/brew ]]; then         # Intel
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
-fi
-
+# Homebrew is NOT initialised here -- see ~/.zprofile for why.
+#
 # Keep PATH free of duplicate entries.
 #
 # This file is sourced by EVERY zsh process, and the setup deliberately nests
