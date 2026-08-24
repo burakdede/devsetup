@@ -12,6 +12,12 @@ Thumbs.db
 dotfiles/.config/agents/memory/*
 !dotfiles/.config/agents/memory/.gitkeep
 
+# Vendored agent skills. Claude Code loads skills from ~/.claude/skills and
+# from its own plugin cache, NOT from ~/.config/agents/skills, so anything
+# copied here is dead weight -- 2.4MB of it at the time of writing. Kept out
+# of the repo rather than deleted from disk; remove it by hand if unwanted.
+dotfiles/.config/agents/skills/
+
 # Compiled / cached zsh plugin bundles -- regenerated on first shell launch
 dotfiles/.zsh_plugins.zsh
 dotfiles/.zsh_plugins.clean.txt
