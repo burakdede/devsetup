@@ -140,7 +140,9 @@ github_key_by_hand() {
     fi
 
     log_info "Add it at: https://github.com/settings/keys"
-    command_exists open && open "https://github.com/settings/keys" 2>/dev/null || true
+    if command_exists open; then
+        open "https://github.com/settings/keys" 2>/dev/null || true
+    fi
     is_interactive && read -r -p "Press Enter once the key is added..."
 }
 
