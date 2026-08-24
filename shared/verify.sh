@@ -261,6 +261,24 @@ verify_shared() {
     # remote boxes. It previously had no config in this repo at all, which meant
     # mise was never activated there and `node` silently resolved to a different
     # version than in zsh. Check the two agree.
+    # zsh reads .zshenv for EVERY invocation, .zprofile for login shells, and
+    # .zshrc only for interactive ones. Runtimes must resolve the same in all
+    # three, or `ssh host "node --version"`, cron and git hooks get a different
+    # version than your terminal does.
+    section "Shell invocation parity"
+    if command -v node >/dev/null 2>&1; then
+        local n_int n_login n_script
+        n_int="$(zsh -lic 'node --version' 2>/dev/null | tail -1)"
+        n_login="$(zsh -lc 'node --version' 2>/dev/null | tail -1)"
+        n_script="$(env -i HOME="$HOME" zsh -c 'node --version' 2>/dev/null | tail -1)"
+
+        if [[ -n "$n_int" && "$n_int" == "$n_login" && "$n_int" == "$n_script" ]]; then
+            ok "zsh resolves node to $n_int when interactive, login and non-interactive"
+        else
+            fail "node differs by zsh invocation -- interactive:${n_int:-none} login:${n_login:-none} script:${n_script:-none}"
+        fi
+    fi
+
     section "bash parity"
     local bash_bin
     bash_bin="$(command -v bash 2>/dev/null || true)"

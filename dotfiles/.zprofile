@@ -32,10 +32,20 @@ fi
 # path_helper also demotes the user-local entries set in ~/.zshenv, so
 # re-assert them. `typeset -U path` (set in .zshenv) makes this a reorder
 # rather than a duplication, and it is a harmless no-op on Linux.
-path=("$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/go/bin" $path)
+#
+# The mise shims MUST be re-asserted too, and must come before Homebrew above:
+# otherwise a login shell picks up Homebrew's node rather than the version
+# pinned in the shared mise config. Keep this list in the same order as the
+# one in .zshenv.
+path=(
+    "${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims"
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+    "$HOME/go/bin"
+    $path
+)
 
-# mise: shim mode for login shells (non-interactive; e.g. SSH, cron).
-# Interactive shells use `mise activate zsh` (full hooks) in .zshrc instead.
-if [[ -x "$HOME/.local/bin/mise" ]]; then
-    eval "$("$HOME/.local/bin/mise" activate zsh --shims)"
-fi
+# mise needs nothing here: .zshenv puts the shims directory on PATH for every
+# zsh, and .zshrc runs full `mise activate zsh` for interactive ones. This file
+# used to shell out to `mise activate --shims`, which was both redundant and a
+# subprocess on every login.

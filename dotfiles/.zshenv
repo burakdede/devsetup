@@ -25,6 +25,20 @@ typeset -U path PATH
 # re-asserted in .zprofile; see the note there.
 path=("$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/go/bin" $path)
 
+# mise shims, for EVERY zsh including non-interactive, non-login ones.
+#
+# This is what `ssh host "node --version"`, cron, and git hooks invoking
+# $SHELL -c actually run, and none of them read .zprofile or .zshrc. Without
+# this the mise-managed runtimes simply do not exist there: PATH had
+# ~/.local/bin (the mise binary) but not the shims, so node, python and java
+# were missing from every non-interactive shell.
+#
+# Deliberately a plain path entry rather than `mise activate --shims`: that
+# would fork the mise binary on every single zsh invocation, including every
+# script. Interactive shells still get full activation (hooks, env vars) from
+# .zshrc, which supersedes this.
+path=("${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims" $path)
+
 # ─── XDG base directories ─────────────────────────────────────────────────────
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
