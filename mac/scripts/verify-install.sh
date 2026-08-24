@@ -28,11 +28,28 @@ verify_shared
 section "Homebrew"
 check_cmd brew
 if command -v brew >/dev/null 2>&1; then
-    if brew bundle check --file="$ROOT_DIR/Brewfile" >/dev/null 2>&1; then
+    # --no-upgrade asks "is it installed", not "is it the newest release".
+    # Without it this warns whenever any formula has a newer version upstream,
+    # which is a job for `just update`, not for verification.
+    if brew bundle check --file="$ROOT_DIR/Brewfile" --no-upgrade >/dev/null 2>&1; then
         ok "Brewfile satisfied"
     else
         warn "Brewfile not fully satisfied  (run: brew bundle install --file=$ROOT_DIR/Brewfile)"
     fi
+
+    # The Brewfile declares the agent CLIs as casks, which is what carries
+    # their shell completions and keeps them independent of whichever node is
+    # current. An npm global of the same name installs into the node prefix,
+    # lands earlier on PATH, and shadows the cask -- silently, because both
+    # answer --version identically. Compare what PATH resolves against what
+    # Homebrew owns rather than trusting the name.
+    brew_bin="$(brew --prefix)/bin"
+    for agent_cli in codex claude opencode; do
+        agent_path="$(command -v "$agent_cli" 2>/dev/null)" || continue
+        [[ "$agent_path" == "$brew_bin/$agent_cli" ]] && continue
+        grep -qE "^(cask|brew) \"$agent_cli\"" "$ROOT_DIR/Brewfile" || continue
+        warn "$agent_cli runs from $agent_path, shadowing the Homebrew one  (npm uninstall -g the duplicate, then: mise reshim)"
+    done
     # mise must come from ~/.local/bin, not Homebrew: the activation lines in
     # .zshrc and .zprofile reference that exact path.
     if brew list --formula 2>/dev/null | grep -qx mise; then

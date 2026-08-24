@@ -21,10 +21,18 @@ section() { printf '\n%s── %s%s\n' "$CYAN" "$1" "$RESET"; }
 _version_of() { command "$1" --version 2>/dev/null | head -n1 || true; }
 
 # Best-of-3 interactive login shell startup, in whole milliseconds.
+# Best-of-N wall time for an interactive login shell, in milliseconds.
+#
+# Startup time is a min-statistic: the fastest run is the one where nothing
+# else competed for the CPU, and that is the number the budget is about. Single
+# samples on this metric swing by 3-4x on a busy machine, so a warm-up run is
+# discarded (it pays for cold page cache and the completion dump) and the best
+# of five is reported. Fewer samples than this produced false budget warnings.
 _startup_ms() {
     local shell="$1" best="" t _
     command -v "$shell" >/dev/null 2>&1 || return 1
-    for _ in 1 2 3; do
+    "$shell" -lic 'exit' >/dev/null 2>&1   # warm-up, deliberately not timed
+    for _ in 1 2 3 4 5; do
         t="$( { /usr/bin/time -p "$shell" -lic 'exit' ; } 2>&1 | awk '/^real/{print $2}' )"
         [[ -z "$t" ]] && continue
         if [[ -z "$best" ]] || awk -v a="$t" -v b="$best" 'BEGIN{exit !(a<b)}'; then
@@ -360,6 +368,63 @@ verify_shared() {
 
     # Visual verification. The agent instructions expect a browser here, so a
     # missing one is a real gap rather than a nice-to-have.
+    # Installing a tool and wiring it up are different acts. These are the
+    # ones that look installed but do nothing until configured.
+    # Removing a candidate from packages/sdkman.txt does not uninstall it, and
+    # .zshrc globs every candidate onto PATH -- so a dropped tool keeps
+    # answering long after the manifest says it is gone.
+    if [[ -d "$HOME/.sdkman/candidates" ]]; then
+        local cand undeclared=""
+        for cand in "$HOME/.sdkman/candidates"/*; do
+            [[ -d "$cand" ]] || continue
+            cand="$(basename "$cand")"
+            grep -qE "^${cand}([@[:space:]]|\$)" "$REPO_ROOT/packages/sdkman.txt" || undeclared="$undeclared $cand"
+        done
+        if [[ -n "$undeclared" ]]; then
+            warn "SDKMAN candidates installed but not declared:${undeclared}  (sdk uninstall <candidate> <version>)"
+        fi
+    fi
+
+    section "Tool wiring"
+    if command -v git-lfs >/dev/null 2>&1; then
+        if git config --get filter.lfs.clean >/dev/null 2>&1; then
+            ok "git-lfs filters registered"
+        else
+            fail "git-lfs installed but not registered -- run: git lfs install"
+        fi
+    fi
+
+    if command -v gh >/dev/null 2>&1; then
+        if gh auth status >/dev/null 2>&1; then
+            ok "gh authenticated ($(gh api user --jq .login 2>/dev/null || echo '?'))"
+            if [[ "$(gh config get git_protocol 2>/dev/null)" == "ssh" ]]; then
+                ok "gh uses ssh for git"
+            else
+                warn "gh git_protocol is not ssh, but the git step sets up an SSH key"
+            fi
+        else
+            fail "gh not authenticated -- issues, PRs and projects will all fail"
+        fi
+    fi
+
+    if [[ -f "$HOME/.ssh/config" ]] && grep -q "managed by machinist" "$HOME/.ssh/config"; then
+        ok "ssh client configured (agent + ed25519)"
+    else
+        warn "$HOME/.ssh/config has no managed block -- run: ./install.sh --only git"
+    fi
+
+    # One theme name across the terminal, editor, pager and previewer.
+    local theme_ok=1
+    grep -q 'Catppuccin Mocha' "$REPO_ROOT/dotfiles/.config/wezterm/wezterm.lua" 2>/dev/null || theme_ok=0
+    grep -q 'catppuccin-mocha'  "$REPO_ROOT/dotfiles/.config/nvim/lua/plugins/ui.lua" 2>/dev/null || theme_ok=0
+    grep -q 'Catppuccin Mocha'  "$HOME/.config/bat/config" 2>/dev/null || theme_ok=0
+    [[ "$(git config --get delta.syntax-theme 2>/dev/null)" == "Catppuccin Mocha" ]] || theme_ok=0
+    if (( theme_ok )); then
+        ok "one theme across wezterm, nvim, bat and delta"
+    else
+        warn "theme has drifted between wezterm / nvim / bat / delta"
+    fi
+
     section "Visual verification"
     if command -v playwright >/dev/null 2>&1 || (command -v mise >/dev/null 2>&1 && mise which playwright >/dev/null 2>&1); then
         ok "playwright  ($(mise exec -- playwright --version 2>/dev/null || playwright --version 2>/dev/null))"

@@ -62,12 +62,9 @@ diff:
 # Measure interactive shell startup, both shells.
 bench:
     #!/usr/bin/env bash
+    set -euo pipefail
+    source shared/verify.sh
     for sh in zsh bash; do
         command -v "$sh" >/dev/null 2>&1 || continue
-        best=99
-        for _ in 1 2 3 4 5; do
-            t=$( { /usr/bin/time -p "$sh" -lic 'exit' ; } 2>&1 | awk '/^real/{print $2}' )
-            best=$(awk -v a="$t" -v b="$best" 'BEGIN{print (a<b)?a:b}')
-        done
-        printf '%-5s %sms\n' "$sh" "$(awk -v b="$best" 'BEGIN{printf "%d", b*1000}')"
+        printf '%-5s %sms\n' "$sh" "$(_startup_ms "$sh")"
     done
