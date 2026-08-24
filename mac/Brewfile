@@ -58,15 +58,10 @@ cask "google-chrome"
 cask "jetbrains-toolbox"
 cask "font-jetbrains-mono-nerd-font"  # required by WezTerm + neovim UI icons
 cask "maccy"                     # clipboard manager
-cask "nordvpn"
-cask "notion"
 cask "opencode"
 cask "rectangle"                 # window management
 cask "slack"
 cask "spotify"
 cask "the-unarchiver"
-cask "vlc"
 cask "wezterm"                   # primary terminal emulator
 cask "whatsapp"
-cask "zed"
-cask "zoom"

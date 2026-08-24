@@ -2,11 +2,5 @@
 # package [channel|-] [classic]
 
 # Collaboration and productivity
-discord - classic
-obsidian - classic
 localsend
-postman
 slack - classic
-
-# Media and screen capture
-obs-studio

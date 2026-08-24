@@ -207,26 +207,6 @@ setup_spotify_repo() {
     fi
 }
 
-install_steam_apt() {
-    echo_header "Steam"
-
-    if dpkg -s steam-installer >/dev/null 2>&1 || dpkg -s steam >/dev/null 2>&1; then
-        log_info "Steam is already installed."
-        return 0
-    fi
-
-    # steam-installer is provided by multiverse on Ubuntu.
-    if command_exists add-apt-repository; then
-        sudo_run add-apt-repository -y multiverse || true
-    fi
-
-    sudo_run dpkg --add-architecture i386
-    sudo_run apt-get update
-    if ! sudo_run apt-get install -y steam-installer; then
-        log_warn "Failed to install steam-installer from apt."
-    fi
-}
-
 setup_tailscale_repo() {
     echo_header "Tailscale"
 
@@ -799,10 +779,6 @@ main() {
 
     if ! should_skip_step SPOTIFY; then
         setup_spotify_repo
-    fi
-
-    if ! should_skip_step STEAM; then
-        install_steam_apt
     fi
 
     if ! should_skip_step TAILSCALE; then

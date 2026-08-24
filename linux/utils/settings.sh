@@ -506,17 +506,15 @@ gsettings set org.gnome.shell.keybindings show-screen-recording-ui "['<Shift><Al
 echo_header "Configuring Dock Favorites"
 
 # Define system apps that should always be in the dock
+# Only pin what this repo actually installs. Entries for apps that are not
+# installed show up as blank tiles in the dock.
 SYSTEM_APPS=(
     'google-chrome.desktop'
     'firefox_firefox.desktop'
-    'code.desktop'
     'slack_slack.desktop'
-    'discord_discord.desktop'
-    'obsidian_obsidian.desktop'
     'localsend_localsend.desktop'
-    'obs-studio_obs-studio.desktop'
+    'org.wezfurlong.wezterm.desktop'
     'org.gnome.Nautilus.desktop'
-    'org.gnome.Terminal.desktop'
     'org.gnome.Settings.desktop'
 )
 
