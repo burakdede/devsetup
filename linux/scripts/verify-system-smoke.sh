@@ -22,6 +22,10 @@ require_command() {
 
 echo "==> Verifying smoke-install commands"
 
+# Keep in step with what the system step installs. tree-sitter and delta come
+# from linux/system/github-tools.txt; tree-sitter in particular is a hard
+# requirement of nvim-treesitter's main branch, which silently falls back to
+# regex syntax without it.
 base_commands=(
     rg
     fd
@@ -29,6 +33,8 @@ base_commands=(
     jq
     yq
     eza
+    delta
+    tree-sitter
     uv
     mise
     claude
@@ -50,15 +56,15 @@ for cmd in "${base_commands[@]}"; do
     require_command "$cmd"
 done
 
-if ! flag_enabled "${LINUX_SETUP_SKIP_DOCKER:-0}"; then
+if ! flag_enabled "${DEVSETUP_SKIP_DOCKER:-${LINUX_SETUP_SKIP_DOCKER:-0}}"; then
     require_command docker
 fi
 
-if ! flag_enabled "${LINUX_SETUP_SKIP_NEOVIM:-0}"; then
+if ! flag_enabled "${DEVSETUP_SKIP_NEOVIM:-${LINUX_SETUP_SKIP_NEOVIM:-0}}"; then
     require_command nvim
 fi
 
-if ! flag_enabled "${LINUX_SETUP_SKIP_WEZTERM:-0}"; then
+if ! flag_enabled "${DEVSETUP_SKIP_WEZTERM:-${LINUX_SETUP_SKIP_WEZTERM:-0}}"; then
     require_command wezterm
 fi
 
