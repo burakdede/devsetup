@@ -25,8 +25,19 @@ config.term = "xterm-256color"
 if not is_mac then
     -- Kitty keyboard protocol causes key-repeat/input jitter on some Linux/X11 setups.
     config.enable_kitty_keyboard = false
-    -- Native Wayland backend can cause crashes on some compositors; X11 via XWayland is stable.
-    config.enable_wayland = false
+
+    -- Wayland vs X11.
+    --
+    -- Running under XWayland costs fractional scaling and gives blurry text on
+    -- HiDPI displays, which is the common case on a modern GNOME desktop
+    -- (Wayland has been the Ubuntu default since 21.04). So prefer the native
+    -- Wayland backend whenever the session is actually Wayland.
+    --
+    -- If your compositor misbehaves, force X11 by exporting
+    -- WEZTERM_DISABLE_WAYLAND=1 in ~/.zshrc.local.
+    local wayland_session = os.getenv("WAYLAND_DISPLAY") ~= nil
+    local wayland_opt_out = os.getenv("WEZTERM_DISABLE_WAYLAND") ~= nil
+    config.enable_wayland = wayland_session and not wayland_opt_out
 end
 
 -- ─── Scrollback ───────────────────────────────────────────────────────────────
@@ -113,6 +124,8 @@ config.disable_default_key_bindings = true
 
 local act = wezterm.action
 local mod = is_mac and "SUPER" or "SHIFT|CTRL"
+-- Pane navigation adds SHIFT on macOS so <mod>+k stays free for clear-scrollback.
+local pane_mod = is_mac and "SUPER|SHIFT" or "SHIFT|CTRL|ALT"
 
 config.keys = {
     -- ── Clipboard ──────────────────────────────────────────────────────────
@@ -148,7 +161,32 @@ config.keys = {
     -- ── Scrollback ─────────────────────────────────────────────────────────
     { key = "PageUp",   mods = "SHIFT", action = act.ScrollByPage(-1) },
     { key = "PageDown", mods = "SHIFT", action = act.ScrollByPage(1) },
+
+    -- ── Clear scrollback ───────────────────────────────────────────────────
+    -- Disabling the default bindings above removed this; it is muscle memory
+    -- on macOS and worth keeping on both platforms.
+    { key = "k", mods = mod, action = act.ClearScrollback("ScrollbackAndViewport") },
+
+    -- ── Pane navigation ────────────────────────────────────────────────────
+    -- hjkl, as in vim and tmux. On SHIFT so that plain <mod>+k stays free for
+    -- clear-scrollback above, keeping all four directions symmetric.
+    { key = "h", mods = pane_mod, action = act.ActivatePaneDirection("Left") },
+    { key = "j", mods = pane_mod, action = act.ActivatePaneDirection("Down") },
+    { key = "k", mods = pane_mod, action = act.ActivatePaneDirection("Up") },
+    { key = "l", mods = pane_mod, action = act.ActivatePaneDirection("Right") },
 }
+
+-- ── Jump straight to a tab ────────────────────────────────────────────────
+-- Also lost to disable_default_key_bindings. Cmd+1..9 on macOS,
+-- Ctrl+Shift+1..9 on Linux; 9 always means "last tab", as in browsers.
+for i = 1, 8 do
+    table.insert(config.keys, {
+        key = tostring(i),
+        mods = mod,
+        action = act.ActivateTab(i - 1),
+    })
+end
+table.insert(config.keys, { key = "9", mods = mod, action = act.ActivateTab(-1) })
 
 -- ─── Mouse bindings ──────────────────────────────────────────────────────────
 config.mouse_bindings = {

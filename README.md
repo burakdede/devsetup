@@ -208,6 +208,37 @@ git pull
 
 ---
 
+## Terminal
+
+WezTerm on both platforms, with `disable_default_key_bindings = true` so that
+nothing intercepts the Ctrl combinations readline and zsh rely on (Ctrl+R
+history search, Ctrl+W kill-word, Ctrl+K kill-line). The bindings are then
+declared explicitly, using each platform's native modifier: **Cmd** on macOS,
+**Ctrl+Shift** on Linux. Written below as `<mod>`.
+
+| Keys | Action |
+|---|---|
+| `<mod>` + C / V | Copy / paste |
+| `<mod>` + T / W | New tab / close tab |
+| `<mod>` + 1..8 | Jump to tab; `<mod>` + 9 jumps to the last |
+| Ctrl + Tab | Next tab (Shift for previous) |
+| `<mod>` + E / O | Split horizontally / vertically |
+| `<mod>` + Shift + H/J/K/L | Move between panes |
+| `<mod>` + Z | Zoom pane |
+| `<mod>` + K | Clear scrollback |
+| `<mod>` + F / X | Search / copy mode |
+
+Because the defaults are off, a binding that is not in `wezterm.lua` does not
+exist. If something you expect is missing, add it there rather than assuming
+WezTerm provides it.
+
+**Linux uses the native Wayland backend** when the session is Wayland, rather
+than falling back to XWayland. XWayland costs fractional scaling and gives
+blurry text on HiDPI, which is the common case on modern GNOME. If your
+compositor misbehaves, export `WEZTERM_DISABLE_WAYLAND=1` in `~/.zshrc.local`.
+
+---
+
 ## Git configuration
 
 `dotfiles/.gitconfig` is symlinked to `~/.gitconfig` and includes
