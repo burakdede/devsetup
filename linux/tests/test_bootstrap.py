@@ -317,7 +317,7 @@ class BootstrapRepoTests(unittest.TestCase):
 
         github_seen = set()
         # Keep in step with the case statement in install_github_release_tools.
-        valid_modes = {"raw", "tar.gz", "gz"}
+        valid_modes = {"raw", "tar.gz", "tar.xz", "gz"}
         for raw_line in (
             (REPO_ROOT / "system" / "github-tools.txt")
             .read_text(encoding="utf-8")

@@ -18,6 +18,7 @@ brew "ripgrep"
 brew "actionlint"        # lints GitHub workflows; agents edit these
 brew "gitleaks"          # secret scanning, enforced via pre-commit
 brew "shellcheck"
+brew "watchexec"         # rerun tests on save; the red-green-refactor loop
 brew "tree-sitter-cli"   # required by nvim-treesitter (main branch) to build parsers
 brew "tmux"
 brew "wget"              # also in the Ubuntu APT list

@@ -529,6 +529,19 @@ install_github_release_tools() {
                 fi
                 sudo_run install -m 0755 "$extracted_path" "/usr/local/bin/$command_name"
                 ;;
+            tar.xz)
+                archive_path="$temp_dir/archive.tar.xz"
+                curl -fsSL "$download_url" -o "$archive_path"
+                # -J is xz; xz-utils is in apt-packages.txt.
+                tar -xJf "$archive_path" -C "$temp_dir"
+                extracted_path="$(find "$temp_dir" -type f -name "$binary_name" | head -n1)"
+                if [[ -z "$extracted_path" ]]; then
+                    log_warn "Downloaded $command_name but could not locate $binary_name in the archive."
+                    rm -rf "$temp_dir"
+                    continue
+                fi
+                sudo_run install -m 0755 "$extracted_path" "/usr/local/bin/$command_name"
+                ;;
             gz)
                 # A single gzip-compressed binary, not a tarball.
                 archive_path="$temp_dir/$binary_name.gz"
@@ -566,10 +579,20 @@ install_uv_tools() {
         return 0
     fi
 
-    local package_name
-    while IFS= read -r package_name; do
+    local entry package_name source
+    while IFS= read -r entry; do
+        package_name="${entry%%|*}"
+        source=""
+        [[ "$entry" == *"|"* ]] && source="${entry#*|}"
+
         log_info "Installing uv tool: $package_name"
-        uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
+        if [[ -n "$source" ]]; then
+            uv tool install --quiet --from "$source" "$package_name" \
+                || uv tool upgrade "$package_name" \
+                || log_warn "Could not install $package_name from $source"
+        else
+            uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
+        fi
     done < <(read_list_file "$UV_TOOLS_FILE")
 }
 

@@ -48,6 +48,8 @@ base_commands=(
     eslint
     prettier
     playwright
+    watchexec
+    specify
     just
     direnv
     shfmt

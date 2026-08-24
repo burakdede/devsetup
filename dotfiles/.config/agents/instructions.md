@@ -28,6 +28,8 @@ equivalent, and rather than asking whether they exist:
 | Python | `uv`, `ruff` |
 | Secrets, workflows | `gitleaks`, `actionlint` |
 | Browser / visual checks | `playwright` (Chromium installed) |
+| Rerun on save | `watchexec` |
+| Spec-driven scaffolding | `specify` (GitHub Spec Kit) |
 | Runtimes | `mise` (JVM: `sdk`) |
 
 If something genuinely useful is missing, install it (`brew` on macOS, `apt`
@@ -89,7 +91,8 @@ disagree.
 
 ## Testing
 
-- Reproduce a bug with a failing test before fixing it.
+- Reproduce a bug with a failing test before fixing it. `watchexec -e <ext> --
+  <test command>` gives you a red-green loop without re-running by hand.
 - Test the real failure mode, not a proxy for it.
 - Never weaken, skip, or delete a test to make a suite pass. If a test is
   wrong, say so and explain why.

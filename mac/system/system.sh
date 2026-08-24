@@ -194,10 +194,20 @@ install_uv_tools() {
         return 0
     fi
 
-    local package_name
-    while IFS= read -r package_name; do
+    local entry package_name source
+    while IFS= read -r entry; do
+        package_name="${entry%%|*}"
+        source=""
+        [[ "$entry" == *"|"* ]] && source="${entry#*|}"
+
         log_info "Installing uv tool: $package_name"
-        uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
+        if [[ -n "$source" ]]; then
+            uv tool install --quiet --from "$source" "$package_name" \
+                || uv tool upgrade "$package_name" \
+                || log_warn "Could not install $package_name from $source"
+        else
+            uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
+        fi
     done < <(read_list_file "$UV_TOOLS_FILE")
 }
 

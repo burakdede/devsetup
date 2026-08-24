@@ -1,9 +1,19 @@
 # Python-based CLI tools, installed with `uv tool install` into isolated
 # environments -- shared by macOS and Ubuntu.
 #
+# Format:  package[|source]
+#
+# With a source, it is passed to `uv tool install --from <source>`. Use it when
+# the vendor documents a specific install path, rather than assuming a PyPI
+# name belongs to whoever you think it does.
+#
 # These are standalone commands, not project dependencies. Anything a project
 # needs belongs in that project's pyproject.toml instead.
 
 pre-commit
 ruff
 yamllint
+
+# GitHub Spec Kit. Installed from the repository GitHub documents rather than
+# the same-named PyPI package, which is not obviously theirs.
+specify-cli|git+https://github.com/github/spec-kit.git
