@@ -182,6 +182,16 @@ and skips `.git` instead of shelling out to `find` and walking `node_modules`.
 Shell integration comes from `fzf --zsh` where available (0.48+), falling back
 to the packaged scripts on older Ubuntu builds.
 
+**`bat` is not aliased over `cat`,** deliberately: it adds decorations that
+break piping and copy-paste. It is wired in only where it is unambiguously
+better, as `MANPAGER` for syntax-highlighted man pages and as the preview
+window for fzf's Ctrl-T.
+
+**`delta` is the git pager,** configured in `.gitconfig`. The setting is
+guarded with a `command -v` fallback to `less`, because git treats a missing
+pager as a fatal error and this file is symlinked on machines where the system
+step may not have run yet.
+
 **SDKMAN is loaded lazily.** `sdkman-init.sh` loops over every installed
 candidate in shell to build PATH, which costs ~90ms per shell with ten
 candidates -- around 40% of total startup. `.zshrc` instead globs
@@ -273,9 +283,31 @@ nvim-treesitter and most guidance you will find online is for `master`. On
   manager and **not npm**, so it is `tree-sitter-cli` in the Brewfile on macOS
   and a release binary via `github-tools.txt` on Ubuntu.
 
-To add a language: add its parser name to the `parsers` list in
-`lua/plugins/lsp.lua` and restart. `:checkhealth nvim-treesitter` shows what is
-installed.
+### Language servers come from Mason
+
+Mason is a package manager for LSP servers that lives inside Neovim. It exists
+here for one reason: it is the only place macOS and Ubuntu converge for free.
+Installing servers natively would mean four mechanisms for four servers
+(`brew`, `go install`, `npm -g`, `rustup component`), each different per OS.
+Mason turns that into one list that resolves identically on both machines.
+
+The tradeoff is a second package manager alongside brew/apt/mise, and servers
+that only exist inside Neovim. That is the right trade for this setup, but it
+is a real one.
+
+### Everyday Neovim workflows
+
+| Task | How |
+|---|---|
+| Add a language server | Add the lspconfig name to `servers` in `lua/plugins/lsp.lua`, restart. Mason installs it |
+| Add a treesitter parser | Add the parser name to `parsers` in the same file, restart |
+| Update plugins | `:Lazy update`, then commit `lazy-lock.json` so both machines match |
+| Update parsers | `:TSUpdate` |
+| See what is installed | `:Mason`, `:checkhealth nvim-treesitter`, `:checkhealth vim.lsp` |
+| Diagnose a slow start | `nvim --startuptime /tmp/st && sort -k2 -rn /tmp/st \| head` |
+
+Plugin versions are pinned in `lazy-lock.json`. Commit it after any `:Lazy
+update`; that file is what keeps the two machines on identical plugin versions.
 
 ---
 

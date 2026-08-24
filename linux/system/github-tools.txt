@@ -17,3 +17,4 @@
 yq|mikefarah/yq|^yq_linux_{deb_arch}$|raw|yq
 eza|eza-community/eza|^eza_{gnu_arch}-unknown-linux-gnu\.tar\.gz$|tar.gz|eza
 tree-sitter|tree-sitter/tree-sitter|^tree-sitter-linux-{node_arch}\.gz$|gz|tree-sitter
+delta|dandavison/delta|^delta-.*-{gnu_arch}-unknown-linux-gnu\.tar\.gz$|tar.gz|delta

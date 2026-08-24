@@ -2,7 +2,10 @@
 # Keep this lean to reduce first-prompt and command lag.
 
 typeset -g POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-typeset -g POWERLEVEL9K_MODE=nerdfont-complete
+# nerdfont-v3, not nerdfont-complete: Nerd Fonts v3 relocated many glyphs, and
+# packages/versions.txt pins 3.3.0. The v2 codepoints render as wrong or
+# missing icons against a v3 font.
+typeset -g POWERLEVEL9K_MODE=nerdfont-v3
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=off
 

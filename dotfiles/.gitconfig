@@ -4,6 +4,13 @@
 	status = auto
 	interactive = auto
 [core]
+	# delta gives syntax-highlighted, side-by-side-capable diffs.
+	#
+	# Guarded on purpose: git treats a missing pager as FATAL ("unable to
+	# execute pager"), and this file is symlinked on every machine including
+	# ones where the system step has not run yet. The fallback keeps git
+	# usable rather than bricking it.
+	pager = command -v delta >/dev/null 2>&1 && delta || less -FRX
 	excludesfile = ~/.gitignore_global
 	editor = nvim
 	autocrlf = input
@@ -31,6 +38,15 @@
 	autoSetupRemote = true
 	# Auto follow tags
 	followTags = true
+
+# delta -- syntax-highlighting pager. Ignored entirely when delta is absent.
+[delta]
+	navigate     = true      # n / N jump between files, as in less
+	line-numbers = true
+	hyperlinks   = false
+[interactive]
+	# Same guard as core.pager above.
+	diffFilter = command -v delta >/dev/null 2>&1 && delta --color-only || cat
 
 # Git fetch
 [fetch]
@@ -70,6 +86,9 @@
 [diff]
 	# Use color
 	color = true
+	# Highlight moved lines differently from added/removed ones. Pairs with
+	# delta, and is useful on its own.
+	colorMoved = default
 	# NOTE: word-diff is deliberately NOT set globally. It rewrites the hunk
 	# body, so `git diff > x.patch` no longer round-trips through `git apply`.
 	# Use the `dw` alias below when you want it.

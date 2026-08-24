@@ -178,6 +178,19 @@ if command -v fzf &>/dev/null; then
     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
 fi
 
+# ─── bat ──────────────────────────────────────────────────────────────────────
+# bat is installed on both platforms but was wired to nothing. It is not
+# aliased over `cat`, deliberately: bat adds decorations that break piping and
+# copy-paste. These are the places where it is unambiguously an improvement.
+if command -v bat &>/dev/null; then
+    # Syntax-highlighted man pages.
+    export MANPAGER="sh -c 'col -bx | bat --language man --style plain'"
+    export MANROFFOPT="-c"
+
+    # Preview file contents in fzf's Ctrl-T picker.
+    export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always --line-range :200 {}'"
+fi
+
 # ─── Clipboard parity ─────────────────────────────────────────────────────────
 # pbcopy/pbpaste are macOS built-ins. Alias the Linux equivalents to the same
 # names so the same muscle memory and the same scripts work on both machines.

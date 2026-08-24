@@ -57,6 +57,9 @@ opt.timeoutlen     = 300            -- time to wait for a mapped sequence to com
 -- ─── Completion ───────────────────────────────────────────────────────────────
 opt.completeopt    = { "menu", "menuone", "noselect" }
 
+-- ─── Substitution preview ─────────────────────────────────────────────────────
+opt.inccommand    = "split"         -- live preview of :s///, in a split
+
 -- ─── Wildmenu / command-line completion ───────────────────────────────────────
 opt.wildmode       = "longest:full,full"
 opt.pumheight      = 10             -- max items in completion menu

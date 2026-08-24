@@ -6,6 +6,7 @@ brew "coreutils"         # GNU coreutils (gls, gcat, …) -- consistent behaviou
 brew "curl", link: true  # ensure modern curl overrides system version
 brew "findutils"         # GNU find -- more powerful than BSD find
 brew "gh"
+brew "git-delta"          # syntax-highlighting pager for git, wired up in .gitconfig
 brew "git"
 brew "git-lfs"           # large-file support; also in the Ubuntu APT list
 brew "htop"
