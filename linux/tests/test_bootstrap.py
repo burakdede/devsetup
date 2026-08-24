@@ -836,6 +836,40 @@ class BootstrapRepoTests(unittest.TestCase):
                 )
             self.assertTrue((home / ".zshrc").is_symlink())
 
+    def test_brewfile_entries_use_the_right_artifact_kind(self):
+        """Every cask in mac/Brewfile must actually be a cask, and each brew a formula.
+
+        Getting this backwards is silent in review and fatal at run time: `brew
+        bundle install` exits non-zero on the bad entry, and because the macOS
+        system step runs under `set -e`, everything after it is skipped. This
+        shipped once as `cask "opencode"`, which is a formula.
+        """
+        brew = shutil.which("brew")
+        if not brew:
+            self.skipTest("Homebrew not installed")
+
+        brewfile = REPO_ROOT.parent / "mac" / "Brewfile"
+        self.assertTrue(brewfile.exists(), "mac/Brewfile must exist")
+
+        entries = re.findall(
+            r'^(brew|cask)\s+"([^"]+)"', brewfile.read_text(encoding="utf-8"), re.M
+        )
+        self.assertTrue(entries, "no entries parsed out of mac/Brewfile")
+
+        for kind, name in entries:
+            with self.subTest(entry=f'{kind} "{name}"'):
+                probe = subprocess.run(
+                    [brew, "info", f"--{kind if kind == 'cask' else 'formula'}", name],
+                    capture_output=True,
+                    timeout=120,
+                )
+                self.assertEqual(
+                    probe.returncode,
+                    0,
+                    f'mac/Brewfile declares {kind} "{name}", but Homebrew has no '
+                    f"{'cask' if kind == 'cask' else 'formula'} by that name",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

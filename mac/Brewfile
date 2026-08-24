@@ -1,6 +1,10 @@
 ########################################################################
 # CLI essentials                                                       #
 ########################################################################
+# Adopt apps that are already in /Applications rather than aborting on
+# them, so this runs cleanly on a machine that is not strictly fresh.
+cask_args adopt: true
+
 brew "cmake"             # native build tool -- needed for many native extensions
 brew "coreutils"         # GNU coreutils (gls, gcat, …) -- consistent behaviour vs BSD
 brew "curl", link: true  # ensure modern curl overrides system version
@@ -49,6 +53,7 @@ brew "uv"      # Python package manager -- replaces pip/venv/pyenv
 brew "direnv"  # per-directory env vars -- agents cd in and env is set automatically
 brew "just"    # task runner -- cleaner than Makefiles, agents call `just <task>`
 brew "shfmt"   # shell formatter -- agents write shell; keeps it well-formatted
+brew "opencode"  # agent CLI -- a formula, not a cask, despite the app-like name
 
 ########################################################################
 # Apps                                                                 #
@@ -62,7 +67,6 @@ cask "google-chrome"
 cask "jetbrains-toolbox"
 cask "font-jetbrains-mono-nerd-font"  # required by WezTerm + neovim UI icons
 cask "maccy"                     # clipboard manager
-cask "opencode"
 cask "rectangle"                 # window management
 cask "slack"
 cask "spotify"
