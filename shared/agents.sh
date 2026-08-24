@@ -97,11 +97,27 @@ configure_agents() {
     mkdir -p "$(dirname "$opencode_config")"
 
     if [[ -f "$opencode_config" ]]; then
-        log_info "OpenCode: $opencode_config already exists -- leaving it alone"
-        if ! grep -q '"instructions"' "$opencode_config"; then
-            log_warn "OpenCode: it has no \"instructions\" key, so it is NOT reading"
-            log_warn "  $CENTRAL_INSTRUCTIONS"
-            log_warn "  Add:  \"instructions\": [\"$CENTRAL_INSTRUCTIONS\"]"
+        if grep -q '"instructions"' "$opencode_config"; then
+            log_info "OpenCode: already reading the shared instructions"
+        elif command -v jq >/dev/null 2>&1; then
+            # Add the one key we care about and leave everything else untouched.
+            # Warning about it was not enough: the file predates this step on
+            # any machine set up before it existed, so it never got wired.
+            local tmp
+            tmp="$(mktemp)"
+            if jq --arg p "$CENTRAL_INSTRUCTIONS" '.instructions = [$p]' \
+                 "$opencode_config" > "$tmp" 2>/dev/null; then
+                cp "$opencode_config" "${opencode_config}.bak"
+                mv "$tmp" "$opencode_config"
+                log_success "OpenCode: added instructions to the existing config (backup: config.json.bak)"
+            else
+                rm -f "$tmp"
+                log_warn "OpenCode: could not parse $opencode_config; add by hand:"
+                log_warn "  \"instructions\": [\"$CENTRAL_INSTRUCTIONS\"]"
+            fi
+        else
+            log_warn "OpenCode: jq not available; add by hand:"
+            log_warn "  \"instructions\": [\"$CENTRAL_INSTRUCTIONS\"]"
         fi
     else
         cat > "$opencode_config" <<EOF
