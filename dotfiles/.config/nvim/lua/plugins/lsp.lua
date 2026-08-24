@@ -294,15 +294,4 @@ return {
             })
         end,
     },
-
-    -- ─── Inline diagnostics (optional; un-comment to enable) ─────────────────
-    -- {
-    --     "folke/trouble.nvim",
-    --     dependencies = { "nvim-tree/nvim-web-devicons" },
-    --     cmd  = { "Trouble", "TroubleToggle" },
-    --     keys = {
-    --         { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
-    --     },
-    --     opts = {},
-    -- },
 }

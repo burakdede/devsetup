@@ -48,13 +48,10 @@ if [[ -d "$HOME/.sdkman/candidates" ]]; then
     }
 fi
 
-# ─── Prompt + plugin profile ──────────────────────────────────────────────────
-# Supported values:
-#   antidote-p10k  (default, low-latency explicit setup)
-#   zsh4humans
-ZSH_PROFILE="${ZSH_PROFILE:-antidote-p10k}"
-
-load_antidote_p10k() {
+# ─── Prompt + plugins (antidote + powerlevel10k) ──────────────────────────────
+# Plugins are declared in ~/.zsh_plugins.txt and bundled by antidote into a
+# single sourceable file, which is what keeps startup fast.
+load_plugins_and_prompt() {
     local antidote_home="${ANTIDOTE_HOME:-$HOME/.local/share/antidote}"
     local zsh_plugins="${ZDOTDIR:-$HOME}/.zsh_plugins"
     local zsh_plugins_clean="${zsh_plugins}.clean.txt"
@@ -65,7 +62,8 @@ load_antidote_p10k() {
         autoload -Uz antidote
 
         if [[ -f "${zsh_plugins}.txt" ]]; then
-            # Rebuild when spec changed, bundle missing, or bundle is poisoned by warning output.
+            # Rebuild when the spec changed, the bundle is missing, or the
+            # bundle was poisoned by antidote warning output.
             if [[ ! -f "${zsh_plugins}.zsh" ]] || [[ ! "${zsh_plugins}.zsh" -nt "${zsh_plugins}.txt" ]]; then
                 needs_rebuild=1
             elif grep -Eq '^[[:space:]]*warning:' "${zsh_plugins}.zsh" 2>/dev/null; then
@@ -73,8 +71,8 @@ load_antidote_p10k() {
             fi
 
             if [[ "$needs_rebuild" == "1" ]]; then
-                # Antidote may emit warning lines when comments are present in spec.
-                # Build from a comment-free spec and strip any stray warning output.
+                # antidote emits warnings for comment lines, so bundle from a
+                # comment-free copy and strip any stray warning output.
                 grep -Ev '^[[:space:]]*(#|$)' "${zsh_plugins}.txt" >| "$zsh_plugins_clean"
                 antidote bundle < "$zsh_plugins_clean" | grep -Ev '^[[:space:]]*warning:' >| "${zsh_plugins}.zsh"
                 rm -f "$zsh_plugins_clean"
@@ -88,26 +86,7 @@ load_antidote_p10k() {
     fi
     [[ -r "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
 }
-
-load_zsh4humans() {
-    if [[ -r "$HOME/.local/share/zsh4humans/z4h.zsh" ]]; then
-        source "$HOME/.local/share/zsh4humans/z4h.zsh"
-    else
-        load_antidote_p10k
-    fi
-}
-
-case "$ZSH_PROFILE" in
-    antidote|antidote-p10k)
-        load_antidote_p10k
-        ;;
-    z4h|zsh4humans)
-        load_zsh4humans
-        ;;
-    *)
-        load_antidote_p10k
-        ;;
-esac
+load_plugins_and_prompt
 
 # ─── Completion ───────────────────────────────────────────────────────────────
 # Runs AFTER the plugin block above so that fpath already contains
@@ -154,9 +133,6 @@ setopt AUTO_CD                # type a directory name to cd into it
 bindkey -e                    # emacs key bindings (change to -v for vi mode)
 
 # ─── Aliases ──────────────────────────────────────────────────────────────────
-# Source shared aliases if present.
-[[ -f "$HOME/.bash_aliases" ]] && source "$HOME/.bash_aliases"
-
 # Modern replacements (installed by system.sh)
 if command -v eza &>/dev/null; then
     alias ls='eza --group-directories-first'

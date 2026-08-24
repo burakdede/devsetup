@@ -1,172 +1,119 @@
+" ~/.vimrc -- fallback only.
+"
+" Neovim is the daily driver and is configured in ~/.config/nvim/. Vim does not
+" read that config, and this file is never read by Neovim, so the two are
+" entirely separate.
+"
+" This exists for the case where you land on a machine that has vim but not
+" nvim (a bare server, a rescue shell, sudoedit). Its whole job is to make that
+" experience feel like the Neovim setup rather than like stock vim, so muscle
+" memory carries over.
+"
+" KEEP IT SMALL. Anything that needs a plugin belongs in the Neovim config, not
+" here. When you change a core setting or a core mapping in
+" ~/.config/nvim/lua/config/{options,keymaps}.lua, mirror it here if it is one
+" of the basics below.
 
-"====[ Work out what kind of file this is ]========
-filetype plugin indent on
-
-"use vim settings rather than vi settings.
 set nocompatible
-"show me where i am in the file and search percentage
-set ruler
-"no need for other number formats other than decimal
-set nrformats=
-"set syntax highligthing on
+filetype plugin indent on
 syntax on
-"show me the commands
-set showcmd
-"autoread file when change on disk
-set autoread
-"show me which mode I am currently in
-set showmode
-"show [{()}]
-set showmatch
-"set encoding to utf-8 by default as vim defaults to latin-1
-set encoding=utf-8
-"use space to jump down a page (like browsers do)...
-nnoremap   <Space> <PageDown>
-vnoremap   <Space> <PageDown>
 
-"====[ Set up smarter search behaviour ]=======================
-set ignorecase
-"if all lower go search for both case or if upper go search for upper
-set smartcase
-"higlighting would be nice for searches as I type along
-set hlsearch
-"lookahead as search pattern is specified
-set incsearch
-"higlight the entire line the cursor on
+" ─── Leader ───────────────────────────────────────────────────────────────────
+" Space, matching vim.g.mapleader in options.lua. The old vimrc mapped <Space>
+" to PageDown, which fought that muscle memory directly.
+let mapleader = " "
+let maplocalleader = "\\"
+
+" ─── Appearance ───────────────────────────────────────────────────────────────
+if has('termguicolors')
+  set termguicolors
+endif
+set number
+set relativenumber
+set signcolumn=yes
 set cursorline
-
-"enable showing title
+set colorcolumn=100
+set laststatus=2
+set showcmd
 set title
 
-"always show status line
-set laststatus=2
-
-"no annoying beep sound
-set visualbell
-set noerrorbells
-
-"no backup needed
-set nobackup
-
-"no swp or something else
-set noswapfile
-
-"make it obvious where 80 characters is
-set textwidth=80
-"set colorcolumn=+1
-
-"softtabs, 4 spaces
+" ─── Editing ──────────────────────────────────────────────────────────────────
+set expandtab
+set shiftwidth=4
 set tabstop=4
 set softtabstop=4
-set shiftwidth=4
-set expandtab
 set shiftround
 set smarttab
-
-" Enable mouse support
-set mouse=a
-
-" Enable clipboard support
-set clipboard+=unnamedplus
-
-" Enable line wrapping
-set wrap
+set autoindent
+set nowrap
 set linebreak
+set textwidth=0
 
-" Enable spell checking for markdown and text files
-autocmd FileType markdown,text setlocal spell spelllang=en_us
+" ─── Search ───────────────────────────────────────────────────────────────────
+set ignorecase
+set smartcase
+set hlsearch
+set incsearch
 
-" Enable auto-completion
-inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+" ─── Files & persistence ──────────────────────────────────────────────────────
+set nobackup
+set noswapfile
+set autoread
+if has('persistent_undo')
+  set undofile
+  set undodir=~/.vim/undo
+  silent! call mkdir(expand('~/.vim/undo'), 'p')
+endif
 
-" Enable folding
-set foldmethod=syntax
-set foldlevel=99
-
-" Enable split window navigation
+" ─── Splits ───────────────────────────────────────────────────────────────────
 set splitbelow
 set splitright
 
-" Enable auto-indent
-filetype indent on
-
-" Enable auto-formatting
-autocmd FileType python,javascript,json,yaml,html,css,markdown setlocal formatoptions+=cro
-
-" Enable auto-pairing of quotes and brackets
-inoremap " ""<Left>
-inoremap ' ''<Left>
-inoremap ( ()<Left>
-inoremap [ []<Left>
-inoremap { {}<Left>
-
-" Enable auto-completion of closing brackets
-inoremap <expr> <CR> getline('.') =~ '[\[\]()]$' ? "<CR><Esc>O" : "<CR>"
-
-"show list of completetions in as much as possible
-set wildmode=list:longest,full
-
-"quicker window movement
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-h> <C-w>h
-nnoremap <C-l> <C-w>l
-
-"show absolute number for current line
-set number
-
-"do not let highlight search stick around after your are done with it
-nmap <silent> <BS> :nohlsearch<CR>
-
-"lets disable regular movement keys
-noremap <up> <nop>
-noremap <down> <nop>
-noremap <left> <nop>
-noremap <right> <nop>
-inoremap <down> <nop>
-inoremap <left> <nop>
-inoremap <right> <nop>
-inoremap <up> <nop>
-
-"change default delete behaviour I really want to delete
-set backspace=indent,eol,start
-
-"regex require escape of special chars with \v no need that make it default
-nnoremap / /\v
-
-"make it easy to navigate errors (and vimgreps)...
-nmap <silent> <RIGHT>         :cnext<CR>
-nmap <silent> <RIGHT><RIGHT>  :cnf<CR><C-G>
-nmap <silent> <LEFT>          :cprev<CR>
-nmap <silent> <LEFT><LEFT>    :cpf<CR><C-G>
-
-"====[ Use persistent undo ]=================
-
-if has('persistent_undo')
-    " Save all undo files in a single location (less messy, more risky)...
-    set undodir=$HOME/.VIM_UNDO_FILES
-
-    " Save a lot of back-history...
-    set undolevels=5000
-
-    " Actually switch on persistent undo
-    set undofile
-
+" ─── Clipboard ────────────────────────────────────────────────────────────────
+" Matches opt.clipboard = "unnamedplus". Needs +clipboard; on Linux that means
+" xclip or wl-clipboard, both installed by the Ubuntu system step.
+if has('clipboard')
+  set clipboard^=unnamedplus
 endif
 
-"=====[ Show help files in a new tab, plus add a shortcut for helpg ]==============
+" ─── Misc ─────────────────────────────────────────────────────────────────────
+set mouse=a
+set encoding=utf-8
+set scrolloff=8
+set sidescrolloff=8
+set updatetime=200
+set timeoutlen=300
+set wildmenu
+set wildmode=longest:full,full
+set pumheight=10
+set list
+set listchars=tab:»\ ,trail:·,nbsp:␣
+set noerrorbells
+set visualbell t_vb=
 
-"only apply to .txt files...
-augroup HelpInTabs
-    autocmd!
-    autocmd BufEnter  *.txt   call HelpInNewTab()
+" ─── Mappings (mirroring lua/config/keymaps.lua) ──────────────────────────────
+nnoremap <M-h> <C-w>h
+nnoremap <M-j> <C-w>j
+nnoremap <M-k> <C-w>k
+nnoremap <M-l> <C-w>l
+
+nnoremap <S-h> :bprevious<CR>
+nnoremap <S-l> :bnext<CR>
+
+nnoremap <silent> <Esc> :nohlsearch<CR>
+
+vnoremap < <gv
+vnoremap > >gv
+
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+
+nnoremap <C-s> :w<CR>
+inoremap <C-s> <Esc>:w<CR>
+vnoremap <C-s> <Esc>:w<CR>
+
+" ─── Restore cursor position (mirrors autocmds.lua) ───────────────────────────
+augroup RestoreCursor
+  autocmd!
+  autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
 augroup END
-
-"only apply to help files...
-function! HelpInNewTab ()
-    if &buftype == 'help'
-        "Convert the help window to a tab...
-        execute "normal \<C-W>T"
-    endif
-endfunction
-

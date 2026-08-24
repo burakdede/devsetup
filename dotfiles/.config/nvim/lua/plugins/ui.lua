@@ -1,13 +1,15 @@
 -- UI plugins
 -- lua/plugins/ui.lua
 --
--- Colour scheme, status line, and visual enhancements.
--- Un-comment the sections you want; they are all lazy-loaded.
+-- Colour scheme and status line. Both are deliberately the only things here:
+-- the terminal (WezTerm) already supplies Catppuccin Mocha, so Neovim matching
+-- it is what makes the editor and the shell look like one environment.
 
 return {
     -- ─── Colour scheme ────────────────────────────────────────────────────────
-    -- Pick one and un-comment it. More schemes: https://dotfyle.com/neovim/colorscheme
-    --
+    -- Kept in step with the WezTerm colour_scheme in
+    -- dotfiles/.config/wezterm/wezterm.lua. Change both together or the editor
+    -- will not match its own terminal.
     {
         "catppuccin/nvim",
         name     = "catppuccin",
@@ -15,37 +17,13 @@ return {
         priority = 1000,
         config   = function() vim.cmd.colorscheme("catppuccin-mocha") end,
     },
-    -- {
-    --     "folke/tokyonight.nvim",
-    --     priority = 1000,
-    --     config   = function() vim.cmd.colorscheme("tokyonight-night") end,
-    -- },
-    -- {
-    --     "rose-pine/neovim",
-    --     name     = "rose-pine",
-    --     priority = 1000,
-    --     config   = function() vim.cmd.colorscheme("rose-pine") end,
-    -- },
 
     -- ─── Status line ──────────────────────────────────────────────────────────
+    -- theme defaults to "auto", which follows the colorscheme above.
     {
         "nvim-lualine/lualine.nvim",
         event        = "VeryLazy",
         dependencies = { "nvim-tree/nvim-web-devicons" },
-        opts         = { theme = "auto" },
+        opts         = {},
     },
-
-    -- ─── Icons ────────────────────────────────────────────────────────────────
-    -- {
-    --     "nvim-tree/nvim-web-devicons",
-    --     lazy = true,
-    -- },
-
-    -- ─── Indent guides ────────────────────────────────────────────────────────
-    -- {
-    --     "lukas-reineke/indent-blankline.nvim",
-    --     event = "BufReadPre",
-    --     main  = "ibl",
-    --     opts  = {},
-    -- },
 }

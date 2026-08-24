@@ -96,8 +96,7 @@ class BootstrapRepoTests(unittest.TestCase):
         ]
         # Bash shared with macOS lives at the monorepo root.
         files.extend(str(f) for f in sorted(SHARED_DIR.glob("*.sh")))
-        if (DOTFILES_DIR / ".bash_aliases").exists():
-            files.append(str(DOTFILES_DIR / ".bash_aliases"))
+        # .vimrc is vimscript and .zsh* are zsh; shellcheck handles neither.
 
         # .zshenv/.zshrc/.zprofile are deliberately absent: shellcheck has no
         # zsh support and misreports zsh-only syntax. test_zsh_dotfiles_parse
@@ -149,14 +148,14 @@ class BootstrapRepoTests(unittest.TestCase):
             result = self.run_cmd(["bash", "dotfiles.sh"], env=env)
             self.assertEqual(result.returncode, 0, result.stderr)
 
-            installed_aliases = home / ".bash_aliases"
+            installed_vimrc = home / ".vimrc"
             installed_gitconfig = home / ".gitconfig"
 
-            self.assertTrue(installed_aliases.exists())
+            self.assertTrue(installed_vimrc.exists())
             self.assertTrue(installed_gitconfig.exists())
 
             # dotfiles.sh must create symlinks, not copies
-            self.assertTrue(installed_aliases.is_symlink(), ".bash_aliases should be a symlink")
+            self.assertTrue(installed_vimrc.is_symlink(), ".vimrc should be a symlink")
             self.assertTrue(installed_gitconfig.is_symlink(), ".gitconfig should be a symlink")
             self.assertTrue(
                 str(installed_gitconfig.resolve()).startswith(str(REPO_ROOT.parent)),
@@ -295,7 +294,8 @@ class BootstrapRepoTests(unittest.TestCase):
                 self.assertEqual(parts[2], "classic")
 
         github_seen = set()
-        valid_modes = {"raw", "tar.gz"}
+        # Keep in step with the case statement in install_github_release_tools.
+        valid_modes = {"raw", "tar.gz", "gz"}
         for raw_line in (REPO_ROOT / "system" / "github-tools.txt").read_text(encoding="utf-8").splitlines():
             line = raw_line.split("#", 1)[0].strip()
             if not line:
@@ -454,7 +454,7 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertNotIn("ufw", output)
 
     def test_dotfiles_script_is_idempotent(self):
-        if not (DOTFILES_DIR / ".bash_aliases").exists():
+        if not (DOTFILES_DIR / ".vimrc").exists():
             self.skipTest("dotfiles directory not found")
         with tempfile.TemporaryDirectory() as temp_home:
             env = os.environ.copy()
@@ -465,8 +465,8 @@ class BootstrapRepoTests(unittest.TestCase):
 
             self.assertEqual(first.returncode, 0, first.stderr)
             self.assertEqual(second.returncode, 0, second.stderr)
-            aliases = Path(temp_home) / ".bash_aliases"
-            self.assertTrue(aliases.is_symlink(), ".bash_aliases should be a symlink after idempotent run")
+            vimrc = Path(temp_home) / ".vimrc"
+            self.assertTrue(vimrc.is_symlink(), ".vimrc should be a symlink after idempotent run")
 
     def test_agents_script_wires_all_three_agents(self):
         """agents.sh points every agent at the one shared instructions file."""

@@ -20,7 +20,6 @@ mapfile -t shellcheck_scripts < <(
 while IFS= read -r f; do
     shellcheck_scripts+=("$REPO_ROOT/$f")
 done < <(git -C "$REPO_ROOT" ls-files 'shared/*.sh')
-[[ -f "$REPO_ROOT/dotfiles/.bash_aliases" ]] && shellcheck_scripts+=("$REPO_ROOT/dotfiles/.bash_aliases")
 
 # -x follows `source` directives so the shared/ files are resolved rather than
 # reported as SC1091. The zsh dotfiles are NOT linted here: shellcheck has no

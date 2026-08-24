@@ -1,8 +1,10 @@
 -- Developer tools plugins
 -- lua/plugins/tools.lua
 --
--- File navigation, fuzzy finding, git integration, and other utilities.
--- Un-comment the sections you want.
+-- File navigation, fuzzy finding, git integration, and tmux-aware navigation.
+--
+-- Note there is no commenting plugin: Neovim 0.10+ ships `gc`/`gcc` built in,
+-- so Comment.nvim would be redundant.
 
 return {
     -- ─── Tmux-aware pane navigation ───────────────────────────────────────────
@@ -64,18 +66,4 @@ return {
         event = "VeryLazy",
         opts  = {},
     },
-
-    -- ─── Auto-pairs ───────────────────────────────────────────────────────────
-    -- {
-    --     "windwp/nvim-autopairs",
-    --     event = "InsertEnter",
-    --     opts  = {},
-    -- },
-
-    -- ─── Comment ──────────────────────────────────────────────────────────────
-    -- {
-    --     "numToStr/Comment.nvim",
-    --     keys = { { "gc", mode = { "n", "v" } }, { "gb", mode = { "n", "v" } } },
-    --     opts = {},
-    -- },
 }

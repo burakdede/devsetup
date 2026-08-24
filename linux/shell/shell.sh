@@ -14,10 +14,8 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 
 trap 'handle_error $? $LINENO' ERR
 
-ZSH_PROFILE="${ZSH_PROFILE:-antidote-p10k}"
 ANTIDOTE_DIR="$HOME/.local/share/antidote"
 P10K_DIR="$HOME/.local/share/powerlevel10k"
-Z4H_DIR="$HOME/.local/share/zsh4humans"
 
 install_zsh() {
     echo_header "Zsh"
@@ -108,36 +106,23 @@ sync_git_repo() {
 install_shell_profile_tools() {
     echo_header "Zsh prompt and plugins"
 
-    case "$ZSH_PROFILE" in
-        antidote|antidote-p10k)
-            sync_git_repo "https://github.com/mattmc3/antidote.git" "$ANTIDOTE_DIR"
-            sync_git_repo "https://github.com/romkatv/powerlevel10k.git" "$P10K_DIR"
+    sync_git_repo "https://github.com/mattmc3/antidote.git" "$ANTIDOTE_DIR"
+    sync_git_repo "https://github.com/romkatv/powerlevel10k.git" "$P10K_DIR"
 
-            # Pre-bundle plugins so the first shell launch is fast and offline-safe.
-            local plugins_txt="${ZDOTDIR:-$HOME}/.zsh_plugins.txt"
-            local plugins_zsh="${ZDOTDIR:-$HOME}/.zsh_plugins.zsh"
-            if [[ -f "$plugins_txt" && -d "$ANTIDOTE_DIR/functions" ]]; then
-                log_info "Pre-bundling zsh plugins with antidote..."
-                local clean_txt
-                clean_txt="$(mktemp)"
-                grep -Ev '^[[:space:]]*(#|$)' "$plugins_txt" > "$clean_txt"
-                ANTIDOTE_HOME="$ANTIDOTE_DIR" \
-                    zsh -c "fpath=('$ANTIDOTE_DIR/functions' \$fpath); autoload -Uz antidote; antidote bundle < '$clean_txt'" \
-                    2>&1 | grep -Ev '^[[:space:]]*warning:' >| "$plugins_zsh" || true
-                rm -f "$clean_txt"
-                log_success "Plugins bundled to $plugins_zsh"
-            fi
-
-            log_success "Configured profile: antidote+p10k"
-            ;;
-        z4h|zsh4humans)
-            sync_git_repo "https://github.com/romkatv/zsh4humans.git" "$Z4H_DIR"
-            log_success "Configured profile: zsh4humans"
-            ;;
-        *)
-            log_warn "Unknown LINUX_SETUP_ZSH_PROFILE='$ZSH_PROFILE'. Supported: antidote-p10k, zsh4humans."
-            ;;
-    esac
+    # Pre-bundle plugins so the first shell launch is fast and offline-safe.
+    local plugins_txt="${ZDOTDIR:-$HOME}/.zsh_plugins.txt"
+    local plugins_zsh="${ZDOTDIR:-$HOME}/.zsh_plugins.zsh"
+    if [[ -f "$plugins_txt" && -d "$ANTIDOTE_DIR/functions" ]]; then
+        log_info "Pre-bundling zsh plugins with antidote..."
+        local clean_txt
+        clean_txt="$(mktemp)"
+        grep -Ev '^[[:space:]]*(#|$)' "$plugins_txt" > "$clean_txt"
+        ANTIDOTE_HOME="$ANTIDOTE_DIR" \
+            zsh -c "fpath=('$ANTIDOTE_DIR/functions' \$fpath); autoload -Uz antidote; antidote bundle < '$clean_txt'" \
+            2>&1 | grep -Ev '^[[:space:]]*warning:' >| "$plugins_zsh" || true
+        rm -f "$clean_txt"
+        log_success "Plugins bundled to $plugins_zsh"
+    fi
 }
 
 main() {
