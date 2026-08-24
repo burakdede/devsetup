@@ -74,7 +74,10 @@ install_apt_packages() {
         return 0
     fi
 
-    mapfile -t packages < <(read_list_file "$APT_PACKAGES_FILE")
+    # while-read rather than mapfile: this file is sourced by the test suite,
+    # which runs on macOS too, and mapfile is a bash 4 builtin.
+    local packages=()
+    while IFS= read -r pkg; do packages+=("$pkg"); done < <(read_list_file "$APT_PACKAGES_FILE")
     if [[ ${#packages[@]} -eq 0 ]]; then
         log_info "No APT packages declared."
         return 0

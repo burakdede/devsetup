@@ -59,12 +59,12 @@ jobs:
           git ls-files 'mac/*.sh' 'shared/*.sh' \
             | xargs shellcheck -x --source-path=SCRIPTDIR
 
-      # macOS ships bash 3.2 (2007). The bootstrap entry point and everything
-      # it runs before Homebrew installs a newer bash MUST work under it,
+      # macOS ships bash 3.2 (2007). The bootstrap entry point, the git hooks,
+      # and anything they invoke MUST work under it,
       # otherwise ./run.sh cannot bootstrap the machine it is meant to
       # bootstrap. This job runs under that same bash 3.2, so it is the right
       # place to catch bash 4+ syntax creeping back in.
-      - name: bash 3.2 compatibility (mac entry points)
+      - name: bash 3.2 compatibility (anything that runs on macOS)
         working-directory: .
         run: |
           echo "checking with: $(bash --version | head -1)"
@@ -86,7 +86,9 @@ jobs:
               echo "$hits"
               fail=1
             fi
-          done < <(git ls-files 'mac/*.sh' 'shared/*.sh')
+          done < <(git ls-files 'mac/*.sh' 'shared/*.sh' 'scripts/*.sh' \
+                     'install.sh' '.githooks/pre-commit' '.githooks/pre-push' \
+                     'linux/scripts/test.sh')
           exit $fail
 
       - name: zsh -n (zsh dotfiles)

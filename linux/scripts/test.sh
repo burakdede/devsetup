@@ -7,19 +7,21 @@ REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "==> bash -n"
-mapfile -t shell_scripts < <(
-    git -C "$ROOT_DIR" ls-files '*.sh' '.githooks/pre-commit' '.githooks/pre-push'
+shell_scripts=()
+while IFS= read -r f; do shell_scripts+=("$f"); done < <(
+    git -C "$ROOT_DIR" ls-files '*.sh'
 )
 bash -n "${shell_scripts[@]}"
 
 echo "==> shellcheck"
-mapfile -t shellcheck_scripts < <(
-    git -C "$ROOT_DIR" ls-files '*.sh' '*.bash' '.githooks/pre-commit' '.githooks/pre-push'
+shellcheck_scripts=()
+while IFS= read -r f; do shellcheck_scripts+=("$f"); done < <(
+    git -C "$ROOT_DIR" ls-files '*.sh' '*.bash'
 )
 # Shared bash sourced by both platforms lives at the monorepo root.
 while IFS= read -r f; do
     shellcheck_scripts+=("$REPO_ROOT/$f")
-done < <(git -C "$REPO_ROOT" ls-files 'shared/*.sh')
+done < <(git -C "$REPO_ROOT" ls-files 'shared/*.sh' 'scripts/*.sh' '.githooks/pre-commit' '.githooks/pre-push')
 
 # -x follows `source` directives so the shared/ files are resolved rather than
 # reported as SC1091. The zsh dotfiles are NOT linted here: shellcheck has no

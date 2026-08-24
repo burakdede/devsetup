@@ -46,10 +46,9 @@ class BootstrapRepoTests(unittest.TestCase):
 
     def test_shell_syntax_is_valid(self):
         scripts = [
-            ".githooks/pre-commit",
-            ".githooks/pre-push",
+            str(REPO_ROOT.parent / ".githooks" / "pre-commit"),
+            str(REPO_ROOT.parent / ".githooks" / "pre-push"),
             "run.sh",
-            "scripts/install-hooks.sh",
             "scripts/smoke-system.sh",
             "system/system.sh",
             "sdk/sdk.sh",
@@ -72,10 +71,9 @@ class BootstrapRepoTests(unittest.TestCase):
 
     def test_shellcheck_passes(self):
         files = [
-            ".githooks/pre-commit",
-            ".githooks/pre-push",
+            str(REPO_ROOT.parent / ".githooks" / "pre-commit"),
+            str(REPO_ROOT.parent / ".githooks" / "pre-push"),
             "run.sh",
-            "scripts/install-hooks.sh",
             "scripts/smoke-system.sh",
             "system/system.sh",
             "sdk/sdk.sh",
@@ -96,6 +94,9 @@ class BootstrapRepoTests(unittest.TestCase):
         ]
         # Bash shared with macOS lives at the monorepo root.
         files.extend(str(f) for f in sorted(SHARED_DIR.glob("*.sh")))
+        files.extend(
+            str(f) for f in sorted((REPO_ROOT.parent / "scripts").glob("*.sh"))
+        )
         # .vimrc is vimscript and .zsh* are zsh; shellcheck handles neither.
 
         # .zshenv/.zshrc/.zprofile are deliberately absent: shellcheck has no
@@ -132,7 +133,10 @@ class BootstrapRepoTests(unittest.TestCase):
 
         result = self.run_cmd(["bash", "utils/settings.sh"], env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Skipping GNOME settings because no desktop session is active.", result.stderr)
+        self.assertIn(
+            "Skipping GNOME settings because no desktop session is active.",
+            result.stderr,
+        )
 
     def test_dotfiles_script_installs_and_backs_up(self):
         if not (DOTFILES_DIR / ".gitconfig").exists():
@@ -140,7 +144,9 @@ class BootstrapRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_home:
             home = Path(temp_home)
             existing_gitconfig = home / ".gitconfig"
-            existing_gitconfig.write_text("[user]\n\tname = Old User\n", encoding="utf-8")
+            existing_gitconfig.write_text(
+                "[user]\n\tname = Old User\n", encoding="utf-8"
+            )
 
             env = os.environ.copy()
             env["HOME"] = temp_home
@@ -156,7 +162,9 @@ class BootstrapRepoTests(unittest.TestCase):
 
             # dotfiles.sh must create symlinks, not copies
             self.assertTrue(installed_vimrc.is_symlink(), ".vimrc should be a symlink")
-            self.assertTrue(installed_gitconfig.is_symlink(), ".gitconfig should be a symlink")
+            self.assertTrue(
+                installed_gitconfig.is_symlink(), ".gitconfig should be a symlink"
+            )
             self.assertTrue(
                 str(installed_gitconfig.resolve()).startswith(str(REPO_ROOT.parent)),
                 "symlink should point into the repo",
@@ -167,7 +175,9 @@ class BootstrapRepoTests(unittest.TestCase):
             if source_config_dir.exists():
                 for entry in source_config_dir.iterdir():
                     target = home / ".config" / entry.name
-                    self.assertTrue(target.is_symlink(), f".config/{entry.name} should be a symlink")
+                    self.assertTrue(
+                        target.is_symlink(), f".config/{entry.name} should be a symlink"
+                    )
 
             # Existing .gitconfig must have been backed up
             backup_root = home / ".local" / "state" / "devsetup" / "dotfiles-backups"
@@ -220,7 +230,7 @@ class BootstrapRepoTests(unittest.TestCase):
                     f"""\
                     #!/usr/bin/env bash
                     set -euo pipefail
-                    touch "{marker_dir / 'settings'}"
+                    touch "{marker_dir / "settings"}"
                     """
                 ),
                 encoding="utf-8",
@@ -231,7 +241,9 @@ class BootstrapRepoTests(unittest.TestCase):
             env["HOME"] = str(Path(tmp_dir) / "home")
             Path(env["HOME"]).mkdir()
 
-            result = self.run_cmd(["bash", "run.sh", "--only", "sdk"], cwd=repo, env=env)
+            result = self.run_cmd(
+                ["bash", "run.sh", "--only", "sdk"], cwd=repo, env=env
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((marker_dir / "sdk").exists())
             self.assertFalse((marker_dir / "system").exists())
@@ -283,7 +295,11 @@ class BootstrapRepoTests(unittest.TestCase):
                 seen.add(line)
 
         snap_seen = set()
-        for raw_line in (REPO_ROOT / "system" / "snap-packages.txt").read_text(encoding="utf-8").splitlines():
+        for raw_line in (
+            (REPO_ROOT / "system" / "snap-packages.txt")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ):
             line = raw_line.split("#", 1)[0].strip()
             if not line:
                 continue
@@ -293,19 +309,27 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertNotIn(line, snap_seen)
             snap_seen.add(line)
             if len(parts) >= 2:
-                self.assertTrue(parts[1] == "-" or re.fullmatch(r"[A-Za-z0-9./_-]+", parts[1]))
+                self.assertTrue(
+                    parts[1] == "-" or re.fullmatch(r"[A-Za-z0-9./_-]+", parts[1])
+                )
             if len(parts) == 3:
                 self.assertEqual(parts[2], "classic")
 
         github_seen = set()
         # Keep in step with the case statement in install_github_release_tools.
         valid_modes = {"raw", "tar.gz", "gz"}
-        for raw_line in (REPO_ROOT / "system" / "github-tools.txt").read_text(encoding="utf-8").splitlines():
+        for raw_line in (
+            (REPO_ROOT / "system" / "github-tools.txt")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ):
             line = raw_line.split("#", 1)[0].strip()
             if not line:
                 continue
             parts = line.split("|")
-            self.assertEqual(len(parts), 5, f"Expected 5 columns in github-tools.txt, got {line!r}")
+            self.assertEqual(
+                len(parts), 5, f"Expected 5 columns in github-tools.txt, got {line!r}"
+            )
             command_name, repo, asset_pattern, mode, binary_name = parts
             self.assertTrue(command_name)
             self.assertRegex(repo, r"^[^/]+/[^/]+$")
@@ -325,7 +349,7 @@ class BootstrapRepoTests(unittest.TestCase):
 
             command = textwrap.dedent(
                 f"""\
-                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{REPO_ROOT / "utils" / "utils.sh"}"
                 sudo_run() {{ printf 'sudo:%s\\n' "$*" >> "{log_file}"; }}
                 log_info() {{ :; }}
                 log_warn() {{ :; }}
@@ -340,7 +364,10 @@ class BootstrapRepoTests(unittest.TestCase):
             result = self.run_cmd(["bash", "-lc", command])
             self.assertEqual(result.returncode, 0, result.stderr)
             log_output = log_file.read_text(encoding="utf-8")
-            self.assertIn("sudo:apt-get install -y --no-install-recommends rg fd-find jq", log_output)
+            self.assertIn(
+                "sudo:apt-get install -y --no-install-recommends rg fd-find jq",
+                log_output,
+            )
 
     def test_system_installer_parses_snap_manifest(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -355,7 +382,7 @@ class BootstrapRepoTests(unittest.TestCase):
 
             command = textwrap.dedent(
                 f"""\
-                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{REPO_ROOT / "utils" / "utils.sh"}"
                 sudo_run() {{ printf 'sudo:%s\\n' "$*" >> "{log_file}"; }}
                 log_info() {{ :; }}
                 log_warn() {{ :; }}
@@ -383,7 +410,7 @@ class BootstrapRepoTests(unittest.TestCase):
 
             command = textwrap.dedent(
                 f"""\
-                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{REPO_ROOT / "utils" / "utils.sh"}"
                 ensure_line_in_file '{line}' "{target}"
                 ensure_line_in_file '{line}' "{target}"
                 """
@@ -401,7 +428,7 @@ class BootstrapRepoTests(unittest.TestCase):
             sourceable_script = self.create_sourceable_system_script(tmp_path)
             command = textwrap.dedent(
                 f"""\
-                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{REPO_ROOT / "utils" / "utils.sh"}"
                 source "{sourceable_script}"
                 check_root() {{ :; }}
                 ensure_sudo() {{ :; }}
@@ -468,7 +495,9 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertEqual(first.returncode, 0, first.stderr)
             self.assertEqual(second.returncode, 0, second.stderr)
             vimrc = Path(temp_home) / ".vimrc"
-            self.assertTrue(vimrc.is_symlink(), ".vimrc should be a symlink after idempotent run")
+            self.assertTrue(
+                vimrc.is_symlink(), ".vimrc should be a symlink after idempotent run"
+            )
 
     def test_agents_script_wires_all_three_agents(self):
         """agents.sh points every agent at the one shared instructions file."""
@@ -477,7 +506,9 @@ class BootstrapRepoTests(unittest.TestCase):
             # Pre-create the central agents config directory (normally done by dotfiles.sh)
             config_agents = home / ".config" / "agents"
             config_agents.mkdir(parents=True)
-            (config_agents / "instructions.md").write_text("# Instructions\n", encoding="utf-8")
+            (config_agents / "instructions.md").write_text(
+                "# Instructions\n", encoding="utf-8"
+            )
 
             env = os.environ.copy()
             env["HOME"] = str(home)
@@ -488,21 +519,28 @@ class BootstrapRepoTests(unittest.TestCase):
             shared = config_agents / "instructions.md"
 
             claude_md = home / ".claude" / "CLAUDE.md"
-            self.assertTrue(claude_md.is_symlink(), "~/.claude/CLAUDE.md must be a symlink")
+            self.assertTrue(
+                claude_md.is_symlink(), "~/.claude/CLAUDE.md must be a symlink"
+            )
             self.assertEqual(Path(os.readlink(claude_md)), shared)
 
             codex_md = home / ".codex" / "AGENTS.md"
-            self.assertTrue(codex_md.is_symlink(), "~/.codex/AGENTS.md must be a symlink")
+            self.assertTrue(
+                codex_md.is_symlink(), "~/.codex/AGENTS.md must be a symlink"
+            )
             self.assertEqual(Path(os.readlink(codex_md)), shared)
 
             # config.toml holds Codex auth and project trust state; the setup
             # must not write it.
             self.assertFalse(
                 (home / ".codex" / "config.toml").exists(),
-                "agents.sh must not write codex config.toml")
+                "agents.sh must not write codex config.toml",
+            )
 
             opencode_config = home / ".config" / "opencode" / "config.json"
-            self.assertTrue(opencode_config.exists(), "opencode config.json must be created")
+            self.assertTrue(
+                opencode_config.exists(), "opencode config.json must be created"
+            )
             payload = json.loads(opencode_config.read_text(encoding="utf-8"))
             self.assertEqual(payload.get("instructions"), [str(shared)])
             self.assertFalse(payload.get("autoshare", True), "autoshare must be false")
@@ -547,7 +585,9 @@ class BootstrapRepoTests(unittest.TestCase):
             # Must NOT have written to the repo's .gitconfig (when dotfiles directory exists)
             repo_gitconfig = DOTFILES_DIR / ".gitconfig"
             if repo_gitconfig.exists():
-                self.assertNotIn("Test User", repo_gitconfig.read_text(encoding="utf-8"))
+                self.assertNotIn(
+                    "Test User", repo_gitconfig.read_text(encoding="utf-8")
+                )
 
     def test_gitconfig_includes_local_override(self):
         """dotfiles/.gitconfig must include ~/.gitconfig.local."""
@@ -591,17 +631,24 @@ class BootstrapRepoTests(unittest.TestCase):
         for key in required:
             self.assertIn(key, found, f"{key} missing from packages/versions.txt")
         # Runtime pins must NOT reappear here -- one home per version.
-        for key in ("NODE_VERSION", "GO_VERSION", "PYTHON_VERSION",
-                    "TERRAFORM_VERSION", "TFLINT_VERSION"):
+        for key in (
+            "NODE_VERSION",
+            "GO_VERSION",
+            "PYTHON_VERSION",
+            "TERRAFORM_VERSION",
+            "TFLINT_VERSION",
+        ):
             self.assertNotIn(
-                key, found,
-                f"{key} belongs in dotfiles/.config/mise/config.toml, not versions.txt")
+                key,
+                found,
+                f"{key} belongs in dotfiles/.config/mise/config.toml, not versions.txt",
+            )
 
     def test_load_versions_exports_variables(self):
         """load_versions() in utils.sh must export pinned version variables."""
         command = textwrap.dedent(
             f"""\
-            source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+            source "{REPO_ROOT / "utils" / "utils.sh"}"
             load_versions
             echo "NEOVIM=$NEOVIM_VERSION"
             echo "MISE=$MISE_VERSION"
@@ -624,16 +671,26 @@ class BootstrapRepoTests(unittest.TestCase):
     def test_system_runtime_installs_are_pinned(self):
         """Core runtime installs should not float to latest/lts/stable selectors."""
         system_script = (REPO_ROOT / "system" / "system.sh").read_text(encoding="utf-8")
-        mise_config = (DOTFILES_DIR / ".config" / "mise" / "config.toml").read_text(encoding="utf-8")
+        mise_config = (DOTFILES_DIR / ".config" / "mise" / "config.toml").read_text(
+            encoding="utf-8"
+        )
 
         # Every mise-managed tool is pinned to a concrete version, never a
         # floating selector, in the single shared config.
-        for tool in ("python", "node", "go", "terraform", "tflint",
-                     "terragrunt", "terraform-docs"):
+        for tool in (
+            "python",
+            "node",
+            "go",
+            "terraform",
+            "tflint",
+            "terragrunt",
+            "terraform-docs",
+        ):
             self.assertRegex(
                 mise_config,
                 re.compile(rf'^{re.escape(tool)}\s*=\s*"[0-9]', re.MULTILINE),
-                f"{tool} must be pinned to a concrete version in mise config.toml")
+                f"{tool} must be pinned to a concrete version in mise config.toml",
+            )
         for floating in ("lts", "latest", "stable"):
             self.assertNotIn(f'"{floating}"', mise_config)
 
@@ -641,16 +698,19 @@ class BootstrapRepoTests(unittest.TestCase):
         # rewrites it, and it is a symlink into the repo.
         self.assertIn('"$MISE_BIN" install', system_script)
         code_lines = [
-            ln for ln in system_script.splitlines()
-            if not ln.lstrip().startswith("#")
+            ln for ln in system_script.splitlines() if not ln.lstrip().startswith("#")
         ]
         self.assertNotIn(
-            "use --global", "\n".join(code_lines),
+            "use --global",
+            "\n".join(code_lines),
             "system.sh must never run `mise use --global`; it rewrites the "
-            "shared config, which is a symlink into the repo")
+            "shared config, which is a symlink into the repo",
+        )
 
         # Precompiled Python, or a fresh machine spends minutes building CPython.
-        self.assertIn("MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped", system_script)
+        self.assertIn(
+            "MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped", system_script
+        )
         self.assertIn('rustup toolchain install "$RUST_VERSION"', system_script)
         self.assertNotIn("update stable --no-self-update", system_script)
 
@@ -667,16 +727,28 @@ class BootstrapRepoTests(unittest.TestCase):
         """run.sh --help must document all orchestrated steps."""
         result = self.run_cmd(["bash", "run.sh", "--help"])
         self.assertEqual(result.returncode, 0, result.stderr)
-        for step in ("system", "dotfiles", "terminal", "shell", "editor", "multiplexer", "sdk", "agents"):
-            self.assertIn(step, result.stdout, f"Step {step!r} missing from --help output")
+        for step in (
+            "system",
+            "dotfiles",
+            "terminal",
+            "shell",
+            "editor",
+            "multiplexer",
+            "sdk",
+            "agents",
+        ):
+            self.assertIn(
+                step, result.stdout, f"Step {step!r} missing from --help output"
+            )
 
     def create_sourceable_terminal_script(self, directory: Path) -> Path:
         original = (REPO_ROOT / "terminal" / "terminal.sh").read_text(encoding="utf-8")
         lines = original.splitlines()
         filtered = [
-            l for l in lines
-            if l.strip() != 'source "$SCRIPT_DIR/../utils/utils.sh"'
-            and l.strip() != "main"
+            line
+            for line in lines
+            if line.strip() != 'source "$SCRIPT_DIR/../utils/utils.sh"'
+            and line.strip() != "main"
         ]
         path = directory / "terminal-sourceable.sh"
         path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
@@ -691,7 +763,7 @@ class BootstrapRepoTests(unittest.TestCase):
 
             command = textwrap.dedent(
                 f"""\
-                source "{REPO_ROOT / 'utils' / 'utils.sh'}"
+                source "{REPO_ROOT / "utils" / "utils.sh"}"
                 log_info() {{ printf 'info:%s\\n' "$*" >> "{log_file}"; }}
                 log_success() {{ :; }}
                 echo_header() {{ :; }}
@@ -707,7 +779,9 @@ class BootstrapRepoTests(unittest.TestCase):
             env["HOME"] = tmp_dir
             result = self.run_cmd(["bash", "-lc", command], env=env)
             self.assertEqual(result.returncode, 0, result.stderr)
-            log_output = log_file.read_text(encoding="utf-8") if log_file.exists() else ""
+            log_output = (
+                log_file.read_text(encoding="utf-8") if log_file.exists() else ""
+            )
             self.assertIn("LINUX_SETUP_SKIP_WEZTERM", log_output)
 
     def test_nvim_config_entrypoint_exists(self):
@@ -723,14 +797,18 @@ class BootstrapRepoTests(unittest.TestCase):
             self.skipTest("dotfiles directory not found")
         content = lsp_lua.read_text(encoding="utf-8")
         for server in ("pyright", "gopls", "rust_analyzer", "jdtls"):
-            self.assertIn(server, content, f"LSP server {server!r} missing from lsp.lua")
+            self.assertIn(
+                server, content, f"LSP server {server!r} missing from lsp.lua"
+            )
 
     def test_zsh_config_scaffold_exists(self):
         zshrc = DOTFILES_DIR / ".zshrc"
         if not zshrc.exists():
             self.skipTest("dotfiles directory not found")
         self.assertTrue(zshrc.exists(), ".zshrc scaffold must exist")
-        self.assertTrue((DOTFILES_DIR / ".zshenv").exists(), ".zshenv scaffold must exist")
+        self.assertTrue(
+            (DOTFILES_DIR / ".zshenv").exists(), ".zshenv scaffold must exist"
+        )
 
     def test_tmux_config_scaffold_exists(self):
         tmux_conf = DOTFILES_DIR / ".config" / "tmux" / "tmux.conf"
@@ -750,8 +828,12 @@ class BootstrapRepoTests(unittest.TestCase):
             home = Path(temp_home)
             for entry in ("wezterm", "nvim", "tmux"):
                 target = home / ".config" / entry
-                self.assertTrue(target.is_symlink(), f".config/{entry} must be a symlink")
-                self.assertTrue(target.exists(), f".config/{entry} symlink must resolve")
+                self.assertTrue(
+                    target.is_symlink(), f".config/{entry} must be a symlink"
+                )
+                self.assertTrue(
+                    target.exists(), f".config/{entry} symlink must resolve"
+                )
             self.assertTrue((home / ".zshrc").is_symlink())
 
 

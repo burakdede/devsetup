@@ -13,14 +13,14 @@
 -- ─── Bootstrap lazy.nvim ──────────────────────────────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
-    vim.fn.system({
-        "git",
-        "clone",
-        "--filter=blob:none",
-        "https://github.com/folke/lazy.nvim.git",
-        "--branch=stable",
-        lazypath,
-    })
+	vim.fn.system({
+		"git",
+		"clone",
+		"--filter=blob:none",
+		"https://github.com/folke/lazy.nvim.git",
+		"--branch=stable",
+		lazypath,
+	})
 end
 vim.opt.rtp:prepend(lazypath)
 
@@ -30,17 +30,21 @@ require("config.options")
 -- ─── Plugins ──────────────────────────────────────────────────────────────────
 -- lazy.nvim auto-discovers spec files inside lua/plugins/
 require("lazy").setup("plugins", {
-    defaults = { lazy = true },
-    install  = { colorscheme = { "habamax" } },
-    checker  = { enabled = false },  -- set true to auto-check for plugin updates
-    change_detection = { notify = false },
-    performance = {
-        rtp = {
-            disabled_plugins = {
-                "gzip", "tarPlugin", "tohtml", "tutor", "zipPlugin",
-            },
-        },
-    },
+	defaults = { lazy = true },
+	install = { colorscheme = { "habamax" } },
+	checker = { enabled = false }, -- set true to auto-check for plugin updates
+	change_detection = { notify = false },
+	performance = {
+		rtp = {
+			disabled_plugins = {
+				"gzip",
+				"tarPlugin",
+				"tohtml",
+				"tutor",
+				"zipPlugin",
+			},
+		},
+	},
 })
 
 -- ─── Keymaps & autocommands (load after plugins) ─────────────────────────────

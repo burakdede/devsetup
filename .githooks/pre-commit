@@ -25,10 +25,9 @@ run_precommit() {
         return 0
     fi
 
-    # Bail out gracefully if the config is missing -- look in linux/ subdirectory
-    local config_file="$ROOT_DIR/linux/.pre-commit-config.yaml"
+    local config_file="$ROOT_DIR/.pre-commit-config.yaml"
     if [[ ! -f "$config_file" ]]; then
-        warn "No linux/.pre-commit-config.yaml found; skipping pre-commit."
+        warn "No .pre-commit-config.yaml at the repo root; skipping pre-commit."
         return 0
     fi
 
@@ -47,19 +46,23 @@ run_precommit() {
     log "Running pre-commit hooks..."
 
     # Record staged files before running so we can re-stage auto-fixed ones.
-    mapfile -t staged_before < <(git diff --name-only --cached)
+    local staged_before=()
+    while IFS= read -r f; do staged_before+=("$f"); done < <(git diff --name-only --cached)
 
     set +e
-    pre-commit run --config "$config_file" --from-ref HEAD --to-ref HEAD 2>/dev/null \
-        || pre-commit run --config "$config_file" 2>/dev/null
+    # Plain `run` checks the STAGED files, which is what a pre-commit hook
+    # wants. The previous "--from-ref HEAD --to-ref HEAD" is an empty range, so
+    # every hook reported "no files to check" and the commit sailed through.
+    pre-commit run --config "$config_file"
     local pc_exit=$?
     set -e
 
     if [[ $pc_exit -ne 0 ]]; then
         # Re-stage files that pre-commit auto-fixed and that were already staged.
-        mapfile -t modified_after < <(git diff --name-only)
+        local modified_after=()
+        while IFS= read -r f; do modified_after+=("$f"); done < <(git diff --name-only)
         local restaged=0
-        local f s
+        local s
         for f in "${modified_after[@]}"; do
             for s in "${staged_before[@]}"; do
                 if [[ "$f" == "$s" ]]; then

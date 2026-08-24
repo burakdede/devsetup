@@ -33,7 +33,10 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        args: [--severity=warning]
+        args: [--severity=warning, -x, --source-path=SCRIPTDIR]
+        # shellcheck has no zsh support and flags these as broken bash.
+        # linux/scripts/test.sh syntax-checks them with `zsh -n` instead.
+        exclude: '^dotfiles/\.(zshrc|zshenv|zprofile|p10k\.zsh)$'
 
   # ── Python: ruff (lint + auto-fix) ──────────────────────────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -58,10 +61,3 @@ repos:
         args: [--verify]
         types: [file]
         files: \.lua$
-
-  # ── Markdown ─────────────────────────────────────────────────────────────────
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
-    hooks:
-      - id: markdownlint-fix
-        args: [--disable, MD013, MD033, MD041]

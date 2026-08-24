@@ -4,7 +4,7 @@
 # ── Quick start ───────────────────────────────────────────────────────────────
 #   git clone git@github.com:burakdede/devsetup.git ~/Projects/devsetup
 #   cd ~/Projects/devsetup/mac
-#   
+#
 #   ./run.sh
 #
 # ── Step overview ─────────────────────────────────────────────────────────────
@@ -22,12 +22,12 @@
 #
 # ── Syncing shared dotfiles ───────────────────────────────────────────────────
 # The dotfiles/ directory lives at the repo root, shared between mac/ and linux/.
-# 
-# 
+#
+#
 #
 # To pull the latest dotfiles (after a git pull on devsetup):
 #   cd ~/Projects/devsetup && git pull
-#   
+#
 #
 # ── Environment variable overrides ───────────────────────────────────────────
 # MACSETUP_UPGRADE=1           -- re-install tools even if already present

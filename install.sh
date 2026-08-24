@@ -94,6 +94,12 @@ main() {
     ui_ok "Detected  $PLATFORM_NAME"
     ui_ok "Running   ${PLATFORM_DIR#"$REPO_ROOT"/}/run.sh $*"
 
+    # This repo's own git hooks. Cheap, idempotent, and unrelated to which OS
+    # we are on, so it happens here rather than as a platform step.
+    if [ -d "$REPO_ROOT/.git" ] && [ -x "$REPO_ROOT/scripts/install-hooks.sh" ]; then
+        ui_ok "$("$REPO_ROOT/scripts/install-hooks.sh")"
+    fi
+
     # So the platform script prints the command you actually typed.
     export DEVSETUP_ENTRY="./install.sh"
 
