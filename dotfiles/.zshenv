@@ -15,10 +15,24 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     fi
 fi
 
-# User-local binaries (mise, uv, cargo, go, …)
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
-export PATH="$HOME/go/bin:$PATH"
+# Keep PATH free of duplicate entries.
+#
+# This file is sourced by EVERY zsh process, and the setup deliberately nests
+# login shells: WezTerm spawns "$SHELL -l", and tmux spawns "$SHELL -l" again
+# for each pane. Without this, every nesting level re-prepends the entries
+# below and PATH grows without bound.
+#
+# macOS papers over this because /etc/zprofile runs /usr/libexec/path_helper,
+# which rebuilds and de-duplicates PATH. Ubuntu has no equivalent for zsh, so
+# make the behaviour explicit and identical on both platforms.
+typeset -U path PATH
+
+# User-local binaries (mise, uv, cargo, go, …).
+#
+# Set here rather than in .zprofile so that non-interactive shells
+# (`zsh -c ...`, `ssh host <command>`, cron) can find them too. Precedence is
+# re-asserted in .zprofile; see the note there.
+path=("$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/go/bin" $path)
 
 # ─── XDG base directories ─────────────────────────────────────────────────────
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
