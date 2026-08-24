@@ -143,6 +143,17 @@ verify_shared() {
                  | sed -E 's/^([a-z0-9-]+).*/\1/')
     fi
 
+    # mise finds <repo>/dotfiles/.config/mise/config.toml as a project config
+    # whenever the cwd is inside the repo, and project configs need explicit
+    # trust. Untrusted, every mise command run from the repo fails.
+    if command -v mise >/dev/null 2>&1 && [[ -f "$REPO_ROOT/dotfiles/.config/mise/config.toml" ]]; then
+        if (cd "$REPO_ROOT/dotfiles" && mise ls --current >/dev/null 2>&1); then
+            ok "repo mise config is trusted"
+        else
+            fail "repo mise config is NOT trusted  (run: mise trust $REPO_ROOT/dotfiles/.config/mise/config.toml)"
+        fi
+    fi
+
     # ── Tools from the shared manifests ──────────────────────────────────────
     section "Shared manifests (packages/)"
     local uv_tools="$REPO_ROOT/packages/uv-tools.txt"

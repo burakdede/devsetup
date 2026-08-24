@@ -342,6 +342,33 @@ version, edit `dotfiles/.config/mise/config.toml` and commit it.
 Per-project overrides still work normally through a project's own `.mise.toml`
 or `.tool-versions`.
 
+### mise trust
+
+mise discovers config by walking **up from the current directory**, looking for
+`.config/mise/config.toml` in each ancestor. Because our copy lives at
+`<repo>/dotfiles/.config/mise/config.toml`, the moment you `cd` into the
+dotfiles directory to edit something -- the workflow this repo is built around
+-- mise finds it as a *project* config rather than the global one.
+
+Project configs need explicit trust, while `~/.config/mise/config.toml` is
+trusted implicitly. Untrusted, every mise command run from inside the repo
+fails with:
+
+```
+mise ERROR Config files in .../dotfiles/.config/mise/config.toml are not trusted.
+```
+
+The `dotfiles` step grants that trust for you. Trust is recorded per machine
+under `~/.local/state/mise/trusted-configs`, so it cannot be committed and has
+to be granted once on each machine. If you ever hit the error, either re-run
+`./run.sh --only dotfiles` or do it directly:
+
+```bash
+mise trust ~/Projects/devsetup/dotfiles/.config/mise/config.toml
+```
+
+`--verify` checks this and fails if the config is untrusted.
+
 ---
 
 ## Post-install state

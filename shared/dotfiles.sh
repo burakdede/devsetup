@@ -103,7 +103,41 @@ install_dotfiles() {
         link_config_entries "$extra"
     done
 
+    trust_repo_mise_config
+
     mkdir -p "$HOME/.git_template"
     log_success "Created ~/.git_template (required by init.templateDir in .gitconfig)"
     log_info "Backups (if any) stored in $BACKUP_ROOT"
+}
+
+# mise discovers config by walking UP from the current directory, looking for
+# .config/mise/config.toml in each ancestor. Our copy lives at
+# <repo>/dotfiles/.config/mise/config.toml, so the moment you cd into the
+# dotfiles directory to edit something -- the workflow this repo is built
+# around -- mise finds it as a PROJECT config rather than the global one.
+#
+# Project configs require explicit trust, while ~/.config/mise/config.toml is
+# trusted implicitly. Without this, every command run from inside the repo
+# fails with "Config files ... are not trusted".
+#
+# Trust is recorded per machine under ~/.local/state/mise/trusted-configs, so
+# it is not something that can be committed; it has to be granted at setup.
+trust_repo_mise_config() {
+    local mise_config="$DOTFILES_DIR/.config/mise/config.toml"
+
+    [[ -f "$mise_config" ]] || return 0
+
+    local mise_bin="$HOME/.local/bin/mise"
+    [[ -x "$mise_bin" ]] || mise_bin="$(command -v mise 2>/dev/null || true)"
+    if [[ -z "$mise_bin" ]]; then
+        log_info "mise not installed yet; skipping trust. Re-run this step after the system step."
+        return 0
+    fi
+
+    if "$mise_bin" trust "$mise_config" >/dev/null 2>&1; then
+        log_success "Trusted the repo mise config for this machine"
+    else
+        log_warn "Could not trust $mise_config."
+        log_warn "Run it by hand: mise trust $mise_config"
+    fi
 }
