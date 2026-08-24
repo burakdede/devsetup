@@ -409,7 +409,6 @@ class BootstrapRepoTests(unittest.TestCase):
                 install_snap_packages() {{ printf 'snaps\\n' >> "{log_file}"; }}
                 setup_google_chrome_repo() {{ printf 'chrome\\n' >> "{log_file}"; }}
                 setup_spotify_repo() {{ printf 'spotify\\n' >> "{log_file}"; }}
-                install_steam_apt() {{ printf 'steam\\n' >> "{log_file}"; }}
                 setup_tailscale_repo() {{ printf 'tailscale\\n' >> "{log_file}"; }}
                 install_jetbrains_toolbox() {{ printf 'jetbrains-toolbox\\n' >> "{log_file}"; }}
                 configure_timeshift_policy() {{ printf 'timeshift\\n' >> "{log_file}"; }}
@@ -441,7 +440,6 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertIn("apt", output)
             self.assertIn("docker", output)
             self.assertIn("spotify", output)
-            self.assertIn("steam", output)
             self.assertIn("tailscale", output)
             self.assertIn("jetbrains-toolbox", output)
             self.assertIn("timeshift", output)
