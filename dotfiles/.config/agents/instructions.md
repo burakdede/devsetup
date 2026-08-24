@@ -35,6 +35,29 @@ equivalent, and rather than asking whether they exist:
 If something genuinely useful is missing, install it (`brew` on macOS, `apt`
 on Ubuntu) and say so, rather than working around its absence.
 
+## Planning and backlog
+
+For anything bigger than a single change, plan before writing code, and think
+hard while doing it — this is where extended reasoning earns its cost, not in
+the typing that follows.
+
+Turn a product or plan document into a backlog with GitHub Spec Kit
+(`specify`), not by hand. It gives every project the same shape: spec, then
+phases, then tasks. Feed it the document, review what it produces, then create
+the GitHub issues from it so epics, phases and tasks stay consistent across
+projects.
+
+Structure the backlog as a DAG, not a flat list. For each task make explicit:
+
+- what it is **blocked by**, as `Blocked by #123` in the issue body
+- what it **blocks**, so the critical path is visible
+- which tasks have no dependency between them and can therefore run in parallel
+
+Say plainly which work is on the critical path and which is parallelisable. A
+backlog that does not distinguish them is a to-do list, not a plan.
+
+Present a plan as an artifact, not as a wall of chat text.
+
 ## Work intake
 
 Work is tracked in GitHub. Issues live in a project board, usually under an
@@ -52,7 +75,12 @@ epic.
 Trivial fixes with no issue behind them can go straight to the default branch;
 CI minutes are finite, so do not burn a full run on a typo.
 
-- Branch: `type/<issue>-<slug>` — `feat/412-oauth-refresh`, `fix/88-null-deref`.
+Start from the latest remote state — `git fetch origin` and branch from the
+updated default branch. Branching from a stale local copy is how avoidable
+rebases and merge conflicts get created.
+
+- Branch: `<issue>-<slug>` — `412-oauth-refresh`, `88-null-deref`. No category
+  prefix: no `fix/`, no `chore/`.
 - Link the PR to the issue so it closes on merge (`Closes #412`).
 - Commit in logical, self-contained patches. One idea per commit. A reviewer,
   human or machine, should be able to read the diff top to bottom.
@@ -64,7 +92,29 @@ A PR description explains:
 - **Verification**: what you ran and what it showed. Attach screenshots or
   recordings when the change is visual.
 
-Never add co-author trailers. Commits use the configured git identity as-is.
+## Commit messages
+
+Subject: under 51 characters, imperative, no Conventional Commit prefix — no
+`fix:`, no `chore:`, no `feat:`.
+
+Body, when one adds anything: a dash list, lines under 73 characters, saying
+**why** rather than restating the diff. Wrap filenames, identifiers and code in
+backticks.
+
+Write real newlines, never a literal `\n`. Pass multi-line messages through a
+heredoc so they survive intact:
+
+```sh
+git commit -F - <<'EOF'
+Short imperative subject
+
+- why this change, not what the diff shows
+- `path/to/file` needed it because ...
+EOF
+```
+
+Never add `Co-Authored-By` trailers, and do not GPG-sign commits you make.
+Commits use the configured git identity exactly as it is.
 
 ## Before you call it done
 
@@ -111,9 +161,6 @@ for humans and do not describe your constraints.
 When the choice is genuinely open and you would otherwise be guessing, stop and
 ask. Present the options through the question tool, not as prose or a bullet
 list. Say what you would pick and why.
-
-When presenting a plan, render it as an artifact rather than a wall of chat
-text.
 
 ## Code and conventions
 
