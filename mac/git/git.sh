@@ -79,33 +79,69 @@ load_ssh_agent() {
 add_key_to_github() {
     echo_header "Add key to GitHub"
 
-    if [[ -f ~/.ssh/id_ed25519.pub ]]; then
-        if command_exists pbcopy; then
-            pbcopy < ~/.ssh/id_ed25519.pub
-            log_success "SSH public key copied to clipboard (pbcopy)."
-        elif command_exists xclip; then
-            xclip -selection clipboard < ~/.ssh/id_ed25519.pub
-            log_success "SSH public key copied to clipboard (xclip)."
-        else
-            log_info "Public key content (copy and paste to GitHub):"
-            cat ~/.ssh/id_ed25519.pub
-        fi
+    if [[ ! -f ~/.ssh/id_ed25519.pub ]]; then
+        log_warn "No public key at ~/.ssh/id_ed25519.pub; nothing to upload."
+        return 0
     fi
 
+    # Trust github.com's host key up front so the connection test below cannot
+    # stall on an interactive fingerprint prompt.
     if ! grep -q "github.com" ~/.ssh/known_hosts 2>/dev/null; then
         touch ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
         ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null || true
     fi
 
-    log_info "1. Go to: https://github.com/settings/keys"
-    log_info "2. Click 'New SSH key' and paste the key from clipboard."
-
-    if command_exists open; then
-        open "https://github.com/settings/keys" 2>/dev/null || true
+    if ! command_exists gh; then
+        github_key_by_hand
+        return 0
     fi
 
-    read -r -p "After adding the key to GitHub, press Enter to test..."
+    # gh does the whole handshake: authenticate, then upload the key. This
+    # replaces copying to the clipboard and visiting the settings page, and it
+    # is also what makes `gh` usable at all -- the agent instructions lean on
+    # it for issues, PRs and projects, and nothing else authenticates it.
+    if ! gh auth status >/dev/null 2>&1; then
+        log_info "Authenticating with GitHub (a browser window will open)..."
+        if ! gh auth login --hostname github.com --git-protocol ssh; then
+            log_warn "gh auth login did not complete."
+            github_key_by_hand
+            return 0
+        fi
+    else
+        log_success "gh is already authenticated as $(gh api user --jq .login 2>/dev/null || echo '?')"
+    fi
+
+    # Idempotent: comparing the key body avoids a duplicate-title error on
+    # re-runs, and gh rejects a key it already has anyway.
+    local key_body
+    key_body="$(awk '{print $2}' ~/.ssh/id_ed25519.pub)"
+    if gh ssh-key list 2>/dev/null | grep -qF "$key_body"; then
+        log_success "This key is already on your GitHub account."
+    elif gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname -s) ($(date +%Y-%m-%d))" 2>/dev/null; then
+        log_success "SSH key uploaded to GitHub."
+    else
+        log_warn "Could not upload the key with gh."
+        github_key_by_hand
+    fi
+}
+
+# Fallback for when gh is unavailable or the login did not finish.
+github_key_by_hand() {
+    if command_exists pbcopy; then
+        pbcopy < ~/.ssh/id_ed25519.pub
+        log_success "Public key copied to clipboard (pbcopy)."
+    elif command_exists xclip; then
+        xclip -selection clipboard < ~/.ssh/id_ed25519.pub
+        log_success "Public key copied to clipboard (xclip)."
+    else
+        log_info "Public key, to paste into GitHub:"
+        cat ~/.ssh/id_ed25519.pub
+    fi
+
+    log_info "Add it at: https://github.com/settings/keys"
+    command_exists open && open "https://github.com/settings/keys" 2>/dev/null || true
+    is_interactive && read -r -p "Press Enter once the key is added..."
 }
 
 test_github_connection() {

@@ -83,6 +83,85 @@ assert_neovim_floor() {
     fi
 }
 
+# Neovim installs LSP servers and treesitter parsers on first launch, which
+# means the first real open is a multi-minute download while you wait. Worse,
+# it fails quietly: gopls went missing for a long time because nothing ever
+# triggered its install.
+#
+# Do it here instead. Slower bootstrap, instant first launch, and failures
+# surface now rather than the first time you open a Go file.
+preload_editor_tools() {
+    echo_header "Neovim language servers and parsers"
+
+    if ! command_exists nvim; then
+        log_warn "nvim not found; skipping preload."
+        return 0
+    fi
+
+    log_info "Installing treesitter parsers (this takes a few minutes)..."
+    if nvim --headless -c 'lua
+        local ok, ts = pcall(require, "nvim-treesitter")
+        if not ok then vim.cmd("qa!") end
+        local want = {"bash","c","cmake","css","diff","dockerfile","go","gomod",
+                      "gowork","html","java","javascript","json","json5","kotlin",
+                      "lua","luadoc","make","markdown","markdown_inline","python",
+                      "regex","ron","rst","rust","scala","sql","toml","tsx",
+                      "typescript","vim","vimdoc","yaml"}
+        local have = ts.get_installed()
+        local missing = vim.tbl_filter(function(p)
+            return not vim.tbl_contains(have, p)
+        end, want)
+        if #missing > 0 then ts.install(missing):wait(900000) end
+        print("parsers: " .. #ts.get_installed())
+    ' -c 'qa' 2>&1 | tail -1; then
+        log_success "Treesitter parsers ready."
+    else
+        log_warn "Parser install had problems. Check with :checkhealth nvim-treesitter"
+    fi
+
+    log_info "Installing LSP servers via Mason..."
+    # Translate the lspconfig server names in lua/plugins/lsp.lua into mason
+    # package names (lua_ls -> lua-language-server) and install them, waiting
+    # on mason-registry rather than sleeping and hoping.
+    nvim --headless -c 'lua
+        local ok_map, mappings = pcall(require, "mason-lspconfig.mappings")
+        local ok_reg, registry = pcall(require, "mason-registry")
+        if not (ok_map and ok_reg) then
+            print("mason not available")
+            vim.cmd("qa!")
+        end
+
+        registry.refresh()
+        local to_package = mappings.get_mason_map().lspconfig_to_package
+        local servers = {
+            "pyright","ruff","gopls","rust_analyzer","jdtls","ts_ls","eslint",
+            "lua_ls","bashls","yamlls","jsonls","taplo","dockerls",
+            "docker_compose_language_service","html","cssls","marksman",
+        }
+
+        local pending = 0
+        for _, server in ipairs(servers) do
+            local pkg_name = to_package[server]
+            if pkg_name then
+                local ok_pkg, pkg = pcall(registry.get_package, pkg_name)
+                if ok_pkg and not pkg:is_installed() then
+                    pending = pending + 1
+                    pkg:install():once("closed", function()
+                        pending = pending - 1
+                    end)
+                end
+            end
+        end
+
+        -- Block until every install settles, with a ceiling so a hung
+        -- download cannot wedge the bootstrap.
+        vim.wait(900000, function() return pending == 0 end, 500)
+        print("mason packages installed: " .. #registry.get_installed_packages())
+    ' -c 'qa' 2>&1 | tail -1
+
+    log_success "Editor tooling preloaded; :Mason and :checkhealth show details."
+}
+
 register_shims() {
     # On macOS there is no update-alternatives.  Instead create symlinks in
     # ~/.local/bin (which is prepended to PATH in .zshenv) so that vi and vim
@@ -129,11 +208,12 @@ main() {
     install_neovim
     register_shims
     bootstrap_plugins
+    preload_editor_tools
 
     echo_header "Editor setup complete"
     log_success "Neovim is ready."
     log_info "Config: ~/.config/nvim/  (symlinked from dotfiles/)"
-    log_info "Open nvim and run :checkhealth to verify LSP and treesitter."
+    log_info "Servers and parsers are preloaded, so the first launch is instant."
 }
 
 main

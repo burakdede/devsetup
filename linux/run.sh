@@ -198,6 +198,46 @@ done
 
 trap cleanup_run_logging EXIT
 
+# What is actually left to do, rather than a fixed list printed every run.
+# A checklist that says "log out to change your shell" when the shell already
+# changed trains you to skip reading it.
+print_outstanding() {
+    local -a items=()
+
+    # Shell change needs a re-login to take effect.
+    local login_shell=""
+    if command_exists dscl; then
+        login_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+    else
+        login_shell="$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)"
+    fi
+    [[ "$login_shell" == *zsh ]] || items+=("log out and back in -- login shell is still ${login_shell:-unknown}")
+
+    # gh drives the issue/PR workflow the agent instructions describe.
+    if command_exists gh && ! gh auth status >/dev/null 2>&1; then
+        items+=("gh auth login -- required for issues, PRs and projects")
+    fi
+
+    # Agent CLIs need an interactive login that cannot be scripted.
+    local agent
+    for agent in claude codex opencode; do
+        command_exists "$agent" || items+=("install $agent")
+    done
+
+    if [[ ${#items[@]} -eq 0 ]]; then
+        ui_ok "Nothing outstanding. Open a new terminal and go."
+        return 0
+    fi
+
+    log_info "Outstanding:"
+    local item
+    for item in "${items[@]}"; do
+        log_info "  - $item"
+    done
+    log_info ""
+    log_info "Anything needing a browser login (agents, gh) has to be done by hand."
+}
+
 main() {
     init_run_logging
 
@@ -309,11 +349,7 @@ main() {
 
     ui_summary_print "$(( $(date +%s) - RUN_STARTED ))"
     log_success "Run log saved to: $LOG_FILE"
-    log_info "Post-install checklist:"
-    log_info "  1. Log out and back in for default-shell/session-level changes."
-    log_info "  2. Open a new terminal to load latest zsh/mise/prompt configuration."
-    log_info "  3. If GNOME settings were applied, re-login if any desktop tweaks did not appear."
-    log_info "  4. Re-run ./run.sh --verify if you want a post-install health summary."
+    print_outstanding
 }
 
 main

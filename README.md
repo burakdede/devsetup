@@ -37,7 +37,18 @@ right bootstrap, so there is nothing to remember per machine.
 ```
 
 It is safe to re-run: every step skips work that is already done. If a step
-fails it says which one, and prints the exact command to resume with.
+fails it says which one, and prints the exact command to resume with. At the
+end it lists only what is genuinely still outstanding.
+
+Day two onwards, `just` is the entry point:
+
+```bash
+just            # list every task
+just update     # brew/apt, mise, uv, sdkman, nvim plugins, mason, hooks
+just verify     # health check
+just test       # full suite
+just bench      # shell startup, both shells
+```
 
 ---
 
