@@ -176,6 +176,35 @@ verify_shared() {
         warn "sdkman  (not installed -- run: ./run.sh --only sdk)"
     fi
 
+    # ── Competing version managers ───────────────────────────────────────────
+    # mise owns python, node and go here, and SDKMAN owns the JVM. Another
+    # manager on PATH will shadow the mise shims for the same runtime, and the
+    # version you get then depends on PATH order rather than on the config in
+    # this repo.
+    section "Version manager conflicts"
+    local conflict found_conflict=0
+    for conflict in pyenv rbenv nodenv nvm asdf goenv jenv; do
+        if command -v "$conflict" >/dev/null 2>&1; then
+            warn "$conflict is installed and competes with mise/SDKMAN for runtime resolution"
+            found_conflict=1
+        fi
+    done
+    if [[ "$found_conflict" -eq 0 ]]; then
+        ok "no competing runtime managers on PATH"
+    fi
+
+    # The runtimes that actually resolve should be the mise ones.
+    local rt
+    for rt in node python; do
+        if command -v "$rt" >/dev/null 2>&1; then
+            if [[ "$(command -v "$rt")" == *"/mise/"* ]]; then
+                ok "$rt resolves through mise"
+            else
+                warn "$rt resolves to $(command -v "$rt"), not mise  (mise config is being bypassed)"
+            fi
+        fi
+    done
+
     section "Editor"
     check_cmd nvim
     check_file "$HOME/.config/nvim/init.lua" "nvim init.lua"

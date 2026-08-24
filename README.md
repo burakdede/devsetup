@@ -182,6 +182,17 @@ and skips `.git` instead of shelling out to `find` and walking `node_modules`.
 Shell integration comes from `fzf --zsh` where available (0.48+), falling back
 to the packaged scripts on older Ubuntu builds.
 
+**SDKMAN is loaded lazily.** `sdkman-init.sh` loops over every installed
+candidate in shell to build PATH, which costs ~90ms per shell with ten
+candidates -- around 40% of total startup. `.zshrc` instead globs
+`~/.sdkman/candidates/*/current/bin` onto PATH directly and sets `JAVA_HOME`,
+so `java`, `kotlin`, `scala` and friends are available immediately, and defers
+the real init until the first time you actually run `sdk`. The `sdk` stub
+replaces itself on first call, so everything (`sdk list`, `sdk use`, `sdk env`)
+behaves normally.
+
+Interactive shell startup is roughly **100ms** as a result, down from 210ms.
+
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 
 ### Editing configs
@@ -386,6 +397,40 @@ Run the Linux suite locally with `cd linux && bash scripts/test.sh`.
 
 ---
 
+## What this setup decides for you
+
+It is opinionated. If you are adopting it, these are the choices you are
+inheriting.
+
+| Concern | Choice | Why |
+|---|---|---|
+| Shell | zsh + antidote + powerlevel10k | Fast, no framework; plugins are a plain text list |
+| Runtimes | mise, one shared config | Python, Node, Go, and the IaC tooling in one pinned file |
+| JVM | SDKMAN | Better JVM story than mise: vendors, GraalVM, per-project `sdk use` |
+| Python CLIs | uv | Isolated tool installs, no global pip |
+| Terminal | WezTerm | Same config and same keys on both platforms |
+| Multiplexer | tmux, OSC 52 clipboard | Copy behaves identically on macOS and Ubuntu, and over SSH |
+| Editor | Neovim + lazy.nvim | |
+| Prompt | powerlevel10k with instant prompt | |
+
+**One runtime manager, not several.** mise owns Python, Node and Go; SDKMAN
+owns the JVM. `pyenv`, `rbenv`, `nodenv`, `nvm`, `asdf`, `goenv` and `jenv` all
+shadow the mise shims for the same runtime, and which version you get then
+depends on PATH order rather than on the config in this repo. `--verify` warns
+when it finds one, and reports whether `node` and `python` actually resolve
+through mise.
+
+**The Brewfile is the source of truth for macOS packages.** If you install
+things by hand it will drift, and `--verify` will tell you so. Reconcile with
+`brew bundle install --file=mac/Brewfile`, or add what you installed to the
+Brewfile. GUI apps you do not want are worth deleting from the Brewfile rather
+than leaving permanently unsatisfied.
+
+**Nothing here pins an LLM model id.** Agent configs use each CLI's own
+default; see the Coding agents section.
+
+---
+
 ## Adding a new tool
 
 **Homebrew (macOS):** add to `mac/Brewfile`, then `brew bundle`.
@@ -394,7 +439,19 @@ Run the Linux suite locally with `cd linux && bash scripts/test.sh`.
 
 **GitHub release binary (Linux):** add a line to `linux/system/github-tools.txt` in the format `command|owner/repo|asset_regex|mode|binary`.
 
-**Both platforms:** if it's a mise-managed runtime, add to `dotfiles/.config/mise/config.toml`. If it's a CLI tool available via both Homebrew and APT, add to both `mac/Brewfile` and `linux/system/apt-packages.txt`.
+**Both platforms:** prefer a shared manifest so the two machines cannot drift.
+
+| Kind of tool | Add it to |
+|---|---|
+| Language runtime or IaC tool | `dotfiles/.config/mise/config.toml` |
+| Python CLI | `packages/uv-tools.txt` |
+| Node CLI | `packages/npm-packages.txt` |
+| JVM SDK | `packages/sdkman.txt` |
+| Version pin for something mise does not manage | `packages/versions.txt` |
+
+Only reach for `mac/Brewfile` or `linux/system/apt-packages.txt` when the tool
+genuinely has no cross-platform installer, and then add it to **both**. Adding a
+cross-platform tool to one OS list only is the usual way the machines diverge.
 
 ---
 

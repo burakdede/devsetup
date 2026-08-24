@@ -14,28 +14,38 @@ if [[ -x "$HOME/.local/bin/mise" ]]; then
     eval "$("$HOME/.local/bin/mise" activate zsh)"
 fi
 
-# ─── SDKMAN activation ────────────────────────────────────────────────────────
-# sdkman-init.sh is not nounset-safe in all versions; source it defensively.
-if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
-    sdkman_restore_nounset=0
-    if [[ -o nounset ]]; then
-        sdkman_restore_nounset=1
-        set +u
-    fi
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
-    if [[ "$sdkman_restore_nounset" == "1" ]]; then
-        set -u
-    fi
+# ─── SDKMAN activation (lazy) ─────────────────────────────────────────────────
+# Sourcing sdkman-init.sh at every shell start costs ~90ms, because it loops
+# over every installed candidate in shell to build PATH -- roughly 40% of total
+# startup with ten candidates installed.
+#
+# Almost all of that work is just putting <candidate>/current/bin on PATH,
+# which a glob does for free. So do that eagerly (java, mvn, gradle and friends
+# are available immediately) and defer the real init until the `sdk` command is
+# actually used, which is rare by comparison.
+if [[ -d "$HOME/.sdkman/candidates" ]]; then
+    export SDKMAN_DIR="$HOME/.sdkman"
 
-    # SDKMAN internals are not fully nounset-safe; wrap sdk calls defensively.
-    if typeset -f sdk >/dev/null 2>&1; then
-        functions -c sdk __sdkman_inner
-        sdk() {
-            emulate -L zsh
-            set +u
-            __sdkman_inner "$@"
-        }
-    fi
+    # (N/) = ignore non-matches, directories only.
+    for _sdkman_bin in "$SDKMAN_DIR"/candidates/*/current/bin(N/); do
+        path=("$_sdkman_bin" $path)
+    done
+    unset _sdkman_bin
+
+    # Tools that read JAVA_HOME rather than searching PATH (Gradle, Maven,
+    # jdtls) still need it, and sdkman-init would normally have set it.
+    [[ -d "$SDKMAN_DIR/candidates/java/current" ]] \
+        && export JAVA_HOME="$SDKMAN_DIR/candidates/java/current"
+
+    # First call to `sdk` replaces this stub with the real implementation.
+    # SDKMAN internals are not nounset-safe, hence the defensive set +u.
+    sdk() {
+        unfunction sdk
+        emulate -L zsh
+        set +u
+        source "$SDKMAN_DIR/bin/sdkman-init.sh"
+        sdk "$@"
+    }
 fi
 
 # ─── Prompt + plugin profile ──────────────────────────────────────────────────
