@@ -610,10 +610,9 @@ install_mise() {
         fi
     fi
 
-    local mise_activation_line
-    # shellcheck disable=SC2016
-    mise_activation_line='eval "$("$HOME/.local/bin/mise" activate bash)"'
-    ensure_line_in_file "$mise_activation_line" "$HOME/.bashrc"
+    # No longer appends an activation line to ~/.bashrc: that file is now a
+    # tracked dotfile (dotfiles/.bashrc) which activates mise itself, and
+    # appending to it would fight the symlink.
     export PATH="$HOME/.local/bin:$PATH"
     eval "$("$MISE_BIN" activate bash)"
 }

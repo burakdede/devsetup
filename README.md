@@ -132,6 +132,7 @@ Everything in `dotfiles/` is cross-platform. OS-specific paths are handled insid
 - **`.zshenv`** -- XDG dirs, `$EDITOR`, and user PATH entries; sourced by every zsh process
 - **`.zprofile`** -- Homebrew init on macOS, mise shims; sourced by login shells only
 - **`.zshrc`** -- fzf key-bindings source differs by OS (detected at runtime)
+- **`.bashrc` / `.bash_profile`** -- the same environment for bash; see below
 - **`wezterm.lua`** -- uses `wezterm.target_triple:find("darwin")` to switch modifier keys
 - **`tmux.conf`** -- fully cross-platform
 - **`nvim/`** -- fully cross-platform
@@ -191,6 +192,26 @@ window for fzf's Ctrl-T.
 guarded with a `command -v` fallback to `less`, because git treats a missing
 pager as a fatal error and this file is symlinked on machines where the system
 step may not have run yet.
+
+**bash is kept in step with zsh.** zsh is the daily driver, but bash still gets
+used: scripts, rescue shells, remote boxes without zsh. It previously had *no*
+config in this repo, and the consequence was not cosmetic -- mise was never
+activated there, so `node` resolved to Homebrew's v26 in bash while zsh
+correctly used the pinned 24.18.1. A script would behave differently depending
+on which shell ran it.
+
+`dotfiles/.bashrc` now mirrors `.zshrc` on the things that matter: PATH (with a
+hand-rolled de-duplicator, since bash has no `typeset -U`), mise activation,
+the SDKMAN environment, aliases, fzf, bat, and clipboard parity.
+`.bash_profile` just sources it, so there is one file rather than two that
+drift.
+
+It is deliberately *not* a second daily driver: no plugin framework, and a
+small hand-written prompt rather than a second prompt framework, since
+powerlevel10k is zsh-only. `--verify` checks that both shells resolve `node`
+identically and that mise is active in bash.
+
+Startup: zsh ~0.10s, bash ~0.16s.
 
 **SDKMAN is loaded lazily.** `sdkman-init.sh` loops over every installed
 candidate in shell to build PATH, which costs ~90ms per shell with ten

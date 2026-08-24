@@ -257,6 +257,40 @@ verify_shared() {
         fi
     done
 
+    # zsh is the daily driver, but bash gets used for scripts, rescue shells and
+    # remote boxes. It previously had no config in this repo at all, which meant
+    # mise was never activated there and `node` silently resolved to a different
+    # version than in zsh. Check the two agree.
+    section "bash parity"
+    local bash_bin
+    bash_bin="$(command -v bash 2>/dev/null || true)"
+    if [[ -z "$bash_bin" ]]; then
+        warn "bash not found"
+    else
+        check_symlink "$HOME/.bashrc"
+        check_symlink "$HOME/.bash_profile"
+
+        local bash_node zsh_node
+        bash_node="$("$bash_bin" -lic 'command -v node' 2>/dev/null | tail -1)"
+        zsh_node="$(zsh -lic 'command -v node' 2>/dev/null | tail -1)"
+        if [[ -z "$bash_node" || -z "$zsh_node" ]]; then
+            warn "could not resolve node in both shells"
+        elif [[ "$bash_node" == "$zsh_node" ]]; then
+            ok "bash and zsh resolve node identically"
+        else
+            fail "node differs by shell -- bash: $bash_node / zsh: $zsh_node"
+        fi
+
+        # Single-quoted on purpose: MISE_SHELL must expand inside the bash
+        # login shell being tested, not in this one.
+        # shellcheck disable=SC2016
+        if "$bash_bin" -lic '[[ -n "${MISE_SHELL:-}" ]]' 2>/dev/null; then
+            ok "mise is activated in bash"
+        else
+            fail "mise is NOT activated in bash (runtime versions will differ from zsh)"
+        fi
+    fi
+
     section "Editor"
     check_cmd nvim
     check_file "$HOME/.config/nvim/init.lua" "nvim init.lua"
