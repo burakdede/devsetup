@@ -420,6 +420,19 @@ depends on PATH order rather than on the config in this repo. `--verify` warns
 when it finds one, and reports whether `node` and `python` actually resolve
 through mise.
 
+If you are migrating from one of them, uninstall it rather than leaving it
+alongside mise, and move its pinned versions into
+`dotfiles/.config/mise/config.toml` first:
+
+```bash
+brew uninstall pyenv rbenv && rm -rf ~/.pyenv ~/.rbenv
+```
+
+**Agent skills are not vendored here.** Claude Code loads skills from
+`~/.claude/skills` and its own plugin cache, never from
+`~/.config/agents/skills`. Anything copied there is dead weight that the plugin
+cache regenerates, so it is gitignored. Only `instructions.md` is shared.
+
 **The Brewfile is the source of truth for macOS packages.** If you install
 things by hand it will drift, and `--verify` will tell you so. Reconcile with
 `brew bundle install --file=mac/Brewfile`, or add what you installed to the
