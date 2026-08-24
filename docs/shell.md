@@ -126,7 +126,7 @@ To force everything to rebuild:
 
 ```bash
 rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/init "${XDG_CACHE_HOME:-$HOME/.cache}"/bash/init
-rm -f  "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-* ~/Projects/machinist/dotfiles/*.zwc
+rm -f  "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-* <clone>/dotfiles/*.zwc
 ```
 
 One case is genuinely slow and is not ours: the first shell after a `mise`
@@ -150,10 +150,10 @@ macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are syml
 
 ```bash
 # edit from anywhere
-$EDITOR ~/Projects/machinist/dotfiles/.config/nvim/init.lua
+$EDITOR <clone>/dotfiles/.config/nvim/init.lua
 
 # commit and push -- both machines pick it up on next git pull
-cd ~/Projects/machinist
+cd <clone>
 git commit -am "nvim: add keymap for telescope"
 git push
 ```
@@ -161,7 +161,7 @@ git push
 ### Pulling changes on the other machine
 
 ```bash
-cd ~/Projects/machinist
+cd <clone>
 git pull
 # dotfiles are symlinks -- changes are live immediately, no re-run needed
 # unless you added a new dotfile that requires a new symlink:

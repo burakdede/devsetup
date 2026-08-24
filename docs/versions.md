@@ -44,7 +44,7 @@ to be granted once on each machine. If you ever hit the error, either re-run
 `./run.sh --only dotfiles` or do it directly:
 
 ```bash
-mise trust ~/Projects/machinist/dotfiles/.config/mise/config.toml
+mise trust <clone>/dotfiles/.config/mise/config.toml
 ```
 
 `--verify` checks this and fails if the config is untrusted.

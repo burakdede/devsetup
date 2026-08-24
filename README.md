@@ -1,13 +1,30 @@
 # machinist
 
-Developer machine setup for macOS and Ubuntu LTS. One clone, two platforms,
-one shared set of configs.
+> A machinist doesn't start by cutting metal. They set up the machine first —
+> square the vise, zero the tool, check the travel — because everything made
+> afterwards inherits that setup.
+
+Same idea, for a developer box. One clone turns a fresh macOS or Ubuntu LTS
+machine into a workshop that is already set up: shell, editor, terminal,
+multiplexer, runtimes, and the coding agents that use them — configured
+identically on both, from one shared set of files.
+
+It is opinionated, because a shop where every tool sits in a different place on
+every bench is not a shop. What it decides for you, and why, is written down in
+[Design decisions](docs/design.md).
 
 ```bash
-git clone git@github.com:burakdede/machinist.git ~/Projects/machinist
-cd ~/Projects/machinist
+git clone https://github.com/burakdede/machinist.git
+cd machinist
 ./install.sh
 ```
+
+HTTPS on purpose: a fresh machine has no SSH key yet — the `git` step is what
+creates one. Switch the remote to SSH afterwards if you prefer.
+
+Clone it wherever you like. Nothing depends on the path: every script resolves
+its own location, and the dotfile symlinks point back at whatever clone you ran
+`install.sh` from.
 
 That is the whole thing. `install.sh` detects the operating system and runs the
 right bootstrap, so there is nothing to remember per machine.

@@ -2,8 +2,8 @@
 # macOS Setup -- Orchestration Script
 #
 # ── Quick start ───────────────────────────────────────────────────────────────
-#   git clone git@github.com:burakdede/machinist.git ~/Projects/machinist
-#   cd ~/Projects/machinist/mac
+#   git clone https://github.com/burakdede/machinist.git
+#   cd <clone>/mac
 #
 #   ./run.sh
 #
@@ -26,7 +26,7 @@
 #
 #
 # To pull the latest dotfiles (after a git pull on machinist):
-#   cd ~/Projects/machinist && git pull
+#   cd <clone> && git pull
 #
 #
 # ── Environment variable overrides ───────────────────────────────────────────

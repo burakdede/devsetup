@@ -5,7 +5,7 @@
 ## Verification
 
 ```bash
-cd ~/Projects/machinist && ./install.sh --verify
+./install.sh --verify   # from anywhere in the clone
 ```
 
 Prints a pass/fail/warn table. The cross-platform checks live in
