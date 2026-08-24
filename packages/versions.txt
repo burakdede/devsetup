@@ -1,0 +1,23 @@
+# Version pins shared by macOS and Ubuntu.
+#
+# These are the last known-good stable releases, read by load_versions() in
+# each platform's utils.sh.
+#
+# ── Scope ─────────────────────────────────────────────────────────────────────
+# Only tools that mise does NOT manage belong here. Language runtimes and IaC
+# tooling are pinned in dotfiles/.config/mise/config.toml instead, so that each
+# of those versions has exactly one home.
+#
+# To upgrade a tool:
+#   1. Update the version here.
+#   2. Set MACSETUP_UPGRADE=1 / LINUX_SETUP_UPGRADE=1 and re-run the step.
+#   3. Verify, then commit the bump.
+#
+# Neovim releases:  https://github.com/neovim/neovim/releases
+# mise releases:    https://github.com/jdx/mise/releases
+# rustup channels:  https://forge.rust-lang.org/infra/channel-layout.html
+
+NEOVIM_VERSION=0.12.3
+MISE_VERSION=2025.11.11
+RUST_VERSION=1.94.1
+NERD_FONTS_VERSION=3.3.0

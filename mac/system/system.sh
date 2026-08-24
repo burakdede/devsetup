@@ -124,6 +124,33 @@ install_mise_runtimes() {
     log_success "Runtimes installed: $("$MISE_BIN" ls --current 2>/dev/null | awk '{printf "%s@%s ", $1, $2}')"
 }
 
+# Rust comes from rustup on both platforms rather than from Homebrew, so that
+# `rustup component add` / `rustup target add` work the same way on each and
+# the toolchain version is pinned from packages/versions.txt.
+install_rust() {
+    echo_header "Rust via rustup"
+
+    if should_skip_step RUST; then
+        log_info "Skipping Rust (MACSETUP_SKIP_RUST is set)."
+        return 0
+    fi
+    if [[ -z "${RUST_VERSION:-}" ]]; then
+        log_warn "RUST_VERSION not set in packages/versions.txt; skipping Rust."
+        return 0
+    fi
+
+    if ! command_exists rustup; then
+        curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path
+        # shellcheck source=/dev/null
+        [[ -r "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+    else
+        log_info "rustup is already installed."
+    fi
+
+    rustup toolchain install "$RUST_VERSION" --profile minimal --no-self-update
+    rustup default "$RUST_VERSION"
+}
+
 install_uv_tools() {
     echo_header "uv tools"
 
@@ -165,6 +192,7 @@ main() {
     install_brew_packages
     install_mise
     install_mise_runtimes
+    install_rust
     install_uv_tools
     install_npm_clis
 

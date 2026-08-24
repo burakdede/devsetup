@@ -145,7 +145,8 @@ load_versions() {
     if [[ -z "$versions_file" ]]; then
         local utils_dir
         utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        versions_file="$utils_dir/../versions.txt"
+        # Shared with the other platform -- see packages/versions.txt.
+        versions_file="$utils_dir/../../packages/versions.txt"
     fi
 
     if [[ ! -f "$versions_file" ]]; then

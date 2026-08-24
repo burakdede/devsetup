@@ -25,6 +25,17 @@ xz-utils
 zip
 zstd
 
+# CLI tools that macOS gets from the Brewfile; keep the two in step.
+cmake
+htop
+moreutils
+nmap
+
+# Clipboard. xclip/xsel cover X11; wl-clipboard is required under Wayland,
+# which is the GNOME default on Ubuntu 22.04+. Neovim's clipboard=unnamedplus
+# silently stops reaching the system clipboard without the matching one.
+wl-clipboard
+
 # Modern CLI tools
 bat
 fd-find

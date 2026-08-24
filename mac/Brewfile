@@ -7,6 +7,7 @@ brew "curl", link: true  # ensure modern curl overrides system version
 brew "findutils"         # GNU find -- more powerful than BSD find
 brew "gh"
 brew "git"
+brew "git-lfs"           # large-file support; also in the Ubuntu APT list
 brew "htop"
 brew "imagemagick"
 brew "jq"
@@ -17,6 +18,7 @@ brew "ripgrep"
 brew "shellcheck"
 brew "sqlite"
 brew "tmux"
+brew "wget"              # also in the Ubuntu APT list
 brew "zsh"
 
 ########################################################################

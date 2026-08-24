@@ -27,15 +27,14 @@ GITHUB_TOOLS_FILE="$SCRIPT_DIR/github-tools.txt"
 DEB_ARCH="$(dpkg --print-architecture)"
 GNU_ARCH="$(uname -m)"
 MISE_BIN="$HOME/.local/bin/mise"
-MISE_VERSION="${MISE_VERSION:-}"   # loaded from versions.txt by load_versions below
-NODE_VERSION="${NODE_VERSION:-24.14.1}"
-GO_VERSION="${GO_VERSION:-1.26.1}"
-PYTHON_VERSION="${PYTHON_VERSION:-3.13.12}"
-RUST_VERSION="${RUST_VERSION:-1.94.1}"
-TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.8.5}"
-TFLINT_VERSION="${TFLINT_VERSION:-0.53.0}"
-TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.67.16}"
-TERRAFORM_DOCS_VERSION="${TERRAFORM_DOCS_VERSION:-0.18.0}"
+# Both loaded from packages/versions.txt by load_versions. No hardcoded
+# fallbacks: a stale default here would be a second source of truth that
+# silently disagrees with the pin file.
+MISE_VERSION="${MISE_VERSION:-}"
+RUST_VERSION="${RUST_VERSION:-}"
+
+# python, node, go and the IaC tools are NOT pinned here. They live in the
+# shared dotfiles/.config/mise/config.toml and are installed with `mise install`.
 
 ensure_core_packages() {
     sudo_run apt-get update
@@ -614,11 +613,26 @@ install_mise() {
     eval "$("$MISE_BIN" activate bash)"
 }
 
-install_node_runtime() {
-    echo_header "Node.js via mise"
+# Install every tool pinned in the shared mise config
+# (dotfiles/.config/mise/config.toml): python, node, go and the IaC tooling.
+#
+# Deliberately `mise install`, NOT `mise use --global`. The latter rewrites
+# ~/.config/mise/config.toml, which is a symlink into this repo, so it would
+# silently edit tracked config during a bootstrap run.
+install_mise_runtimes() {
+    echo_header "Runtimes and tools via mise"
     install_mise
-    "$MISE_BIN" use --global "node@${NODE_VERSION}"
+
+    if [[ ! -f "$HOME/.config/mise/config.toml" ]]; then
+        log_warn "No ~/.config/mise/config.toml yet. Run the dotfiles step first."
+        return 0
+    fi
+
+    "$MISE_BIN" install
+    log_success "mise tools installed."
 }
+
+
 
 setup_ufw() {
     echo_header "ufw firewall"
@@ -639,19 +653,7 @@ setup_ufw() {
     log_info "ufw enabled: deny incoming, allow outgoing, SSH allowed."
 }
 
-install_go_runtime() {
-    echo_header "Go via mise"
-    install_mise
-    "$MISE_BIN" use --global "go@${GO_VERSION}"
-}
 
-install_python_runtime() {
-    echo_header "Python via mise"
-    install_mise
-    MISE_PYTHON_COMPILE=0 \
-    MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped \
-        "$MISE_BIN" use --global "python@${PYTHON_VERSION}"
-}
 
 install_rust() {
     echo_header "Rust via rustup"
@@ -670,34 +672,11 @@ install_rust() {
     rustup default "$RUST_VERSION"
 }
 
-install_iac_tools() {
-    echo_header "IaC tools via mise"
-    install_mise
-
-    local tool_spec tool_name tool_version
-    local tool_specs=(
-        "terraform@${TERRAFORM_VERSION}"
-        "tflint@${TFLINT_VERSION}"
-        "terragrunt@${TERRAGRUNT_VERSION}"
-        "terraform-docs@${TERRAFORM_DOCS_VERSION}"
-    )
-
-    for tool_spec in "${tool_specs[@]}"; do
-        tool_name="${tool_spec%%@*}"
-        tool_version="${tool_spec#*@}"
-        if [[ -z "$tool_version" ]]; then
-            log_warn "Missing version pin for ${tool_name}; skipping."
-            continue
-        fi
-        log_info "Installing ${tool_name} ${tool_version} via mise"
-        "$MISE_BIN" use --global "${tool_name}@${tool_version}"
-    done
-}
 
 install_npm_clis() {
     echo_header "Node-based tooling"
 
-    install_node_runtime
+    install_mise_runtimes
 
     local list package_name
     for list in "$NPM_PACKAGES_FILE" "$NPM_AGENT_CLIS_FILE"; do
@@ -708,7 +687,8 @@ install_npm_clis() {
 
         while IFS= read -r package_name; do
             log_info "Installing npm package: $package_name"
-            "$MISE_BIN" exec "node@${NODE_VERSION}" -- npm install --global "$package_name"
+            # No version here: mise resolves node from the shared config.
+            "$MISE_BIN" exec -- npm install --global "$package_name"
         done < <(read_list_file "$list")
     done
 }
@@ -824,20 +804,14 @@ main() {
         install_npm_clis
     fi
 
-    if ! should_skip_step GO; then
-        install_go_runtime
-    fi
-
-    if ! should_skip_step PYTHON; then
-        install_python_runtime
+    # python, node, go and the IaC tooling all come from the shared mise
+    # config in one call; there is no per-runtime step any more.
+    if ! should_skip_step MISE_TOOLS; then
+        install_mise_runtimes
     fi
 
     if ! should_skip_step RUST; then
         install_rust
-    fi
-
-    if ! should_skip_step IAC_TOOLS; then
-        install_iac_tools
     fi
 
     if ! should_skip_step UFW; then

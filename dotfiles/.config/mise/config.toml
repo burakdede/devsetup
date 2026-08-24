@@ -1,10 +1,26 @@
-# mise global tool versions
+# mise global tool versions -- the single source of truth for everything mise
+# manages, shared by macOS and Ubuntu.
+#
 # https://mise.jdx.dev/configuration.html
 #
+# This file is symlinked to ~/.config/mise/config.toml on both machines, so a
+# version bump here reaches both after a `git pull` plus `mise install`.
+#
+# IMPORTANT: the setup scripts run `mise install`, never `mise use --global`.
+# `use --global` REWRITES this file, and because it is a symlink into the repo
+# that means a bootstrap run would silently edit tracked config and undo the
+# pins below. Add tools by editing this file, not by running `mise use -g`.
+#
 # Override per-project in <project>/.mise.toml or <project>/.tool-versions.
-# Add new tools: mise use --global <tool>@<version>
 
 [tools]
+# ─── Language runtimes ────────────────────────────────────────────────────────
 python = "3.13"
 node   = "24.18.1"
-go     = "1.23"
+go     = "1.26.1"
+
+# ─── Infrastructure as code ───────────────────────────────────────────────────
+terraform      = "1.8.5"
+tflint         = "0.53.0"
+terragrunt     = "0.67.16"
+terraform-docs = "0.18.0"

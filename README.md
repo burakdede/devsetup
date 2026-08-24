@@ -228,12 +228,23 @@ Edit `dotfiles/.config/agents/instructions.md` to update instructions for all ag
 
 ## Versions
 
-Runtime versions are pinned in platform-specific `versions.txt` files:
+Every version is pinned in exactly one place, shared by both platforms.
 
-- `mac/versions.txt` -- Neovim, mise, Node, Nerd Fonts
-- `linux/versions.txt` -- Neovim, mise, Node, Go, Python, Rust, Nerd Fonts, IaC tools
+| Pinned in | Covers |
+|---|---|
+| `dotfiles/.config/mise/config.toml` | Everything mise manages: Python, Node, Go, Terraform, tflint, Terragrunt, terraform-docs |
+| `packages/versions.txt` | Everything mise does not: Neovim, mise itself, Rust toolchain, Nerd Fonts |
 
-Global mise tool versions (Python, Node, Go) are in `dotfiles/.config/mise/config.toml` and override these defaults per-project via `.mise.toml` files.
+There are no per-platform `versions.txt` files. Both machines resolve the same
+pins, so `node --version` gives the same answer on each.
+
+**Do not run `mise use --global`.** It rewrites `~/.config/mise/config.toml`,
+which is a symlink into this repo, so it would silently edit tracked config.
+The setup scripts run `mise install`, which only reads. To change a runtime
+version, edit `dotfiles/.config/mise/config.toml` and commit it.
+
+Per-project overrides still work normally through a project's own `.mise.toml`
+or `.tool-versions`.
 
 ---
 

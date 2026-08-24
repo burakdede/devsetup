@@ -125,29 +125,34 @@ CLI tool to an Ubuntu-only list is the usual way the two machines drift apart.
 
 ## Version Pins
 
-Pinned versions live in [`versions.txt`](../versions.txt).
+Pins are shared with macOS and split by who installs the tool. There is no
+longer a `linux/versions.txt`.
 
-This is the right place to update:
+**mise-managed** -- [`dotfiles/.config/mise/config.toml`](../../dotfiles/.config/mise/config.toml):
 
-- `mise`
-- Node
-- Go
-- Python
-- Rust
-- Terraform
-- TFLint
-- Terragrunt
-- terraform-docs
+- Python, Node, Go
+- Terraform, TFLint, Terragrunt, terraform-docs
+
+**Everything else** -- [`packages/versions.txt`](../../packages/versions.txt):
+
+- `mise` itself
+- Rust toolchain
 - Neovim
-- WezTerm
 - Nerd Fonts
+
+WezTerm is not pinned; the terminal step resolves the latest release and
+prefers the `.deb` matching this Ubuntu version.
 
 Upgrade flow:
 
-1. Change the version in `versions.txt`.
+1. Change the version in whichever of the two files owns that tool.
 2. Rerun the relevant step or `./run.sh`.
 3. Verify with `./run.sh --verify` and `bash scripts/test.sh`.
 4. Commit only after the new pin is stable.
+
+Never run `mise use --global` to bump a runtime. It rewrites
+`~/.config/mise/config.toml`, which is a symlink into this repo, so it edits
+tracked config as a side effect of a bootstrap run. Edit the file directly.
 
 ## Dotfiles And Personal Preferences
 
