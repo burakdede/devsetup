@@ -165,6 +165,15 @@ load_versions() {
     done < "$versions_file"
 }
 
+# Compare dotted version strings: version_ge 0.12.3 0.12.0 -> true.
+# Uses sort -V, which is present in GNU coreutils and in macOS sort.
+version_ge() {
+    local have="$1" want="$2"
+    [[ -z "$want" ]] && return 0
+    [[ "$have" == "$want" ]] && return 0
+    [[ "$(printf '%s\n%s\n' "$have" "$want" | sort -V | head -n1)" == "$want" ]]
+}
+
 flag_enabled() {
     local value="${1:-0}"
     case "$value" in

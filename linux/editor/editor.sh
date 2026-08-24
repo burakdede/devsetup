@@ -18,6 +18,16 @@ trap 'handle_error $? $LINENO' ERR
 
 load_versions
 
+# Neovim names its Linux release assets by GNU triple: nvim-linux-x86_64 and
+# nvim-linux-arm64. Never hardcode one -- an arm64 Ubuntu VM (the usual case on
+# an Apple Silicon Mac) would 404 on every install.
+NVIM_ARCH="$(uname -m)"
+case "$NVIM_ARCH" in
+    x86_64)        NVIM_ASSET_ARCH="x86_64" ;;
+    aarch64|arm64) NVIM_ASSET_ARCH="arm64" ;;
+    *)             NVIM_ASSET_ARCH="$NVIM_ARCH" ;;
+esac
+
 NVIM_INSTALL_DIR="/usr/local"
 NVIM_BIN="$NVIM_INSTALL_DIR/bin/nvim"
 # Default falls back to latest if versions.txt doesn't pin one
@@ -60,7 +70,7 @@ install_neovim() {
     # Falls back to querying the GitHub API for the latest release when no version is pinned.
     if [[ -n "$want" ]]; then
         local tag="v${want}"
-        local asset="nvim-linux-x86_64.tar.gz"
+        local asset="nvim-linux-${NVIM_ASSET_ARCH}.tar.gz"
         download_url="https://github.com/neovim/neovim/releases/download/${tag}/${asset}"
         log_info "Downloading Neovim ${want} (pinned)..."
     else
@@ -73,7 +83,8 @@ install_neovim() {
             return 0
         fi
         download_url="$(jq -r \
-            '.assets[] | select(.name | test("nvim-linux-x86_64\\.tar\\.gz$")) | .browser_download_url' \
+            --arg re "nvim-linux-${NVIM_ASSET_ARCH}\\.tar\\.gz$" \
+            '.assets[] | select(.name | test($re)) | .browser_download_url' \
             "$metadata_file" | head -n1)"
     fi
 

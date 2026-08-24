@@ -56,6 +56,31 @@ install_neovim() {
     log_info "Installing Neovim via Homebrew..."
     brew install neovim
     log_success "Neovim $(installed_nvim_version) installed."
+    assert_neovim_floor
+}
+
+# macOS tracks Homebrew's stable Neovim rather than pinning an exact patch the
+# way Linux does; pinning brew to a patch release needs a custom tap, which is
+# more machinery than it is worth for an editor.
+#
+# What actually matters is the floor: nvim-treesitter's main branch requires
+# Neovim >= 0.12, and silently degrades to regex syntax below it. So treat
+# NEOVIM_VERSION from packages/versions.txt as a minimum and say so loudly if
+# Homebrew is behind it.
+assert_neovim_floor() {
+    local want="${NEOVIM_VERSION:-}"
+    local got
+    got="$(installed_nvim_version)"
+
+    [[ -z "$want" || -z "$got" ]] && return 0
+
+    if version_ge "$got" "$want"; then
+        log_success "Neovim $got meets the $want floor."
+    else
+        log_warn "Neovim $got is older than the $want floor in packages/versions.txt."
+        log_warn "nvim-treesitter (main branch) needs >= 0.12 and will fall back to"
+        log_warn "regex syntax below it. Try: brew upgrade neovim"
+    fi
 }
 
 register_shims() {
