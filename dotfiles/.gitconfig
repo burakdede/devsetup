@@ -9,8 +9,6 @@
 	autocrlf = input
 	quotepath = false
 	whitespace = trailing-space,space-before-tab,indent-with-non-tab,cr-at-eol
-	packedGitLimit = 512m
-	packedGitWindowSize = 512m
 
 # Best practices for git
 [init]
@@ -26,27 +24,44 @@
 
 # Git push
 [push]
-	# Always use --set-upstream when pushing
+	# Push the current branch to a branch of the same name.
 	default = current
+	# Create the upstream branch on first push. `default = current` does NOT
+	# do this on its own -- autoSetupRemote is what replaces --set-upstream.
+	autoSetupRemote = true
 	# Auto follow tags
 	followTags = true
+
+# Git fetch
+[fetch]
+	# Drop remote-tracking refs that no longer exist upstream.
+	prune = true
 
 # Git pull
 [pull]
 	# Always rebase instead of merge
 	rebase = true
 
+# Reuse recorded conflict resolutions. Worth having with rebase-by-default,
+# since the same conflict tends to resurface on every re-rebase.
+[rerere]
+	enabled = true
+	autoUpdate = true
+
 # Git merge
 [merge]
 	strategy = ort
-	conflictstyle = diff3
-
-# Git format
-[format]
-	# Always use --pretty=format
-	pretty = format:%C(auto)%h%Creset %s %C(cyan)(%cr)%Creset%C(auto)%d%Creset
+	# zdiff3 is diff3 with the common lines hoisted out of the conflict body,
+	# which makes three-way conflicts considerably easier to read. Git 2.35+.
+	conflictstyle = zdiff3
 
 # Git log
+#
+# NOTE: format.pretty is deliberately NOT set. It applies to `git show` and
+# `git whatchanged` as well as `git log`, and a one-line format there hides
+# the commit body and author entirely -- `git show <sha>` becomes useless for
+# reading why a change was made. Use the `l` / `lg` aliases below for a
+# condensed log instead.
 [log]
 	# Default log format
 	date = relative
@@ -55,8 +70,9 @@
 [diff]
 	# Use color
 	color = true
-	# Show word differences
-	word-diff = true
+	# NOTE: word-diff is deliberately NOT set globally. It rewrites the hunk
+	# body, so `git diff > x.patch` no longer round-trips through `git apply`.
+	# Use the `dw` alias below when you want it.
 
 # Git alias (existing section remains unchanged)
 [alias]
@@ -80,19 +96,23 @@
 	cm = commit -m
 	am = commit --amend
 	amn = commit --amend --no-edit
-	add = add
 	unstage = reset HEAD --
 	undo = reset --soft HEAD~1
 
 	# Push and Pull
+	# NOTE: git ignores any alias that shadows a builtin command, so `pull`,
+	# `add`, `diff`, `remote` and `tag` cannot be aliased. Where those were
+	# defined before they were silently dead; the behaviour they wanted is
+	# now either config above (pull.rebase, color.ui) or a short name here.
 	pu = push
-	pufo = push -f origin
-	pull = pull --rebase
+	# --force-with-lease refuses to clobber commits you have not seen,
+	# unlike a bare -f. Use this instead of `push -f`.
+	pufo = push --force-with-lease origin
 
 	# Remote and Fetch
 	f = fetch
-	fa = fetch --all
-	remote = remote -v
+	fa = fetch --all --prune
+	rv = remote -v
 
 	# Cleanup
 	cleanup = gc --prune=now
@@ -100,7 +120,6 @@
 	cleanf = clean -fd
 
 	# Diff and Compare
-	diff = diff --color
 	dw = diff --word-diff
 	dc = diff --cached
 	dh = diff HEAD
@@ -112,7 +131,7 @@
 	ss = stash show -p
 
 	# Tag
-	tag = tag -a
+	ta = tag -a
 	tagd = tag -d
 	tagl = tag -l
 # Machine-local identity and overrides -- not committed to the repo.
