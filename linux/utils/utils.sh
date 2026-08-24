@@ -174,15 +174,22 @@ flag_enabled() {
 }
 
 # Check LINUX_SETUP_SKIP_<STEP>=1 env var.
+# Skip a step: DEVSETUP_SKIP_<STEP>=1
+#
+# The legacy MACSETUP_SKIP_* / LINUX_SETUP_SKIP_* spellings are still honoured
+# so older notes and scripts keep working, but DEVSETUP_* is the documented
+# name and is identical on both platforms.
 should_skip_step() {
     local step_name="$1"
-    local var_name="LINUX_SETUP_SKIP_${step_name}"
-    flag_enabled "${!var_name:-0}"
+    local shared_var="DEVSETUP_SKIP_${step_name}"
+    local legacy_var="LINUX_SETUP_SKIP_${step_name}"
+    flag_enabled "${!shared_var:-${!legacy_var:-0}}"
 }
 
-# Check LINUX_SETUP_UPGRADE=1 env var -- forces reinstall even if tool is present.
+# Force reinstall even when a tool is already present: DEVSETUP_UPGRADE=1
+# (legacy LINUX_SETUP_UPGRADE is still honoured).
 upgrade_enabled() {
-    flag_enabled "${LINUX_SETUP_UPGRADE:-0}"
+    flag_enabled "${DEVSETUP_UPGRADE:-${LINUX_SETUP_UPGRADE:-0}}"
 }
 
 backup_gnome_settings() {

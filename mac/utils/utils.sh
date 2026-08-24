@@ -164,13 +164,20 @@ flag_enabled() {
 }
 
 # Check MACSETUP_SKIP_<STEP>=1 env var.
+# Skip a step: DEVSETUP_SKIP_<STEP>=1
+#
+# The legacy MACSETUP_SKIP_* / LINUX_SETUP_SKIP_* spellings are still honoured
+# so older notes and scripts keep working, but DEVSETUP_* is the documented
+# name and is identical on both platforms.
 should_skip_step() {
     local step_name="$1"
-    local var_name="MACSETUP_SKIP_${step_name}"
-    flag_enabled "${!var_name:-0}"
+    local shared_var="DEVSETUP_SKIP_${step_name}"
+    local legacy_var="MACSETUP_SKIP_${step_name}"
+    flag_enabled "${!shared_var:-${!legacy_var:-0}}"
 }
 
-# Check MACSETUP_UPGRADE=1 env var -- forces reinstall even if tool is present.
+# Force reinstall even when a tool is already present: DEVSETUP_UPGRADE=1
+# (legacy MACSETUP_UPGRADE is still honoured).
 upgrade_enabled() {
-    flag_enabled "${MACSETUP_UPGRADE:-0}"
+    flag_enabled "${DEVSETUP_UPGRADE:-${MACSETUP_UPGRADE:-0}}"
 }

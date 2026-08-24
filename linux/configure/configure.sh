@@ -17,7 +17,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 LOCAL_GITCONFIG="$HOME/.gitconfig.local"
-PROMPT_TIMEOUT_SECONDS="${LINUX_SETUP_PROMPT_TIMEOUT_SECONDS:-60}"
+PROMPT_TIMEOUT_SECONDS="${DEVSETUP_PROMPT_TIMEOUT_SECONDS:-${LINUX_SETUP_PROMPT_TIMEOUT_SECONDS:-60}}"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -88,20 +88,25 @@ configure_git_identity() {
     current_email="$(git_local_get user.email || git_global_get user.email)"
 
     # Non-interactive/automated seeding support.
-    if [[ -n "${LINUX_SETUP_GIT_NAME:-}" ]]; then
-        current_name="${LINUX_SETUP_GIT_NAME}"
+    # DEVSETUP_* is the documented name on both platforms; the per-platform
+    # spelling is kept as a fallback so older notes keep working.
+    local DEVSETUP_GIT_NAME="${DEVSETUP_GIT_NAME:-${LINUX_SETUP_GIT_NAME:-}}"
+    local DEVSETUP_GIT_EMAIL="${DEVSETUP_GIT_EMAIL:-${LINUX_SETUP_GIT_EMAIL:-}}"
+
+    if [[ -n "${DEVSETUP_GIT_NAME:-}" ]]; then
+        current_name="${DEVSETUP_GIT_NAME}"
     fi
-    if [[ -n "${LINUX_SETUP_GIT_EMAIL:-}" ]]; then
-        current_email="${LINUX_SETUP_GIT_EMAIL}"
+    if [[ -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
+        current_email="${DEVSETUP_GIT_EMAIL}"
     fi
 
-    if [[ -n "${LINUX_SETUP_GIT_NAME:-}" && -n "${LINUX_SETUP_GIT_EMAIL:-}" ]]; then
+    if [[ -n "${DEVSETUP_GIT_NAME:-}" && -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
         touch "$LOCAL_GITCONFIG"
-        git config --file "$LOCAL_GITCONFIG" user.name  "$LINUX_SETUP_GIT_NAME"
-        git config --file "$LOCAL_GITCONFIG" user.email "$LINUX_SETUP_GIT_EMAIL"
+        git config --file "$LOCAL_GITCONFIG" user.name  "$DEVSETUP_GIT_NAME"
+        git config --file "$LOCAL_GITCONFIG" user.email "$DEVSETUP_GIT_EMAIL"
         log_success "Git identity written from environment variables to $LOCAL_GITCONFIG"
-        log_info "  name:  $LINUX_SETUP_GIT_NAME"
-        log_info "  email: $LINUX_SETUP_GIT_EMAIL"
+        log_info "  name:  $DEVSETUP_GIT_NAME"
+        log_info "  email: $DEVSETUP_GIT_EMAIL"
         return 0
     fi
 
@@ -146,7 +151,7 @@ configure_git_identity() {
 main() {
     # Allow non-interactive seeding via environment variables so CI and
     # automated setups can pre-configure git identity without a TTY.
-    if [[ -n "${LINUX_SETUP_GIT_NAME:-}" && -n "${LINUX_SETUP_GIT_EMAIL:-}" ]]; then
+    if [[ -n "${DEVSETUP_GIT_NAME:-}" && -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
         configure_git_identity
         echo_header "Configuration complete"
         log_success "Your machine-local settings are in $LOCAL_GITCONFIG"
@@ -154,9 +159,16 @@ main() {
         return 0
     fi
 
-    if ! is_interactive; then
-        log_info "Non-interactive environment detected; skipping configure step."
-        log_info "Run 'bash configure/configure.sh' manually to set up git identity."
+    # A non-interactive shell can still be fully configured when the identity
+    # is supplied by environment, which is the entire point of those variables
+    # (CI, cloud-init, an unattended re-image). Only bail when there is both no
+    # TTY to prompt on and nothing to work from.
+    if ! is_interactive \
+        && [[ -z "${DEVSETUP_GIT_NAME:-${LINUX_SETUP_GIT_NAME:-}}" \
+           || -z "${DEVSETUP_GIT_EMAIL:-${LINUX_SETUP_GIT_EMAIL:-}}" ]]; then
+        log_info "Non-interactive environment and no git identity in the environment."
+        log_info "Either run manually:  bash configure/configure.sh"
+        log_info "or pre-seed it:       DEVSETUP_GIT_NAME=... DEVSETUP_GIT_EMAIL=... ./run.sh --only configure"
         return 0
     fi
 

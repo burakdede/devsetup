@@ -55,6 +55,30 @@ cd ~/Projects/devsetup/linux
 
 Both scripts are interactive on first run. Use `--skip-git` to skip the SSH key setup (useful for headless/CI runs).
 
+### Environment variables
+
+The same names work on both platforms:
+
+| Variable | Effect |
+|---|---|
+| `DEVSETUP_SKIP_<STEP>=1` | Skip one step, e.g. `DEVSETUP_SKIP_SDK=1` |
+| `DEVSETUP_UPGRADE=1` | Re-install tools even when already present |
+| `DEVSETUP_GIT_NAME` / `_EMAIL` | Pre-seed git identity for an unattended run |
+| `DEVSETUP_LOG_FILE` | Override the run log path |
+| `DEVSETUP_PROMPT_TIMEOUT_SECONDS` | Timeout for interactive prompts (default 60) |
+
+The older `MACSETUP_*` and `LINUX_SETUP_*` spellings still work, but they were
+gratuitously different between the two machines. Genuinely Ubuntu-only knobs
+(GNOME fonts, cursor size, wallpapers) keep the `LINUX_SETUP_*` prefix, since
+they have no macOS counterpart.
+
+A fully unattended install:
+
+```bash
+DEVSETUP_GIT_NAME="Your Name" DEVSETUP_GIT_EMAIL="you@example.com" \
+  ./run.sh --skip-git
+```
+
 ---
 
 ## What gets installed
@@ -76,8 +100,8 @@ Both scripts are interactive on first run. Use `--skip-git` to skip the SSH key 
 | `macos` | macOS system defaults via `defaults write` |
 
 Run a single step: `./run.sh --only editor`  
-Skip a step: `MACSETUP_SKIP_SDK=1 ./run.sh`  
-Re-install: `MACSETUP_UPGRADE=1 ./run.sh --only neovim`
+Skip a step: `DEVSETUP_SKIP_SDK=1 ./run.sh`  
+Re-install: `DEVSETUP_UPGRADE=1 ./run.sh --only editor`
 
 ### Linux (`linux/`)
 
@@ -96,8 +120,8 @@ Re-install: `MACSETUP_UPGRADE=1 ./run.sh --only neovim`
 | `settings` | GNOME desktop settings (font, scaling, cursor) |
 
 Run a single step: `./run.sh --only editor`  
-Skip a step: `LINUX_SETUP_SKIP_SDK=1 ./run.sh`  
-Re-install: `LINUX_SETUP_UPGRADE=1 ./run.sh --only editor`
+Skip a step: `DEVSETUP_SKIP_SDK=1 ./run.sh`  
+Re-install: `DEVSETUP_UPGRADE=1 ./run.sh --only editor`
 
 ---
 
