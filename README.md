@@ -57,10 +57,10 @@ just bench      # shell startup, both shells
 | Topic | What is in it |
 |---|---|
 | [Shell](docs/shell.md) | zsh and bash config, PATH rules, startup speed, aliases |
-| [Terminal](docs/terminal.md) | WezTerm and tmux, keybindings, fixing input problems |
+| [Terminal](docs/terminal.md) | WezTerm and tmux, keybindings, theming, fixing input problems |
 | [Neovim](docs/neovim.md) | Plugins, LSP, treesitter, everyday workflows |
 | [JVM toolchain](docs/jvm.md) | SDKMAN, GraalVM, Maven and Gradle |
-| [Git](docs/git.md) | Config decisions, aliases, the global gitignore |
+| [Git](docs/git.md) | Config decisions, git-lfs and ssh wiring, the global gitignore |
 | [Coding agents](docs/agents.md) | One instructions file shared by Claude Code, Codex and OpenCode |
 | [Versions and packages](docs/versions.md) | Where each version is pinned, how to add a tool |
 | [Verification and CI](docs/ci.md) | What `--verify` checks, what CI covers, post-install state |

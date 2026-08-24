@@ -31,6 +31,29 @@ than falling back to XWayland. XWayland costs fractional scaling and gives
 blurry text on HiDPI, which is the common case on modern GNOME. If your
 compositor misbehaves, export `WEZTERM_DISABLE_WAYLAND=1` in `~/.zshrc.local`.
 
+## One theme, four tools
+
+The colour scheme is Catppuccin Mocha, and it is set in four places that must
+agree or the shell stops looking like a single environment:
+
+| Tool | Where |
+|---|---|
+| WezTerm | `dotfiles/.config/wezterm/wezterm.lua` (`color_scheme`) |
+| Neovim | `dotfiles/.config/nvim/lua/plugins/ui.lua` (`colorscheme`) |
+| bat | `dotfiles/.config/bat/config` (`--theme`) |
+| delta | `dotfiles/.gitconfig` (`delta.syntax-theme`) |
+
+delta renders through bat, so it takes a bat theme name rather than one of its
+own. Catppuccin Mocha ships built into bat, so none of this needs a theme file
+or a `bat cache --build`. `./install.sh --verify` fails the "one theme" check
+when the four drift apart, which is what happens when you change one and forget
+the rest.
+
+`eza` is aliased with `--icons` because the JetBrainsMono Nerd Font is installed
+by the system step and is what WezTerm renders with. On a terminal without that
+font the icons show as tofu; drop `--icons` from the aliases in `.zshrc` and
+`.bashrc` if you use one.
+
 ## Terminal input problems
 
 If typing into the terminal produces duplicated characters, stray spaces, or

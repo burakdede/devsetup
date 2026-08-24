@@ -173,9 +173,11 @@ bindkey -e                    # emacs key bindings (change to -v for vi mode)
 # ─── Aliases ──────────────────────────────────────────────────────────────────
 # Modern replacements (installed by system.sh)
 if command -v eza &>/dev/null; then
-    alias ls='eza --group-directories-first'
-    alias ll='eza -lah --group-directories-first'
-    alias lt='eza --tree --level=2'
+    # --icons is safe here: the JetBrainsMono Nerd Font is installed by the
+    # system step and is what WezTerm renders with.
+    alias ls='eza --group-directories-first --icons'
+    alias ll='eza -lah --group-directories-first --icons --git'
+    alias lt='eza --tree --level=2 --icons'
 fi
 # bat is available as its own command -- not aliased over cat because it adds
 # decorations that interfere with piping and copy-pasting output.

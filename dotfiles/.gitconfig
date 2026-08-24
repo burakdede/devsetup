@@ -44,6 +44,9 @@
 	navigate     = true      # n / N jump between files, as in less
 	line-numbers = true
 	hyperlinks   = false
+	# delta renders through bat, so this is the same theme name bat uses and
+	# matches WezTerm and Neovim. Keep the four in step.
+	syntax-theme = Catppuccin Mocha
 [interactive]
 	# Same guard as core.pager above.
 	diffFilter = command -v delta >/dev/null 2>&1 && delta --color-only || cat
@@ -160,3 +163,8 @@
 # configure/configure.sh writes your name/email here during bootstrap.
 [include]
     path = ~/.gitconfig.local
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

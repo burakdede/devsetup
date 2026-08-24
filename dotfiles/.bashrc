@@ -128,9 +128,9 @@ shopt -s cdspell
 
 # ─── Aliases (mirroring .zshrc) ───────────────────────────────────────────────
 if command -v eza &>/dev/null; then
-    alias ls='eza --group-directories-first'
-    alias ll='eza -lah --group-directories-first'
-    alias lt='eza --tree --level=2'
+    alias ls='eza --group-directories-first --icons'
+    alias ll='eza -lah --group-directories-first --icons --git'
+    alias lt='eza --tree --level=2 --icons'
 fi
 alias vi='nvim'
 alias vim='nvim'
