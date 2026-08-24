@@ -72,6 +72,12 @@ jobs:
       - name: Dotfiles bootstrap
         run: bash run.sh --only dotfiles
 
+      # Install antidote and powerlevel10k so the startup budget below is
+      # measured against a REALLY configured shell. Without this the measured
+      # zsh has no plugins and no prompt, and the number is a meaningless floor.
+      - name: Shell bootstrap (plugins + prompt)
+        run: bash run.sh --only shell
+
       - name: Agents bootstrap
         run: bash run.sh --only agents
       # Startup speed is a stated goal, so measure it on the real target OS

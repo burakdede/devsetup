@@ -67,8 +67,16 @@ set_default_shell() {
         return 0
     fi
 
-    chsh -s "$zsh_path"
-    log_success "Default shell changed to $zsh_path (effective after next login)."
+    # Non-fatal on purpose. chsh can prompt for a password or be refused
+    # outright (managed machines, CI runners), and that must not abort a
+    # bootstrap where every other step succeeded. Say exactly how to finish it.
+    if chsh -s "$zsh_path" 2>/dev/null; then
+        log_success "Default shell changed to $zsh_path (effective after next login)."
+    else
+        log_warn "Could not change the default shell automatically."
+        log_warn "Finish it by hand with:"
+        log_warn "  chsh -s $zsh_path"
+    fi
 }
 
 wire_mise_activation() {

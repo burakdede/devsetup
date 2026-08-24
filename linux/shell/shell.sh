@@ -54,15 +54,17 @@ set_default_shell() {
         return 0
     fi
 
-    if command_exists usermod; then
-        sudo_run usermod --shell "$zsh_path" "$USER"
+    # Non-fatal on purpose. Changing the login shell can be refused (managed
+    # machines, CI runners, chsh prompting for a password), and that must not
+    # abort a bootstrap where every other step succeeded. Say how to finish it.
+    if command_exists usermod && sudo usermod --shell "$zsh_path" "$USER" 2>/dev/null; then
         log_success "Default shell changed to $zsh_path (effective after next login)."
-    elif command_exists chsh; then
-        chsh -s "$zsh_path"
+    elif command_exists chsh && chsh -s "$zsh_path" 2>/dev/null; then
         log_success "Default shell changed to $zsh_path (effective after next login)."
     else
-        log_warn "Neither usermod nor chsh found; set default shell manually:"
-        log_info "  chsh -s $zsh_path"
+        log_warn "Could not change the default shell automatically."
+        log_warn "Finish it by hand with:"
+        log_warn "  chsh -s $zsh_path"
     fi
 }
 
