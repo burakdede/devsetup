@@ -35,6 +35,8 @@ base_commands=(
     eza
     delta
     tree-sitter
+    gitleaks
+    actionlint
     uv
     mise
     claude

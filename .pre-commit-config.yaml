@@ -61,3 +61,19 @@ repos:
         args: [--verify]
         types: [file]
         files: \.lua$
+
+  # ── Secrets ─────────────────────────────────────────────────────────────────
+  # instructions.md tells every agent "never commit secrets". This is what
+  # actually enforces it: detect-private-key above only catches key files,
+  # not tokens pasted into source.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  # Would have caught the bash-4 mapfile in macos-ci.yml before CI did.
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
