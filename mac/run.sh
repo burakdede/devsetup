@@ -52,8 +52,7 @@ LOG_FILE="${DEVSETUP_LOG_FILE:-${MACSETUP_LOG_FILE:-$HOME/.local/state/devsetup/
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
 LOG_TEE_PID=""
-ORIG_STDOUT_FD=""
-ORIG_STDERR_FD=""
+SAVED_STDIO=0
 
 usage() {
     cat <<'EOF'
@@ -151,8 +150,12 @@ init_run_logging() {
 
     LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/devsetup-log.XXXXXX")"
     if mkfifo "$LOG_PIPE"; then
-        exec {ORIG_STDOUT_FD}>&1
-        exec {ORIG_STDERR_FD}>&2
+        # Fixed descriptors 3 and 4, NOT the `exec {VAR}>&1` auto-allocating
+        # form: that needs bash 4.1, and macOS still ships bash 3.2. This is the
+        # entry point of the whole bootstrap, so it has to run on a stock Mac
+        # before Homebrew (and a newer bash) exist.
+        exec 3>&1 4>&2
+        SAVED_STDIO=1
         tee -a "$LOG_FILE" < "$LOG_PIPE" &
         LOG_TEE_PID="$!"
         exec > "$LOG_PIPE" 2>&1
@@ -161,12 +164,10 @@ init_run_logging() {
 }
 
 cleanup_run_logging() {
-    if [[ -n "$ORIG_STDOUT_FD" && -n "$ORIG_STDERR_FD" ]]; then
-        exec 1>&"$ORIG_STDOUT_FD" 2>&"$ORIG_STDERR_FD" || true
-        exec {ORIG_STDOUT_FD}>&- || true
-        exec {ORIG_STDERR_FD}>&- || true
-        ORIG_STDOUT_FD=""
-        ORIG_STDERR_FD=""
+    if [[ "$SAVED_STDIO" -eq 1 ]]; then
+        exec 1>&3 2>&4 || true
+        exec 3>&- 4>&- || true
+        SAVED_STDIO=0
     fi
     [[ -n "$LOG_PIPE" && -p "$LOG_PIPE" ]] && rm -f "$LOG_PIPE" || true
     [[ -n "$LOG_TEE_PID" ]] && wait "$LOG_TEE_PID" 2>/dev/null || true

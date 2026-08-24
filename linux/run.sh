@@ -17,8 +17,7 @@ LOG_FILE="${DEVSETUP_LOG_FILE:-${LINUX_SETUP_LOG_FILE:-$HOME/.local/state/devset
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
 LOG_TEE_PID=""
-ORIG_STDOUT_FD=""
-ORIG_STDERR_FD=""
+SAVED_STDIO=0
 
 usage() {
     cat <<'EOF'
@@ -119,8 +118,11 @@ init_run_logging() {
     # Use a named pipe instead of process substitution for wider compatibility.
     LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/devsetup-log.XXXXXX")"
     if mkfifo "$LOG_PIPE"; then
-        exec {ORIG_STDOUT_FD}>&1
-        exec {ORIG_STDERR_FD}>&2
+        # Fixed descriptors 3 and 4, matching mac/run.sh. The auto-allocating
+        # `exec {VAR}>&1` form needs bash 4.1; keeping both entry points on the
+        # portable spelling means they behave identically.
+        exec 3>&1 4>&2
+        SAVED_STDIO=1
         tee -a "$LOG_FILE" < "$LOG_PIPE" &
         LOG_TEE_PID="$!"
         exec > "$LOG_PIPE" 2>&1
@@ -134,12 +136,10 @@ init_run_logging() {
 
 cleanup_run_logging() {
     # Restore stdout/stderr first so the FIFO writer closes and tee can exit.
-    if [[ -n "$ORIG_STDOUT_FD" && -n "$ORIG_STDERR_FD" ]]; then
-        exec 1>&"$ORIG_STDOUT_FD" 2>&"$ORIG_STDERR_FD" || true
-        exec {ORIG_STDOUT_FD}>&- || true
-        exec {ORIG_STDERR_FD}>&- || true
-        ORIG_STDOUT_FD=""
-        ORIG_STDERR_FD=""
+    if [[ "$SAVED_STDIO" -eq 1 ]]; then
+        exec 1>&3 2>&4 || true
+        exec 3>&- 4>&- || true
+        SAVED_STDIO=0
     fi
 
     if [[ -n "$LOG_PIPE" && -p "$LOG_PIPE" ]]; then

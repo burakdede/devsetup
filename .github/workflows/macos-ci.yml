@@ -54,8 +54,40 @@ jobs:
       - name: shellcheck
         working-directory: .
         run: |
-          mapfile -t files < <(git ls-files 'mac/*.sh' 'shared/*.sh')
-          shellcheck -x --source-path=SCRIPTDIR "${files[@]}"
+          # No mapfile here: GitHub's macOS runners use /bin/bash, which is
+          # bash 3.2, and mapfile is a bash 4 builtin.
+          git ls-files 'mac/*.sh' 'shared/*.sh' \
+            | xargs shellcheck -x --source-path=SCRIPTDIR
+
+      # macOS ships bash 3.2 (2007). The bootstrap entry point and everything
+      # it runs before Homebrew installs a newer bash MUST work under it,
+      # otherwise ./run.sh cannot bootstrap the machine it is meant to
+      # bootstrap. This job runs under that same bash 3.2, so it is the right
+      # place to catch bash 4+ syntax creeping back in.
+      - name: bash 3.2 compatibility (mac entry points)
+        working-directory: .
+        run: |
+          echo "checking with: $(bash --version | head -1)"
+          # mapfile/readarray and ${var^^}/${var,,} and declare -A are bash 4;
+          # the auto-allocating `exec {fd}>&1` form is bash 4.1.
+          #
+          # Comment lines are skipped: several of these constructs are named in
+          # comments precisely to explain why they are avoided.
+          pattern='(^|[^[:alnum:]_])(mapfile|readarray)[[:space:]]'
+          pattern="$pattern"'|\$\{[A-Za-z_][A-Za-z0-9_]*(\^\^|,,)\}'
+          pattern="$pattern"'|exec[[:space:]]+\{[A-Za-z_]'
+          pattern="$pattern"'|(declare|local)[[:space:]]+-A[[:space:]]'
+
+          fail=0
+          while IFS= read -r f; do
+            hits="$(grep -vE '^[[:space:]]*#' "$f" | grep -nE "$pattern" || true)"
+            if [ -n "$hits" ]; then
+              echo "::error file=$f::uses bash 4+ syntax but must run on stock macOS bash 3.2"
+              echo "$hits"
+              fail=1
+            fi
+          done < <(git ls-files 'mac/*.sh' 'shared/*.sh')
+          exit $fail
 
       - name: zsh -n (zsh dotfiles)
         working-directory: .
