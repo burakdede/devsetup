@@ -150,6 +150,27 @@ git pull
 
 ---
 
+## Git configuration
+
+`dotfiles/.gitconfig` is symlinked to `~/.gitconfig` and includes
+`~/.gitconfig.local` at the end, which is where your name, email and
+credential helper live. That file is machine-local and never committed; the
+`configure` step writes it for you.
+
+**The global gitignore is deliberately small.** `dotfiles/.gitignore_global`
+covers OS metadata, editor scratch files and local tool state only. Build
+output and language artefacts are a property of the project, not the machine,
+and belong in the project's own `.gitignore`.
+
+This is a change in policy: the file used to be a 1040-line gitignore.io dump
+covering 20+ languages, which globally ignored `pom.xml`, `Cargo.lock`,
+`bower.json`, `target/`, `build/`, `lib/`, `bin/`, `dist/` and `out/`. Files
+matching those patterns silently failed to be added in *every* repository on
+the machine. If you were relying on that, add the patterns to the individual
+projects that need them.
+
+---
+
 ## Coding agents
 
 `dotfiles/.config/agents/instructions.md` is the shared system prompt for all three agents:
