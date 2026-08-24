@@ -2,8 +2,8 @@
 # macOS Setup -- Orchestration Script
 #
 # ── Quick start ───────────────────────────────────────────────────────────────
-#   git clone git@github.com:burakdede/devsetup.git ~/Projects/devsetup
-#   cd ~/Projects/devsetup/mac
+#   git clone git@github.com:burakdede/machinist.git ~/Projects/machinist
+#   cd ~/Projects/machinist/mac
 #
 #   ./run.sh
 #
@@ -25,15 +25,15 @@
 #
 #
 #
-# To pull the latest dotfiles (after a git pull on devsetup):
-#   cd ~/Projects/devsetup && git pull
+# To pull the latest dotfiles (after a git pull on machinist):
+#   cd ~/Projects/machinist && git pull
 #
 #
 # ── Environment variable overrides ───────────────────────────────────────────
-# MACSETUP_UPGRADE=1           -- re-install tools even if already present
-# MACSETUP_SKIP_<STEP>=1       -- skip a specific step (e.g. MACSETUP_SKIP_SDK)
-# MACSETUP_GIT_NAME / _EMAIL   -- pre-seed git identity (non-interactive CI use)
-# MACSETUP_PROMPT_TIMEOUT_SECONDS=N -- timeout for configure prompts (default 60)
+# MACHINIST_UPGRADE=1           -- re-install tools even if already present
+# MACHINIST_SKIP_<STEP>=1       -- skip a specific step (e.g. MACHINIST_SKIP_SDK)
+# MACHINIST_GIT_NAME / _EMAIL   -- pre-seed git identity (non-interactive CI use)
+# MACHINIST_PROMPT_TIMEOUT_SECONDS=N -- timeout for configure prompts (default 60)
 
 set -euo pipefail
 
@@ -49,7 +49,7 @@ ONLY_STEPS=()
 VERIFY_ONLY=0
 RUN_TS="$(date +%Y%m%d-%H%M%S)"
 RUN_STARTED="$(date +%s)"
-LOG_FILE="${DEVSETUP_LOG_FILE:-${MACSETUP_LOG_FILE:-$HOME/.local/state/devsetup/logs/mac-run-${RUN_TS}.log}}"
+LOG_FILE="${MACHINIST_LOG_FILE:-$HOME/.local/state/machinist/logs/mac-run-${RUN_TS}.log}"
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
 LOG_TEE_PID=""
@@ -57,7 +57,7 @@ SAVED_STDIO=0
 
 usage() {
     cat <<EOF
-Usage: ${DEVSETUP_ENTRY:-./run.sh} [options]
+Usage: ${MACHINIST_ENTRY:-./run.sh} [options]
 
 Options:
   --skip-git          Skip GitHub SSH setup step (default: included).
@@ -89,10 +89,10 @@ Dependencies:
   - Run system before agents (agents needs brew for codex/opencode casks).
 
 Environment variable overrides (identical on macOS and Ubuntu):
-  DEVSETUP_UPGRADE=1            Re-install tools even if already present.
-  DEVSETUP_SKIP_<STEP>=1        Skip a specific step, e.g. DEVSETUP_SKIP_SDK=1
-  DEVSETUP_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
-  DEVSETUP_LOG_FILE             Override the run log path.
+  MACHINIST_UPGRADE=1            Re-install tools even if already present.
+  MACHINIST_SKIP_<STEP>=1        Skip a specific step, e.g. MACHINIST_SKIP_SDK=1
+  MACHINIST_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
+  MACHINIST_LOG_FILE             Override the run log path.
 EOF
 }
 
@@ -135,8 +135,8 @@ run_script() {
     local started ended
     started="$(date +%s)"
 
-    # DEVSETUP_STEP is named in the failure message and the resume command.
-    DEVSETUP_STEP="$step" bash "$script_path"
+    # MACHINIST_STEP is named in the failure message and the resume command.
+    MACHINIST_STEP="$step" bash "$script_path"
 
     ended="$(date +%s)"
     ui_summary_add ok "$step" "$((ended - started))"
@@ -146,7 +146,7 @@ init_run_logging() {
     [[ "$LOGGING_INITIALIZED" -eq 1 ]] && return 0
 
     if ! mkdir -p "$(dirname "$LOG_FILE")" || ! touch "$LOG_FILE"; then
-        LOG_FILE="${TMPDIR:-/tmp}/devsetup-mac-logs/run-${RUN_TS}.log"
+        LOG_FILE="${TMPDIR:-/tmp}/machinist-mac-logs/run-${RUN_TS}.log"
         if ! mkdir -p "$(dirname "$LOG_FILE")" || ! touch "$LOG_FILE"; then
             log_warn "Could not create run log. Continuing without persistent log."
             LOGGING_INITIALIZED=0
@@ -155,7 +155,7 @@ init_run_logging() {
         log_warn "Using fallback log path: $LOG_FILE"
     fi
 
-    LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/devsetup-log.XXXXXX")"
+    LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/machinist-log.XXXXXX")"
     if mkfifo "$LOG_PIPE"; then
         # Fixed descriptors 3 and 4, NOT the `exec {VAR}>&1` auto-allocating
         # form: that needs bash 4.1, and macOS still ships bash 3.2. This is the
@@ -274,7 +274,7 @@ main() {
     log_info "  1. Log out and back in for default-shell change to take effect."
     log_info "  2. Open a new terminal to load the updated zsh / mise configuration."
     log_info "  3. Open WezTerm → tmux session → nvim to verify the full stack."
-    log_info "  4. Run ${DEVSETUP_ENTRY:-./run.sh} --verify for a health check summary."
+    log_info "  4. Run ${MACHINIST_ENTRY:-./run.sh} --verify for a health check summary."
 }
 
 main

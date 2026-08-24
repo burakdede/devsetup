@@ -5,8 +5,8 @@
 # installs it to /usr/local/bin/nvim, and registers it with update-alternatives
 # so that `vim`, `vi`, and `editor` all resolve to nvim.
 #
-# Skip:    LINUX_SETUP_SKIP_NEOVIM=1
-# Upgrade: LINUX_SETUP_UPGRADE=1  (re-installs even if nvim is present)
+# Skip:    MACHINIST_SKIP_NEOVIM=1
+# Upgrade: MACHINIST_UPGRADE=1  (re-installs even if nvim is present)
 
 set -euo pipefail
 
@@ -51,7 +51,7 @@ install_neovim() {
 
     if [[ -n "$got" ]] && ! upgrade_enabled; then
         if [[ -z "$want" || "$got" == "$want" ]]; then
-            log_info "Neovim $got is already installed. (LINUX_SETUP_UPGRADE=1 to reinstall)"
+            log_info "Neovim $got is already installed. (MACHINIST_UPGRADE=1 to reinstall)"
             return 0
         fi
         log_info "Installed: $got  Pinned: $want -- reinstalling to match pin."
@@ -162,7 +162,7 @@ main() {
         register_alternatives
         bootstrap_plugins
     else
-        log_info "Skipping Neovim (LINUX_SETUP_SKIP_NEOVIM is set)."
+        log_info "Skipping Neovim (MACHINIST_SKIP_NEOVIM is set)."
     fi
 
     echo_header "Editor setup complete"

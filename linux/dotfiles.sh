@@ -5,14 +5,14 @@
 # supplies the paths. See that file for what gets linked where.
 #
 # ── Editing a config ──────────────────────────────────────────────────────────
-#   $EDITOR ~/Projects/devsetup/dotfiles/.config/nvim/init.lua
-#   cd ~/Projects/devsetup && git commit -am "..." && git push
+#   $EDITOR ~/Projects/machinist/dotfiles/.config/nvim/init.lua
+#   cd ~/Projects/machinist && git commit -am "..." && git push
 #
 # Changes are live immediately -- the installed files are symlinks into the
 # repo, so a `git pull` on the other machine is enough. Re-run this step only
 # when a NEW dotfile is added and needs a new symlink.
 #
-# Skip: LINUX_SETUP_SKIP_DOTFILES=1 ./run.sh --only dotfiles
+# Skip: MACHINIST_SKIP_DOTFILES=1 ./run.sh --only dotfiles
 
 set -euo pipefail
 

@@ -11,7 +11,7 @@ name: macOS CI
 
 on:
   push:
-    branches: [main, master, 'feat/**']
+    branches: [main]
     paths:
       - 'mac/**'
       - 'dotfiles/**'
@@ -23,9 +23,6 @@ on:
       - 'dotfiles/**'
       - 'shared/**'
       - 'packages/**'
-  schedule:
-    # Weekly, to catch upstream breakage in Homebrew and the release APIs.
-    - cron: '0 6 * * 1'
 
 defaults:
   run:
@@ -118,8 +115,8 @@ jobs:
 
       - name: Configure (non-interactive, identity from env)
         env:
-          DEVSETUP_GIT_NAME: CI Runner
-          DEVSETUP_GIT_EMAIL: ci@example.com
+          MACHINIST_GIT_NAME: CI Runner
+          MACHINIST_GIT_EMAIL: ci@example.com
         run: ./run.sh --only configure
 
       - name: Git identity was actually written

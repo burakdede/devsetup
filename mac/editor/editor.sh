@@ -21,8 +21,8 @@
 # ── Upgrading Neovim ─────────────────────────────────────────────────────────
 #   brew upgrade neovim
 #
-# Skip:    MACSETUP_SKIP_NEOVIM=1 ./run.sh --only editor
-# Upgrade: MACSETUP_UPGRADE=1     ./run.sh --only editor
+# Skip:    MACHINIST_SKIP_NEOVIM=1 ./run.sh --only editor
+# Upgrade: MACHINIST_UPGRADE=1     ./run.sh --only editor
 
 set -euo pipefail
 
@@ -49,7 +49,7 @@ install_neovim() {
     got="$(installed_nvim_version)"
 
     if [[ -n "$got" ]] && ! upgrade_enabled; then
-        log_info "Neovim $got already installed. (MACSETUP_UPGRADE=1 to reinstall)"
+        log_info "Neovim $got already installed. (MACHINIST_UPGRADE=1 to reinstall)"
         return 0
     fi
 
@@ -122,7 +122,7 @@ main() {
     export PATH="$HOME/.local/bin:$PATH"
 
     if should_skip_step NEOVIM; then
-        log_info "Skipping Neovim (MACSETUP_SKIP_NEOVIM is set)."
+        log_info "Skipping Neovim (MACHINIST_SKIP_NEOVIM is set)."
         return 0
     fi
 

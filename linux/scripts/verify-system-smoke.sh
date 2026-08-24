@@ -61,15 +61,15 @@ for cmd in "${base_commands[@]}"; do
     require_command "$cmd"
 done
 
-if ! flag_enabled "${DEVSETUP_SKIP_DOCKER:-${LINUX_SETUP_SKIP_DOCKER:-0}}"; then
+if ! flag_enabled "${MACHINIST_SKIP_DOCKER:-0}"; then
     require_command docker
 fi
 
-if ! flag_enabled "${DEVSETUP_SKIP_NEOVIM:-${LINUX_SETUP_SKIP_NEOVIM:-0}}"; then
+if ! flag_enabled "${MACHINIST_SKIP_NEOVIM:-0}"; then
     require_command nvim
 fi
 
-if ! flag_enabled "${DEVSETUP_SKIP_WEZTERM:-${LINUX_SETUP_SKIP_WEZTERM:-0}}"; then
+if ! flag_enabled "${MACHINIST_SKIP_WEZTERM:-0}"; then
     require_command wezterm
 fi
 

@@ -12,8 +12,8 @@
 # To upgrade mise:
 #   mise self-update
 #
-# Skip mise install:   MACSETUP_SKIP_MISE=1 ./run.sh --only system
-# Force reinstall:     MACSETUP_UPGRADE=1 ./run.sh --only system
+# Skip mise install:   MACHINIST_SKIP_MISE=1 ./run.sh --only system
+# Force reinstall:     MACHINIST_UPGRADE=1 ./run.sh --only system
 
 set -euo pipefail
 
@@ -80,7 +80,7 @@ install_mise() {
     echo_header "mise (runtime version manager)"
 
     if should_skip_step MISE; then
-        log_info "Skipping mise (MACSETUP_SKIP_MISE is set)."
+        log_info "Skipping mise (MACHINIST_SKIP_MISE is set)."
         return 0
     fi
 
@@ -136,7 +136,7 @@ install_rust() {
     echo_header "Rust via rustup"
 
     if should_skip_step RUST; then
-        log_info "Skipping Rust (MACSETUP_SKIP_RUST is set)."
+        log_info "Skipping Rust (MACHINIST_SKIP_RUST is set)."
         return 0
     fi
     if [[ -z "${RUST_VERSION:-}" ]]; then

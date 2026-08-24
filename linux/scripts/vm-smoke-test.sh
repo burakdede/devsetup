@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VM_NAME="devsetup-smoke"
+VM_NAME="machinist-smoke"
 KEEP_VM=0
 FULL_SMOKE=0
 
@@ -66,19 +66,19 @@ echo "==> Launching Multipass VM: $VM_NAME"
 multipass launch 24.04 --name "$VM_NAME" --cpus 2 --memory 4G --disk 20G
 
 echo "==> Copying repository into VM"
-multipass exec "$VM_NAME" -- rm -rf /home/ubuntu/devsetup
-multipass transfer -r "$ROOT_DIR" "$VM_NAME:/home/ubuntu/devsetup"
+multipass exec "$VM_NAME" -- rm -rf /home/ubuntu/machinist
+multipass transfer -r "$ROOT_DIR" "$VM_NAME:/home/ubuntu/machinist"
 
 SMOKE_ENV=""
 if [[ "$FULL_SMOKE" -eq 1 ]]; then
-    SMOKE_ENV="LINUX_SETUP_SMOKE_FULL=1"
+    SMOKE_ENV="MACHINIST_SMOKE_FULL=1"
 fi
 
 echo "==> Running smoke tests in VM"
 multipass exec "$VM_NAME" -- bash -lc "
   sudo apt-get update &&
   sudo apt-get install -y shellcheck python3 &&
-  cd /home/ubuntu/devsetup &&
+  cd /home/ubuntu/machinist &&
   bash scripts/test.sh &&
   ${SMOKE_ENV} bash scripts/smoke-system.sh
 "

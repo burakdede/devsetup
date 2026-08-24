@@ -60,25 +60,25 @@ ensure_sudo() {
 # and re-runnable, so the useful thing to say is: what broke, and the exact
 # command to resume with.
 #
-# DEVSETUP_STEP is set by run.sh before each step; DEVSETUP_ENTRY is set by
+# MACHINIST_STEP is set by run.sh before each step; MACHINIST_ENTRY is set by
 # install.sh so the suggested command matches how you invoked it.
 handle_error() {
     local exit_code="${1:-$?}"
     local line="${2:-unknown}"
     local script="${BASH_SOURCE[1]:-${0}}"
-    local entry="${DEVSETUP_ENTRY:-./run.sh}"
+    local entry="${MACHINIST_ENTRY:-./run.sh}"
 
     log_error "Failed in $(basename "$script") at line ${line} (exit ${exit_code})."
 
-    if [[ -n "${DEVSETUP_STEP:-}" ]]; then
-        log_error "Step '${DEVSETUP_STEP}' did not complete."
+    if [[ -n "${MACHINIST_STEP:-}" ]]; then
+        log_error "Step '${MACHINIST_STEP}' did not complete."
     fi
 
     log_info ""
     log_info "Nothing has been left half-configured: steps are independent and"
     log_info "safe to re-run. To pick up from here:"
-    if [[ -n "${DEVSETUP_STEP:-}" ]]; then
-        log_info "  ${entry} --only ${DEVSETUP_STEP}"
+    if [[ -n "${MACHINIST_STEP:-}" ]]; then
+        log_info "  ${entry} --only ${MACHINIST_STEP}"
     else
         log_info "  ${entry}"
     fi
@@ -195,21 +195,21 @@ flag_enabled() {
     esac
 }
 
-# Check MACSETUP_SKIP_<STEP>=1 env var.
-# Skip a step: DEVSETUP_SKIP_<STEP>=1
+# Check MACHINIST_SKIP_<STEP>=1 env var.
+# Skip a step: MACHINIST_SKIP_<STEP>=1
 #
-# The legacy MACSETUP_SKIP_* / LINUX_SETUP_SKIP_* spellings are still honoured
-# so older notes and scripts keep working, but DEVSETUP_* is the documented
+# The legacy MACHINIST_SKIP_* / MACHINIST_SKIP_* spellings are still honoured
+# so older notes and scripts keep working, but MACHINIST_* is the documented
 # name and is identical on both platforms.
 should_skip_step() {
     local step_name="$1"
-    local shared_var="DEVSETUP_SKIP_${step_name}"
-    local legacy_var="MACSETUP_SKIP_${step_name}"
+    local shared_var="MACHINIST_SKIP_${step_name}"
+    local legacy_var="MACHINIST_SKIP_${step_name}"
     flag_enabled "${!shared_var:-${!legacy_var:-0}}"
 }
 
-# Force reinstall even when a tool is already present: DEVSETUP_UPGRADE=1
-# (legacy MACSETUP_UPGRADE is still honoured).
+# Force reinstall even when a tool is already present: MACHINIST_UPGRADE=1
+# (legacy MACHINIST_UPGRADE is still honoured).
 upgrade_enabled() {
-    flag_enabled "${DEVSETUP_UPGRADE:-${MACSETUP_UPGRADE:-0}}"
+    flag_enabled "${MACHINIST_UPGRADE:-0}"
 }

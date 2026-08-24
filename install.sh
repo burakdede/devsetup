@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# devsetup -- one entry point for both machines.
+# machinist -- one entry point for both machines.
 #
 #   ./install.sh                 full bootstrap for whichever OS this is
 #   ./install.sh --verify        health check, installs nothing
@@ -90,7 +90,7 @@ main() {
     require_prereqs
     detect_platform
 
-    ui_header "devsetup"
+    ui_header "machinist"
     ui_ok "Detected  $PLATFORM_NAME"
     ui_ok "Running   ${PLATFORM_DIR#"$REPO_ROOT"/}/run.sh $*"
 
@@ -101,7 +101,7 @@ main() {
     fi
 
     # So the platform script prints the command you actually typed.
-    export DEVSETUP_ENTRY="./install.sh"
+    export MACHINIST_ENTRY="./install.sh"
 
     cd "$PLATFORM_DIR"
     exec ./run.sh "$@"

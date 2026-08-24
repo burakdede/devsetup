@@ -13,7 +13,7 @@
 # ── Upgrading SDKMAN itself ───────────────────────────────────────────────────
 #   sdk selfupdate
 #
-# Skip: DEVSETUP_SKIP_SDK=1 ./run.sh --only sdk
+# Skip: MACHINIST_SKIP_SDK=1 ./run.sh --only sdk
 
 set -euo pipefail
 
@@ -25,7 +25,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 if should_skip_step SDK; then
-    log_info "Skipping SDKMAN (DEVSETUP_SKIP_SDK is set)."
+    log_info "Skipping SDKMAN (MACHINIST_SKIP_SDK is set)."
     exit 0
 fi
 

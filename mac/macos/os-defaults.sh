@@ -23,7 +23,7 @@
 #         5=Screensaver, 10=Sleep, 11=Launchpad, 12=Notification Center
 # Current: TL=Mission Control, TR=Desktop, BL=Screensaver
 #
-# Skip:    MACSETUP_SKIP_MACOS_DEFAULTS=1 ./run.sh --only macos
+# Skip:    MACHINIST_SKIP_MACOS_DEFAULTS=1 ./run.sh --only macos
 
 set -euo pipefail
 
@@ -32,7 +32,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 if should_skip_step MACOS_DEFAULTS; then
-    log_info "Skipping macOS defaults (MACSETUP_SKIP_MACOS_DEFAULTS is set)."
+    log_info "Skipping macOS defaults (MACHINIST_SKIP_MACOS_DEFAULTS is set)."
     exit 0
 fi
 

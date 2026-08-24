@@ -3,9 +3,7 @@ name: Linux CI
 on:
   push:
     branches:
-      - master
       - main
-      - feat/**
     paths:
       - 'linux/**'
       - 'dotfiles/**'
@@ -17,10 +15,6 @@ on:
       - 'dotfiles/**'
       - 'shared/**'
       - 'packages/**'
-  schedule:
-    # Weekly full test every Monday at 06:00 UTC -- catches upstream breakage
-    # (snap removals, GitHub release asset renames, npm package changes, etc.)
-    - cron: '0 6 * * 1'
 
 defaults:
   run:
@@ -55,18 +49,18 @@ jobs:
       # Everything else (apt, GitHub tools, uv, mise, npm, Docker, Chrome, runtimes) runs for real.
       - name: System bootstrap
         env:
-          DEVSETUP_SMOKE_FULL: "1"
-          DEVSETUP_SKIP_SNAPS: "1"
-          DEVSETUP_SKIP_UFW: "1"
+          MACHINIST_SMOKE_FULL: "1"
+          MACHINIST_SKIP_SNAPS: "1"
+          MACHINIST_SKIP_UFW: "1"
           DEBIAN_FRONTEND: noninteractive
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/smoke-system.sh
 
       - name: Verify installed commands
         env:
-          DEVSETUP_SKIP_WEZTERM: "1"
-          DEVSETUP_SKIP_NEOVIM: "1"
-          DEVSETUP_SKIP_FONTS: "1"
+          MACHINIST_SKIP_WEZTERM: "1"
+          MACHINIST_SKIP_NEOVIM: "1"
+          MACHINIST_SKIP_FONTS: "1"
         run: bash scripts/verify-system-smoke.sh
 
       - name: Dotfiles bootstrap

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Terminal output for the devsetup scripts -- shared by macOS and Ubuntu.
+# Terminal output for the machinist scripts -- shared by macOS and Ubuntu.
 #
 # This is the first thing that runs on a new machine, before anything has been
 # installed, so it has NO dependencies: pure bash 3.2 plus coreutils. No gum,

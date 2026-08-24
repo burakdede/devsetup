@@ -5,8 +5,8 @@
 # Optionally sets WezTerm as the default terminal emulator when a GNOME
 # desktop session is active.
 #
-# Skip:    LINUX_SETUP_SKIP_WEZTERM=1
-# Upgrade: LINUX_SETUP_UPGRADE=1
+# Skip:    MACHINIST_SKIP_WEZTERM=1
+# Upgrade: MACHINIST_UPGRADE=1
 
 set -euo pipefail
 
@@ -96,7 +96,7 @@ install_wezterm() {
 
     if [[ -n "$got" ]] && ! upgrade_enabled; then
         if [[ -z "$want" || "$want" == "nightly" || "$got" == "$want" ]]; then
-            log_info "WezTerm $got is already installed. (LINUX_SETUP_UPGRADE=1 to reinstall)"
+            log_info "WezTerm $got is already installed. (MACHINIST_UPGRADE=1 to reinstall)"
             return 0
         fi
         log_info "Installed: $got  Pinned: $want -- reinstalling to match pin."
@@ -150,7 +150,7 @@ install_wezterm_launcher() {
 
     sudo_run tee "$WEZTERM_LAUNCHER" >/dev/null <<EOF
 #!/bin/sh
-# Installed by devsetup (linux/terminal/terminal.sh). Do not edit by hand.
+# Installed by machinist (linux/terminal/terminal.sh). Do not edit by hand.
 #
 # Clears XMODIFIERS so WezTerm does not connect to the iBus XIM server, which
 # causes double key-event processing (duplicate and dropped keystrokes).
@@ -235,7 +235,7 @@ main() {
             fi
         fi
     else
-        log_info "Skipping WezTerm (LINUX_SETUP_SKIP_WEZTERM is set)."
+        log_info "Skipping WezTerm (MACHINIST_SKIP_WEZTERM is set)."
     fi
 
     echo_header "Terminal setup complete"

@@ -14,7 +14,7 @@ ONLY_STEPS=()
 VERIFY_ONLY=0
 RUN_TS="$(date +%Y%m%d-%H%M%S)"
 RUN_STARTED="$(date +%s)"
-LOG_FILE="${DEVSETUP_LOG_FILE:-${LINUX_SETUP_LOG_FILE:-$HOME/.local/state/devsetup/logs/linux-run-${RUN_TS}.log}}"
+LOG_FILE="${MACHINIST_LOG_FILE:-$HOME/.local/state/machinist/logs/linux-run-${RUN_TS}.log}"
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
 LOG_TEE_PID=""
@@ -22,7 +22,7 @@ SAVED_STDIO=0
 
 usage() {
     cat <<EOF
-Usage: ${DEVSETUP_ENTRY:-./run.sh} [options]
+Usage: ${MACHINIST_ENTRY:-./run.sh} [options]
 
 Options:
   --include-git       Include GitHub SSH setup step (default: enabled).
@@ -48,10 +48,10 @@ Valid STEP values (run in this order on a fresh machine):
   --verify        Print a ✓/✗ summary of installed tools without installing.
 
 Environment variable overrides (identical on macOS and Ubuntu):
-  DEVSETUP_UPGRADE=1            Re-install tools even if already present.
-  DEVSETUP_SKIP_<STEP>=1        Skip a specific step, e.g. DEVSETUP_SKIP_SDK=1
-  DEVSETUP_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
-  DEVSETUP_LOG_FILE             Override the run log path.
+  MACHINIST_UPGRADE=1            Re-install tools even if already present.
+  MACHINIST_SKIP_<STEP>=1        Skip a specific step, e.g. MACHINIST_SKIP_SDK=1
+  MACHINIST_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
+  MACHINIST_LOG_FILE             Override the run log path.
 
 Dependencies:
   - Run system first on a fresh machine; all other steps need its packages.
@@ -103,7 +103,7 @@ run_script() {
 
     echo_header "Starting: ${description}"
     # Named in the failure message and in the resume command; see handle_error.
-    DEVSETUP_STEP="$step" bash "$script_path"
+    MACHINIST_STEP="$step" bash "$script_path"
     log_success "Completed: ${description}"
 }
 
@@ -113,7 +113,7 @@ init_run_logging() {
     fi
     local requested_log="$LOG_FILE"
     if ! mkdir -p "$(dirname "$LOG_FILE")" || ! touch "$LOG_FILE"; then
-        LOG_FILE="${TMPDIR:-/tmp}/devsetup-linux-logs/run-${RUN_TS}.log"
+        LOG_FILE="${TMPDIR:-/tmp}/machinist-linux-logs/run-${RUN_TS}.log"
         if ! mkdir -p "$(dirname "$LOG_FILE")" || ! touch "$LOG_FILE"; then
             log_warn "Could not create run log at '$requested_log' or fallback '$LOG_FILE'. Continuing without persistent run log."
             LOG_FILE="$requested_log"
@@ -124,7 +124,7 @@ init_run_logging() {
     fi
 
     # Use a named pipe instead of process substitution for wider compatibility.
-    LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/devsetup-log.XXXXXX")"
+    LOG_PIPE="$(mktemp -u "${TMPDIR:-/tmp}/machinist-log.XXXXXX")"
     if mkfifo "$LOG_PIPE"; then
         # Fixed descriptors 3 and 4, matching mac/run.sh. The auto-allocating
         # `exec {VAR}>&1` form needs bash 4.1; keeping both entry points on the
@@ -213,12 +213,12 @@ main() {
 
     # Defaults for display/font quality in GNOME settings step.
     # Users can override any of these env vars when invoking run.sh.
-    export LINUX_SETUP_TEXT_SCALE="${LINUX_SETUP_TEXT_SCALE:-1.15}"
-    export LINUX_SETUP_CURSOR_SIZE="${LINUX_SETUP_CURSOR_SIZE:-32}"
-    export LINUX_SETUP_FONT_RGBA_ORDER="${LINUX_SETUP_FONT_RGBA_ORDER:-rgb}"
-    export LINUX_SETUP_FONT_ANTIALIASING="${LINUX_SETUP_FONT_ANTIALIASING:-rgba}"
-    export LINUX_SETUP_FONT_HINTING="${LINUX_SETUP_FONT_HINTING:-slight}"
-    export LINUX_SETUP_MONOSPACE_FONT="${LINUX_SETUP_MONOSPACE_FONT:-JetBrainsMono Nerd Font 13}"
+    export MACHINIST_TEXT_SCALE="${MACHINIST_TEXT_SCALE:-1.15}"
+    export MACHINIST_CURSOR_SIZE="${MACHINIST_CURSOR_SIZE:-32}"
+    export MACHINIST_FONT_RGBA_ORDER="${MACHINIST_FONT_RGBA_ORDER:-rgb}"
+    export MACHINIST_FONT_ANTIALIASING="${MACHINIST_FONT_ANTIALIASING:-rgba}"
+    export MACHINIST_FONT_HINTING="${MACHINIST_FONT_HINTING:-slight}"
+    export MACHINIST_MONOSPACE_FONT="${MACHINIST_MONOSPACE_FONT:-JetBrainsMono Nerd Font 13}"
 
     local step_name
     local -a steps=(
@@ -252,9 +252,9 @@ main() {
     echo_header "Ubuntu developer machine bootstrap"
     log_info "Run log: $LOG_FILE"
     log_info "Default run includes all steps; use --skip-git/--skip-settings for non-interactive mode."
-    log_info "Display defaults: text-scale=$LINUX_SETUP_TEXT_SCALE cursor-size=$LINUX_SETUP_CURSOR_SIZE"
-    log_info "Font defaults: rgba-order=$LINUX_SETUP_FONT_RGBA_ORDER antialias=$LINUX_SETUP_FONT_ANTIALIASING hinting=$LINUX_SETUP_FONT_HINTING"
-    log_info "Monospace font: $LINUX_SETUP_MONOSPACE_FONT"
+    log_info "Display defaults: text-scale=$MACHINIST_TEXT_SCALE cursor-size=$MACHINIST_CURSOR_SIZE"
+    log_info "Font defaults: rgba-order=$MACHINIST_FONT_RGBA_ORDER antialias=$MACHINIST_FONT_ANTIALIASING hinting=$MACHINIST_FONT_HINTING"
+    log_info "Monospace font: $MACHINIST_MONOSPACE_FONT"
 
     # Warn about unmet dependencies when running with --only
     if [[ ${#ONLY_STEPS[@]} -gt 0 ]]; then

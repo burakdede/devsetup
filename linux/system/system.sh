@@ -304,7 +304,7 @@ install_jetbrains_toolbox() {
     local bin_path="$HOME/.local/bin/jetbrains-toolbox"
 
     if [[ -x "$bin_path" ]] && ! upgrade_enabled; then
-        log_info "JetBrains Toolbox is already installed. (LINUX_SETUP_UPGRADE=1 to reinstall)"
+        log_info "JetBrains Toolbox is already installed. (MACHINIST_UPGRADE=1 to reinstall)"
         return 0
     fi
 
@@ -494,7 +494,7 @@ install_github_release_tools() {
         asset_pattern="${asset_pattern//\{node_arch\}/$NODE_ARCH}"
 
         if command_exists "$command_name" && ! upgrade_enabled; then
-            log_info "Tool already installed: $command_name (set LINUX_SETUP_UPGRADE=1 to upgrade)"
+            log_info "Tool already installed: $command_name (set MACHINIST_UPGRADE=1 to upgrade)"
             continue
         fi
 
@@ -564,7 +564,7 @@ install_uv() {
     echo_header "uv"
 
     if command_exists uv && ! upgrade_enabled; then
-        log_info "uv is already installed. (LINUX_SETUP_UPGRADE=1 to upgrade)"
+        log_info "uv is already installed. (MACHINIST_UPGRADE=1 to upgrade)"
         return 0
     fi
 
@@ -748,7 +748,7 @@ install_playwright_browser() {
     # --with-deps pulls the shared libraries headless Chromium needs on
     # Ubuntu (fonts, libnss3, libasound2 and friends). It uses apt, so it
     # needs sudo; fall back to the browser alone if that is unavailable.
-    if sudo -n true 2>/dev/null || [[ -n "${DEVSETUP_SUDO_OK:-}" ]]; then
+    if sudo -n true 2>/dev/null || [[ -n "${MACHINIST_SUDO_OK:-}" ]]; then
         if "$MISE_BIN" exec -- playwright install --with-deps chromium; then
             log_success "Chromium and its system deps ready"
             return 0

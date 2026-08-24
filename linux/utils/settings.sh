@@ -56,7 +56,7 @@ wait_for_schema() {
     local schema="$1"
     local ext_id="${2:-}"
     local schema_dir=""
-    local timeout_seconds="${LINUX_SETUP_SCHEMA_WAIT_SECONDS:-60}"
+    local timeout_seconds="${MACHINIST_SCHEMA_WAIT_SECONDS:-60}"
     if [[ -n "$ext_id" ]]; then
         schema_dir="$(extension_schema_dir "$ext_id")"
     fi
@@ -121,8 +121,8 @@ configure_wallpapers() {
     local tmp_profile tmp_db
 
     repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
-    desktop_input="${LINUX_SETUP_DESKTOP_WALLPAPER_PATH:-assets/wallpapers/desktop.png}"
-    login_input="${LINUX_SETUP_LOGIN_WALLPAPER_PATH:-assets/wallpapers/login.png}"
+    desktop_input="${MACHINIST_DESKTOP_WALLPAPER_PATH:-assets/wallpapers/desktop.png}"
+    login_input="${MACHINIST_LOGIN_WALLPAPER_PATH:-assets/wallpapers/login.png}"
 
     desktop_path="$(resolve_wallpaper_path "$desktop_input" "$repo_root")"
     if [[ -f "$desktop_path" ]]; then
@@ -285,12 +285,12 @@ echo_header "Configuring display scaling (HiDPI)"
 # For a proper per-element scaled UI without the performance hit, switch to a
 # Wayland session: GNOME on Wayland handles fractional scaling natively at the
 # compositor level with no extra rendering cost.
-TEXT_SCALE="${LINUX_SETUP_TEXT_SCALE:-1.15}"
-CURSOR_SIZE="${LINUX_SETUP_CURSOR_SIZE:-32}"
-FONT_RGBA_ORDER="${LINUX_SETUP_FONT_RGBA_ORDER:-rgb}"
-FONT_ANTIALIASING="${LINUX_SETUP_FONT_ANTIALIASING:-rgba}"
-FONT_HINTING="${LINUX_SETUP_FONT_HINTING:-slight}"
-MONOSPACE_FONT="${LINUX_SETUP_MONOSPACE_FONT:-JetBrainsMono Nerd Font 13}"
+TEXT_SCALE="${MACHINIST_TEXT_SCALE:-1.15}"
+CURSOR_SIZE="${MACHINIST_CURSOR_SIZE:-32}"
+FONT_RGBA_ORDER="${MACHINIST_FONT_RGBA_ORDER:-rgb}"
+FONT_ANTIALIASING="${MACHINIST_FONT_ANTIALIASING:-rgba}"
+FONT_HINTING="${MACHINIST_FONT_HINTING:-slight}"
+MONOSPACE_FONT="${MACHINIST_MONOSPACE_FONT:-JetBrainsMono Nerd Font 13}"
 
 gsettings set org.gnome.desktop.interface text-scaling-factor "$TEXT_SCALE"
 gsettings set org.gnome.desktop.interface cursor-size "$CURSOR_SIZE"
@@ -568,8 +568,8 @@ gsettings set org.gnome.desktop.default-applications.terminal exec 'env XMODIFIE
 echo_header "Configuring power management"
 
 # Inactivity timeout before the screen blanks and lock screen activates.
-# Configurable via LINUX_SETUP_IDLE_DELAY_SECONDS (0 = never blank).
-IDLE_DELAY="${LINUX_SETUP_IDLE_DELAY_SECONDS:-900}"   # default: 15 minutes
+# Configurable via MACHINIST_IDLE_DELAY_SECONDS (0 = never blank).
+IDLE_DELAY="${MACHINIST_IDLE_DELAY_SECONDS:-900}"   # default: 15 minutes
 gsettings set org.gnome.desktop.session idle-delay "$IDLE_DELAY"
 
 # Lock the screen when the idle delay fires, but do NOT suspend/sleep.

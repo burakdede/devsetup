@@ -1,11 +1,11 @@
-# devsetup
+# machinist
 
 Developer machine setup for macOS and Ubuntu LTS. One clone, two platforms,
 one shared set of configs.
 
 ```bash
-git clone git@github.com:burakdede/devsetup.git ~/Projects/devsetup
-cd ~/Projects/devsetup
+git clone git@github.com:burakdede/machinist.git ~/Projects/machinist
+cd ~/Projects/machinist
 ./install.sh
 ```
 
@@ -52,7 +52,7 @@ Ubuntu-specific, since they have no macOS counterpart:
 ## Layout
 
 ```
-devsetup/
+machinist/
 ├── dotfiles/          shared cross-platform configs (zsh, nvim, tmux, wezterm, …)
 ├── packages/          shared tool manifests (SDKMAN, uv, npm)
 ├── mac/               macOS setup scripts (Homebrew-based)
@@ -101,8 +101,8 @@ list, that is how the two machines drift apart.
 | `macos` | macOS system defaults via `defaults write` |
 
 Run a single step: `./run.sh --only editor`  
-Skip a step: `DEVSETUP_SKIP_SDK=1 ./run.sh`  
-Re-install: `DEVSETUP_UPGRADE=1 ./run.sh --only editor`
+Skip a step: `MACHINIST_SKIP_SDK=1 ./run.sh`  
+Re-install: `MACHINIST_UPGRADE=1 ./run.sh --only editor`
 
 ### Linux (`linux/`)
 
@@ -121,8 +121,8 @@ Re-install: `DEVSETUP_UPGRADE=1 ./run.sh --only editor`
 | `settings` | GNOME desktop settings (font, scaling, cursor) |
 
 Run a single step: `./run.sh --only editor`  
-Skip a step: `DEVSETUP_SKIP_SDK=1 ./run.sh`  
-Re-install: `DEVSETUP_UPGRADE=1 ./run.sh --only editor`
+Skip a step: `MACHINIST_SKIP_SDK=1 ./run.sh`  
+Re-install: `MACHINIST_UPGRADE=1 ./run.sh --only editor`
 
 ---
 

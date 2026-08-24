@@ -22,8 +22,8 @@
 # Put machine-specific overrides in ~/.zshrc.local (not committed to any repo).
 # Example: export WORK_API_KEY="..."
 #
-# Skip:    MACSETUP_SKIP_SHELL=1 ./run.sh --only shell
-# Upgrade: MACSETUP_UPGRADE=1  ./run.sh --only shell (re-clones antidote/p10k)
+# Skip:    MACHINIST_SKIP_SHELL=1 ./run.sh --only shell
+# Upgrade: MACHINIST_UPGRADE=1  ./run.sh --only shell (re-clones antidote/p10k)
 
 set -euo pipefail
 
@@ -146,7 +146,7 @@ main() {
     export PATH="$HOME/.local/bin:$PATH"
 
     if should_skip_step SHELL; then
-        log_info "Skipping shell setup (MACSETUP_SKIP_SHELL is set)."
+        log_info "Skipping shell setup (MACHINIST_SKIP_SHELL is set)."
         return 0
     fi
 

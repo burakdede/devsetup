@@ -29,7 +29,7 @@ This path is meant to work for a generic Ubuntu developer workstation with `sudo
 For unattended execution, pass Git identity so the configure step is non-blocking:
 
 ```bash
-LINUX_SETUP_GIT_NAME="Your Name" LINUX_SETUP_GIT_EMAIL="you@example.com" ./run.sh
+MACHINIST_GIT_NAME="Your Name" MACHINIST_GIT_EMAIL="you@example.com" ./run.sh
 ```
 
 ## Optional Steps
@@ -74,16 +74,16 @@ bash scripts/test.sh
 
 Every `run.sh` execution writes a timestamped log by default:
 
-- `~/.local/state/devsetup/logs/run-YYYYMMDD-HHMMSS.log`
+- `~/.local/state/machinist/logs/run-YYYYMMDD-HHMMSS.log`
 
 If that location is not writable, `run.sh` automatically falls back to:
 
-- `${TMPDIR:-/tmp}/devsetup-logs/run-YYYYMMDD-HHMMSS.log`
+- `${TMPDIR:-/tmp}/machinist-logs/run-YYYYMMDD-HHMMSS.log`
 
 You can set a custom path explicitly:
 
 ```bash
-LINUX_SETUP_LOG_FILE="$HOME/.local/state/devsetup/logs/my-run.log" ./run.sh
+MACHINIST_LOG_FILE="$HOME/.local/state/machinist/logs/my-run.log" ./run.sh
 ```
 
 ## After Bootstrap

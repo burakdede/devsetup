@@ -21,7 +21,7 @@ source "$REPO_ROOT/shared/verify.sh"
 # mise shims and user-local bins are not on PATH in a non-login shell.
 export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.cargo/bin:$PATH"
 
-echo_header "devsetup verification (macOS)"
+echo_header "machinist verification (macOS)"
 
 verify_shared
 

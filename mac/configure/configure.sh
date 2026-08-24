@@ -13,9 +13,9 @@
 #
 # ── Non-interactive / CI use ─────────────────────────────────────────────────
 # Set env vars to skip the prompts:
-#   DEVSETUP_GIT_NAME="Full Name" DEVSETUP_GIT_EMAIL="you@example.com" ./run.sh --only configure
+#   MACHINIST_GIT_NAME="Full Name" MACHINIST_GIT_EMAIL="you@example.com" ./run.sh --only configure
 #
-# Skip:    MACSETUP_SKIP_CONFIGURE=1 ./run.sh --only configure
+# Skip:    MACHINIST_SKIP_CONFIGURE=1 ./run.sh --only configure
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 LOCAL_GITCONFIG="$HOME/.gitconfig.local"
-PROMPT_TIMEOUT_SECONDS="${DEVSETUP_PROMPT_TIMEOUT_SECONDS:-${MACSETUP_PROMPT_TIMEOUT_SECONDS:-60}}"
+PROMPT_TIMEOUT_SECONDS="${MACHINIST_PROMPT_TIMEOUT_SECONDS:-60}"
 
 prompt_with_default() {
     local prompt="$1"
@@ -98,22 +98,22 @@ configure_git_identity() {
     current_name="$(git_local_get user.name || git_global_get user.name)"
     current_email="$(git_local_get user.email || git_global_get user.email)"
 
-    # DEVSETUP_* is the documented name on both platforms; the per-platform
+    # MACHINIST_* is the documented name on both platforms; the per-platform
     # spelling is kept as a fallback so older notes keep working.
-    local DEVSETUP_GIT_NAME="${DEVSETUP_GIT_NAME:-${MACSETUP_GIT_NAME:-}}"
-    local DEVSETUP_GIT_EMAIL="${DEVSETUP_GIT_EMAIL:-${MACSETUP_GIT_EMAIL:-}}"
+    local MACHINIST_GIT_NAME="${MACHINIST_GIT_NAME:-}"
+    local MACHINIST_GIT_EMAIL="${MACHINIST_GIT_EMAIL:-}"
 
-    if [[ -n "${DEVSETUP_GIT_NAME:-}" ]]; then
-        current_name="${DEVSETUP_GIT_NAME}"
+    if [[ -n "${MACHINIST_GIT_NAME:-}" ]]; then
+        current_name="${MACHINIST_GIT_NAME}"
     fi
-    if [[ -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
-        current_email="${DEVSETUP_GIT_EMAIL}"
+    if [[ -n "${MACHINIST_GIT_EMAIL:-}" ]]; then
+        current_email="${MACHINIST_GIT_EMAIL}"
     fi
 
-    if [[ -n "${DEVSETUP_GIT_NAME:-}" && -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
+    if [[ -n "${MACHINIST_GIT_NAME:-}" && -n "${MACHINIST_GIT_EMAIL:-}" ]]; then
         touch "$LOCAL_GITCONFIG"
-        git config --file "$LOCAL_GITCONFIG" user.name  "$DEVSETUP_GIT_NAME"
-        git config --file "$LOCAL_GITCONFIG" user.email "$DEVSETUP_GIT_EMAIL"
+        git config --file "$LOCAL_GITCONFIG" user.name  "$MACHINIST_GIT_NAME"
+        git config --file "$LOCAL_GITCONFIG" user.email "$MACHINIST_GIT_EMAIL"
         log_success "Git identity written from environment variables to $LOCAL_GITCONFIG"
         return 0
     fi
@@ -155,11 +155,11 @@ configure_git_identity() {
 
 main() {
     if should_skip_step CONFIGURE; then
-        log_info "Skipping configure (MACSETUP_SKIP_CONFIGURE is set)."
+        log_info "Skipping configure (MACHINIST_SKIP_CONFIGURE is set)."
         return 0
     fi
 
-    if [[ -n "${DEVSETUP_GIT_NAME:-}" && -n "${DEVSETUP_GIT_EMAIL:-}" ]]; then
+    if [[ -n "${MACHINIST_GIT_NAME:-}" && -n "${MACHINIST_GIT_EMAIL:-}" ]]; then
         configure_git_identity
         echo_header "Configuration complete"
         log_success "Machine-local settings are in $LOCAL_GITCONFIG"
@@ -171,11 +171,11 @@ main() {
     # (CI, cloud-init, an unattended re-image). Only bail when there is both no
     # TTY to prompt on and nothing to work from.
     if ! is_interactive \
-        && [[ -z "${DEVSETUP_GIT_NAME:-${MACSETUP_GIT_NAME:-}}" \
-           || -z "${DEVSETUP_GIT_EMAIL:-${MACSETUP_GIT_EMAIL:-}}" ]]; then
+        && [[ -z "${MACHINIST_GIT_NAME:-}" \
+           || -z "${MACHINIST_GIT_EMAIL:-}" ]]; then
         log_info "Non-interactive environment and no git identity in the environment."
         log_info "Either run manually:  bash configure/configure.sh"
-        log_info "or pre-seed it:       DEVSETUP_GIT_NAME=... DEVSETUP_GIT_EMAIL=... ./run.sh --only configure"
+        log_info "or pre-seed it:       MACHINIST_GIT_NAME=... MACHINIST_GIT_EMAIL=... ./run.sh --only configure"
         return 0
     fi
 

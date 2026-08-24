@@ -6,33 +6,33 @@ This repository is usable as-is, but it is also meant to be easy to adapt. Custo
 
 ## Skip Flags
 
-Any major install step can be skipped with `LINUX_SETUP_SKIP_<STEP>=1`.
+Any major install step can be skipped with `MACHINIST_SKIP_<STEP>=1`.
 
 Example:
 
 ```bash
-LINUX_SETUP_SKIP_DOCKER=1 LINUX_SETUP_SKIP_CHROME=1 ./run.sh
+MACHINIST_SKIP_DOCKER=1 MACHINIST_SKIP_CHROME=1 ./run.sh
 ```
 
 Available skip flags:
 
 | Variable | Skips |
 |---|---|
-| `LINUX_SETUP_SKIP_DOCKER` | Docker CLI and Compose plugin |
-| `LINUX_SETUP_SKIP_SNAPS` | All snap packages |
-| `LINUX_SETUP_SKIP_CHROME` | Google Chrome |
-| `LINUX_SETUP_SKIP_GITHUB_RELEASE_TOOLS` | GitHub-release binaries such as `yq`, `eza`, `sd`, `scc` |
-| `LINUX_SETUP_SKIP_UV` | `uv` and `uv`-managed tools |
-| `LINUX_SETUP_SKIP_CLAUDE` | Claude Code |
-| `LINUX_SETUP_SKIP_NPM_TOOLS` | npm CLIs and MCP packages |
-| `LINUX_SETUP_SKIP_GO` | Go toolchain via `mise` |
-| `LINUX_SETUP_SKIP_PYTHON` | Python toolchain via `mise` |
-| `LINUX_SETUP_SKIP_RUST` | Rust toolchain via `rustup` |
-| `LINUX_SETUP_SKIP_IAC_TOOLS` | IaC tooling via `mise` (`terraform`, `tflint`, `terragrunt`, `terraform-docs`) |
-| `LINUX_SETUP_SKIP_UFW` | firewall setup |
-| `LINUX_SETUP_SKIP_WEZTERM` | terminal installation in verification and smoke flows |
-| `LINUX_SETUP_SKIP_NEOVIM` | editor installation in verification and smoke flows |
-| `LINUX_SETUP_SKIP_FONTS` | Nerd Fonts installation |
+| `MACHINIST_SKIP_DOCKER` | Docker CLI and Compose plugin |
+| `MACHINIST_SKIP_SNAPS` | All snap packages |
+| `MACHINIST_SKIP_CHROME` | Google Chrome |
+| `MACHINIST_SKIP_GITHUB_RELEASE_TOOLS` | GitHub-release binaries such as `yq`, `eza`, `sd`, `scc` |
+| `MACHINIST_SKIP_UV` | `uv` and `uv`-managed tools |
+| `MACHINIST_SKIP_CLAUDE` | Claude Code |
+| `MACHINIST_SKIP_NPM_TOOLS` | npm CLIs and MCP packages |
+| `MACHINIST_SKIP_GO` | Go toolchain via `mise` |
+| `MACHINIST_SKIP_PYTHON` | Python toolchain via `mise` |
+| `MACHINIST_SKIP_RUST` | Rust toolchain via `rustup` |
+| `MACHINIST_SKIP_IAC_TOOLS` | IaC tooling via `mise` (`terraform`, `tflint`, `terragrunt`, `terraform-docs`) |
+| `MACHINIST_SKIP_UFW` | firewall setup |
+| `MACHINIST_SKIP_WEZTERM` | terminal installation in verification and smoke flows |
+| `MACHINIST_SKIP_NEOVIM` | editor installation in verification and smoke flows |
+| `MACHINIST_SKIP_FONTS` | Nerd Fonts installation |
 
 ## Optional Modules
 
@@ -56,23 +56,23 @@ The settings step now applies HiDPI-friendly defaults:
 Override during settings run:
 
 ```bash
-LINUX_SETUP_TEXT_SCALE=1.20 LINUX_SETUP_CURSOR_SIZE=36 ./run.sh
+MACHINIST_TEXT_SCALE=1.20 MACHINIST_CURSOR_SIZE=36 ./run.sh
 ```
 
 Panel-specific font tuning:
 
 ```bash
-LINUX_SETUP_FONT_RGBA_ORDER=rgb \
-LINUX_SETUP_FONT_ANTIALIASING=rgba \
-LINUX_SETUP_FONT_HINTING=slight \
-LINUX_SETUP_MONOSPACE_FONT="JetBrainsMono Nerd Font 12" \
+MACHINIST_FONT_RGBA_ORDER=rgb \
+MACHINIST_FONT_ANTIALIASING=rgba \
+MACHINIST_FONT_HINTING=slight \
+MACHINIST_MONOSPACE_FONT="JetBrainsMono Nerd Font 12" \
 ./run.sh --include-settings
 ./run.sh
 ```
 
 Notes:
 
-- Use `LINUX_SETUP_FONT_RGBA_ORDER=bgr` only if your panel subpixel layout is BGR.
+- Use `MACHINIST_FONT_RGBA_ORDER=bgr` only if your panel subpixel layout is BGR.
 - On high-DPI screens, `slight` hinting is usually cleaner than `full`.
 
 ## Wallpapers (Desktop + Login Screen)
@@ -90,8 +90,8 @@ Default image locations (relative to repo root):
 Override with environment variables:
 
 ```bash
-LINUX_SETUP_DESKTOP_WALLPAPER_PATH=/absolute/path/my-desktop.jpg \
-LINUX_SETUP_LOGIN_WALLPAPER_PATH=/absolute/path/my-login.jpg \
+MACHINIST_DESKTOP_WALLPAPER_PATH=/absolute/path/my-desktop.jpg \
+MACHINIST_LOGIN_WALLPAPER_PATH=/absolute/path/my-login.jpg \
 ./run.sh --include-settings
 ```
 
@@ -174,8 +174,8 @@ The shell step supports two fast profiles:
 Choose profile during bootstrap:
 
 ```bash
-LINUX_SETUP_ZSH_PROFILE=antidote-p10k ./run.sh --only shell
-LINUX_SETUP_ZSH_PROFILE=zsh4humans ./run.sh --only shell
+MACHINIST_ZSH_PROFILE=antidote-p10k ./run.sh --only shell
+MACHINIST_ZSH_PROFILE=zsh4humans ./run.sh --only shell
 ```
 
 Profile can also be overridden at runtime in `~/.zshrc` via `ZSH_PROFILE`.
@@ -201,7 +201,7 @@ echo 'export ZSH_TMUX_AUTO_ATTACH=1' >> ~/.zshrc.local
 Some installs are intentionally skipped if already present. To force reinstall or refresh during a maintenance pass:
 
 ```bash
-LINUX_SETUP_UPGRADE=1 ./run.sh --only system
+MACHINIST_UPGRADE=1 ./run.sh --only system
 ```
 
 Use this deliberately. The default behavior favors stability over constant upgrades.

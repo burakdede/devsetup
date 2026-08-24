@@ -4,7 +4,7 @@
 # The logic is OS-neutral and lives in shared/agents.sh; this wrapper only
 # supplies the Ubuntu install hints. See that file for what gets wired where.
 #
-# Skip: LINUX_SETUP_SKIP_AGENTS=1 ./run.sh --only agents
+# Skip: MACHINIST_SKIP_AGENTS=1 ./run.sh --only agents
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 if should_skip_step AGENTS; then
-    log_info "Skipping agents (LINUX_SETUP_SKIP_AGENTS is set)."
+    log_info "Skipping agents (MACHINIST_SKIP_AGENTS is set)."
     exit 0
 fi
 

@@ -10,7 +10,7 @@
 #
 # To upgrade a tool:
 #   1. Update the version here.
-#   2. Set MACSETUP_UPGRADE=1 / LINUX_SETUP_UPGRADE=1 and re-run the step.
+#   2. Set MACHINIST_UPGRADE=1 / MACHINIST_UPGRADE=1 and re-run the step.
 #   3. Verify, then commit the bump.
 #
 # Neovim releases:  https://github.com/neovim/neovim/releases

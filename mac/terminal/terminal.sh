@@ -22,8 +22,8 @@
 # ── Upgrading WezTerm ─────────────────────────────────────────────────────────
 #   brew upgrade --cask wezterm
 #
-# Skip:    MACSETUP_SKIP_WEZTERM=1 ./run.sh --only terminal
-# Upgrade: MACSETUP_UPGRADE=1      ./run.sh --only terminal
+# Skip:    MACHINIST_SKIP_WEZTERM=1 ./run.sh --only terminal
+# Upgrade: MACHINIST_UPGRADE=1      ./run.sh --only terminal
 
 set -euo pipefail
 
@@ -59,7 +59,7 @@ install_wezterm() {
     got="$(installed_wezterm_version)"
 
     if [[ -n "$got" ]] && ! upgrade_enabled; then
-        log_info "WezTerm $got already installed. (MACSETUP_UPGRADE=1 to reinstall)"
+        log_info "WezTerm $got already installed. (MACHINIST_UPGRADE=1 to reinstall)"
         return 0
     fi
 
@@ -73,7 +73,7 @@ main() {
     export PATH="$HOME/.local/bin:$PATH"
 
     if should_skip_step WEZTERM; then
-        log_info "Skipping WezTerm (MACSETUP_SKIP_WEZTERM is set)."
+        log_info "Skipping WezTerm (MACHINIST_SKIP_WEZTERM is set)."
         return 0
     fi
 

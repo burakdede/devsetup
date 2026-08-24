@@ -14,7 +14,7 @@
 #
 # Safe to re-run: idempotent.
 
-BACKUP_ROOT="$HOME/.local/state/devsetup/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
+BACKUP_ROOT="$HOME/.local/state/machinist/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
 BACKED_UP_ANY=0
 
 backup_target() {
@@ -96,7 +96,7 @@ install_home_dotfiles() {
 install_dotfiles() {
     if [[ ! -d "$DOTFILES_DIR" ]]; then
         log_error "dotfiles/ directory not found at $DOTFILES_DIR"
-        log_info "Ensure you cloned the full repo: git clone git@github.com:burakdede/devsetup.git"
+        log_info "Ensure you cloned the full repo: git clone git@github.com:burakdede/machinist.git"
         exit 1
     fi
 

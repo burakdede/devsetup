@@ -180,7 +180,7 @@ class BootstrapRepoTests(unittest.TestCase):
                     )
 
             # Existing .gitconfig must have been backed up
-            backup_root = home / ".local" / "state" / "devsetup" / "dotfiles-backups"
+            backup_root = home / ".local" / "state" / "machinist" / "dotfiles-backups"
             backups = list(backup_root.rglob(".gitconfig"))
             self.assertTrue(backups, "Expected .gitconfig backup to be created")
 
@@ -453,13 +453,13 @@ class BootstrapRepoTests(unittest.TestCase):
                 setup_ufw() {{ printf 'ufw\\n' >> "{log_file}"; }}
                 echo_header() {{ :; }}
                 log_success() {{ :; }}
-                export LINUX_SETUP_SKIP_SNAPS=1
-                export LINUX_SETUP_SKIP_CHROME=1
-                export LINUX_SETUP_SKIP_GO=1
-                export LINUX_SETUP_SKIP_PYTHON=1
-                export LINUX_SETUP_SKIP_RUST=1
-                export LINUX_SETUP_SKIP_IAC_TOOLS=1
-                export LINUX_SETUP_SKIP_UFW=1
+                export MACHINIST_SKIP_SNAPS=1
+                export MACHINIST_SKIP_CHROME=1
+                export MACHINIST_SKIP_GO=1
+                export MACHINIST_SKIP_PYTHON=1
+                export MACHINIST_SKIP_RUST=1
+                export MACHINIST_SKIP_IAC_TOOLS=1
+                export MACHINIST_SKIP_UFW=1
                 main
                 """
             )
@@ -566,8 +566,8 @@ class BootstrapRepoTests(unittest.TestCase):
             # when available, which makes piped stdin unreliable in a terminal).
             env = os.environ.copy()
             env["HOME"] = tmp_dir
-            env["LINUX_SETUP_GIT_NAME"] = "Test User"
-            env["LINUX_SETUP_GIT_EMAIL"] = "test@example.com"
+            env["MACHINIST_GIT_NAME"] = "Test User"
+            env["MACHINIST_GIT_EMAIL"] = "test@example.com"
             result = subprocess.run(
                 ["bash", "configure/configure.sh"],
                 cwd=REPO_ROOT,
@@ -755,7 +755,7 @@ class BootstrapRepoTests(unittest.TestCase):
         return path
 
     def test_terminal_installer_skips_when_flag_set(self):
-        """terminal.sh skips installation when LINUX_SETUP_SKIP_WEZTERM=1."""
+        """terminal.sh skips installation when MACHINIST_SKIP_WEZTERM=1."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             log_file = tmp_path / "log.txt"
@@ -771,7 +771,7 @@ class BootstrapRepoTests(unittest.TestCase):
                 ensure_sudo() {{ :; }}
                 sudo_run() {{ :; }}
                 source "{sourceable}"
-                export LINUX_SETUP_SKIP_WEZTERM=1
+                export MACHINIST_SKIP_WEZTERM=1
                 main
                 """
             )
@@ -782,7 +782,7 @@ class BootstrapRepoTests(unittest.TestCase):
             log_output = (
                 log_file.read_text(encoding="utf-8") if log_file.exists() else ""
             )
-            self.assertIn("LINUX_SETUP_SKIP_WEZTERM", log_output)
+            self.assertIn("MACHINIST_SKIP_WEZTERM", log_output)
 
     def test_nvim_config_entrypoint_exists(self):
         init_lua = DOTFILES_DIR / ".config" / "nvim" / "init.lua"

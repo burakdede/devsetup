@@ -5,7 +5,7 @@
 ## Verification
 
 ```bash
-cd ~/Projects/devsetup && ./install.sh --verify
+cd ~/Projects/machinist && ./install.sh --verify
 ```
 
 Prints a pass/fail/warn table. The cross-platform checks live in
@@ -45,4 +45,4 @@ Everything else is live without restart:
 - Tmux plugins are installed by the `multiplexer` step (TPM runs at next `tmux` start)
 - Agent configs (CLAUDE.md, config.toml, config.json) are written and ready
 
-**Dotfiles step on a machine with existing configs:** existing files are backed up to `~/.local/state/devsetup/dotfiles-backups/<timestamp>/` before being replaced with symlinks.
+**Dotfiles step on a machine with existing configs:** existing files are backed up to `~/.local/state/machinist/dotfiles-backups/<timestamp>/` before being replaced with symlinks.

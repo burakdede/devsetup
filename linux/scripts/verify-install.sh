@@ -20,7 +20,7 @@ source "$REPO_ROOT/shared/verify.sh"
 
 export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/.cargo/bin:$PATH"
 
-echo_header "devsetup verification (Ubuntu)"
+echo_header "machinist verification (Ubuntu)"
 
 verify_shared
 

@@ -43,8 +43,8 @@ zsh supports two profiles:
 Set during shell step:
 
 ```bash
-LINUX_SETUP_ZSH_PROFILE=antidote-p10k ./run.sh --only shell
-LINUX_SETUP_ZSH_PROFILE=zsh4humans ./run.sh --only shell
+MACHINIST_ZSH_PROFILE=antidote-p10k ./run.sh --only shell
+MACHINIST_ZSH_PROFILE=zsh4humans ./run.sh --only shell
 ```
 
 Runtime override:
