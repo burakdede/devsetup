@@ -24,8 +24,19 @@ GITHUB_TOOLS_FILE="$SCRIPT_DIR/github-tools.txt"
 # Machine architecture, in the two spellings upstreams use for release assets.
 # DEB_ARCH  -- Debian naming:  amd64 / arm64   (also used for apt "arch=" pins)
 # GNU_ARCH  -- GNU triple:     x86_64 / aarch64
-DEB_ARCH="$(dpkg --print-architecture)"
 GNU_ARCH="$(uname -m)"
+if command -v dpkg >/dev/null 2>&1; then
+    DEB_ARCH="$(dpkg --print-architecture)"
+else
+    # dpkg is absent when this file is sourced for linting or unit tests off
+    # Ubuntu. Derive the Debian spelling from the GNU one rather than aborting
+    # at load time.
+    case "$GNU_ARCH" in
+        x86_64)        DEB_ARCH="amd64" ;;
+        aarch64|arm64) DEB_ARCH="arm64" ;;
+        *)             DEB_ARCH="$GNU_ARCH" ;;
+    esac
+fi
 MISE_BIN="$HOME/.local/bin/mise"
 # Both loaded from packages/versions.txt by load_versions. No hardcoded
 # fallbacks: a stale default here would be a second source of truth that
@@ -628,7 +639,12 @@ install_mise_runtimes() {
         return 0
     fi
 
-    "$MISE_BIN" install
+    # Force a precompiled Python build. Without these mise falls back to
+    # compiling CPython from source, which takes many minutes on a fresh
+    # machine and needs a full build toolchain.
+    MISE_PYTHON_COMPILE=0 \
+    MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped \
+        "$MISE_BIN" install
     log_success "mise tools installed."
 }
 

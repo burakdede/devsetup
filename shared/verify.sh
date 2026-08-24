@@ -70,13 +70,13 @@ check_cmd_optional() {
 check_file() {
     local path="$1"
     local label="${2:-$(_pretty_path "$path")}"
-    [[ -e "$path" ]] && ok "$label" || fail "$label  (missing: $path)"
+    if [[ -e "$path" ]]; then ok "$label"; else fail "$label  (missing: $path)"; fi
 }
 
 check_dir() {
     local path="$1"
     local label="${2:-$(_pretty_path "$path")}"
-    [[ -d "$path" ]] && ok "$label" || fail "$label  (missing: $path)"
+    if [[ -d "$path" ]]; then ok "$label"; else fail "$label  (missing: $path)"; fi
 }
 
 # A dotfile must be a symlink INTO this repo. A regular file there means the

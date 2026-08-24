@@ -1,4 +1,3 @@
-# shellcheck shell=bash
 # ~/.zshenv -- sourced for every zsh session (interactive, login, and scripts).
 #
 # Keep this file lean: only set variables that every zsh process needs.

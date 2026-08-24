@@ -1,0 +1,105 @@
+name: macOS CI
+
+# The mac/ scripts and the shared code they depend on had no CI at all, so a
+# macOS-only breakage (a removed `brew bundle` flag, say) only ever surfaced by
+# running the bootstrap by hand.
+#
+# This job deliberately does NOT run the full bootstrap: installing every cask
+# in the Brewfile would take far too long on a hosted runner. It checks the
+# things that can be checked statically, plus the steps that are safe to run
+# for real on a throwaway machine.
+
+on:
+  push:
+    branches: [main, master, 'feat/**']
+    paths:
+      - 'mac/**'
+      - 'dotfiles/**'
+      - 'shared/**'
+      - 'packages/**'
+  pull_request:
+    paths:
+      - 'mac/**'
+      - 'dotfiles/**'
+      - 'shared/**'
+      - 'packages/**'
+  schedule:
+    # Weekly, to catch upstream breakage in Homebrew and the release APIs.
+    - cron: '0 6 * * 1'
+
+defaults:
+  run:
+    working-directory: mac
+
+jobs:
+  static-checks:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: brew install shellcheck
+
+      # git ls-files prints repo-root-relative paths, so these run from the
+      # repo root rather than the mac/ working-directory default.
+      - name: bash -n
+        working-directory: .
+        run: |
+          while IFS= read -r f; do bash -n "$f"; done < <(
+            git ls-files 'mac/*.sh' 'shared/*.sh'
+          )
+
+      - name: shellcheck
+        working-directory: .
+        run: |
+          mapfile -t files < <(git ls-files 'mac/*.sh' 'shared/*.sh')
+          shellcheck -x --source-path=SCRIPTDIR "${files[@]}"
+
+      - name: zsh -n (zsh dotfiles)
+        working-directory: .
+        run: |
+          for f in dotfiles/.zshenv dotfiles/.zshrc dotfiles/.zprofile; do
+            zsh -n "$f"
+          done
+
+      - name: Brewfile is valid
+        run: brew bundle list --file=Brewfile >/dev/null
+
+      - name: run.sh --help
+        run: ./run.sh --help
+
+  bootstrap:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Steps that are safe and quick on a hosted runner. The system step is
+      # skipped: it would install the full Brewfile including GUI casks.
+      - name: Dotfiles bootstrap
+        run: ./run.sh --only dotfiles
+
+      - name: Configure (non-interactive, identity from env)
+        env:
+          DEVSETUP_GIT_NAME: CI Runner
+          DEVSETUP_GIT_EMAIL: ci@example.com
+        run: ./run.sh --only configure
+
+      - name: Git identity was actually written
+        run: |
+          test "$(git config --file ~/.gitconfig.local user.email)" = "ci@example.com"
+
+      - name: Agents bootstrap
+        run: ./run.sh --only agents
+
+      - name: Shared instructions reach every agent
+        run: |
+          test -L ~/.claude/CLAUDE.md
+          test -L ~/.codex/AGENTS.md
+          grep -q "$HOME/.config/agents/instructions.md" ~/.config/opencode/config.json
+
+      - name: Verify (report only; a bare runner will not pass everything)
+        run: ./run.sh --verify || true

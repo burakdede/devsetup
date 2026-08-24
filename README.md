@@ -362,6 +362,28 @@ cd ~/Projects/devsetup/mac && ./run.sh --verify
 cd ~/Projects/devsetup/linux && ./run.sh --verify
 ```
 
+Prints a pass/fail/warn table. The cross-platform checks live in
+`shared/verify.sh` and are **derived from the manifests** rather than
+hand-listed, so a tool added to `packages/` is verified automatically and the
+verifier cannot drift from the installer.
+
+## CI
+
+Both platforms are covered:
+
+| Workflow | Runner | What it does |
+|---|---|---|
+| `linux-ci.yml` | `ubuntu-24.04` | shellcheck, zsh parse, 30 unit tests, plus a **real** system bootstrap (APT, mise, Docker, runtimes) |
+| `macos-ci.yml` | `macos-15` | shellcheck, zsh parse, Brewfile validity, plus the dotfiles / configure / agents steps for real |
+
+macOS deliberately does not run the full `system` step: installing every cask
+in the Brewfile is far too slow for a hosted runner. Both workflows also run
+weekly, to catch upstream breakage (a removed Homebrew flag, a renamed GitHub
+release asset, a snap that disappears) rather than discovering it mid-install
+on a new machine.
+
+Run the Linux suite locally with `cd linux && bash scripts/test.sh`.
+
 ---
 
 ## Adding a new tool

@@ -120,7 +120,12 @@ install_mise_runtimes() {
 
     # Versions come from the shared dotfiles/.config/mise/config.toml, so macOS
     # and Ubuntu resolve to the same python/node/go.
-    "$MISE_BIN" install
+    # Force a precompiled Python build. Without these mise falls back to
+    # compiling CPython from source, which takes many minutes on a fresh
+    # machine and needs a full build toolchain.
+    MISE_PYTHON_COMPILE=0 \
+    MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped \
+        "$MISE_BIN" install
     log_success "Runtimes installed: $("$MISE_BIN" ls --current 2>/dev/null | awk '{printf "%s@%s ", $1, $2}')"
 }
 

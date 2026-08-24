@@ -9,10 +9,14 @@ on:
     paths:
       - 'linux/**'
       - 'dotfiles/**'
+      - 'shared/**'
+      - 'packages/**'
   pull_request:
     paths:
       - 'linux/**'
       - 'dotfiles/**'
+      - 'shared/**'
+      - 'packages/**'
   schedule:
     # Weekly full test every Monday at 06:00 UTC -- catches upstream breakage
     # (snap removals, GitHub release asset renames, npm package changes, etc.)

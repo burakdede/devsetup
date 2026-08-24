@@ -13,6 +13,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # dotfiles/ lives at the monorepo root, one level above linux/
 DOTFILES_DIR = REPO_ROOT.parent / "dotfiles"
+# Manifests shared with macOS live at the monorepo root
+PACKAGES_DIR = REPO_ROOT.parent / "packages"
+SHARED_DIR = REPO_ROOT.parent / "shared"
 
 
 class BootstrapRepoTests(unittest.TestCase):
@@ -89,15 +92,33 @@ class BootstrapRepoTests(unittest.TestCase):
             "multiplexer/multiplexer.sh",
             "scripts/verify-install.sh",
             "configure/configure.sh",
+            "agents/agents.sh",
         ]
-        # Include shared dotfiles files when the monorepo dotfiles dir is present.
-        dotfiles_files = [DOTFILES_DIR / ".bash_aliases", DOTFILES_DIR / ".zshenv"]
-        for f in dotfiles_files:
-            if f.exists():
-                files.append(str(f))
+        # Bash shared with macOS lives at the monorepo root.
+        files.extend(str(f) for f in sorted(SHARED_DIR.glob("*.sh")))
+        if (DOTFILES_DIR / ".bash_aliases").exists():
+            files.append(str(DOTFILES_DIR / ".bash_aliases"))
 
-        result = self.run_cmd(["shellcheck", *files])
+        # .zshenv/.zshrc/.zprofile are deliberately absent: shellcheck has no
+        # zsh support and misreports zsh-only syntax. test_zsh_dotfiles_parse
+        # covers them instead.
+        #
+        # -x --source-path=SCRIPTDIR so `source` of shared/ resolves rather
+        # than being reported as SC1091.
+        result = self.run_cmd(["shellcheck", "-x", "--source-path=SCRIPTDIR", *files])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_zsh_dotfiles_parse(self):
+        """The zsh dotfiles must parse under zsh; shellcheck cannot check them."""
+        zsh = shutil.which("zsh")
+        if not zsh:
+            self.skipTest("zsh not installed")
+        for name in (".zshenv", ".zshrc", ".zprofile"):
+            path = DOTFILES_DIR / name
+            if not path.exists():
+                continue
+            result = self.run_cmd([zsh, "-n", str(path)])
+            self.assertEqual(result.returncode, 0, f"{name}: {result.stderr}")
 
     def test_run_help_succeeds(self):
         result = self.run_cmd(["bash", "run.sh", "--help"])
@@ -245,7 +266,9 @@ class BootstrapRepoTests(unittest.TestCase):
         simple_manifests = [
             REPO_ROOT / "system" / "apt-packages.txt",
             REPO_ROOT / "system" / "npm-packages.txt",
-            REPO_ROOT / "system" / "uv-tools.txt",
+            PACKAGES_DIR / "npm-packages.txt",
+            PACKAGES_DIR / "uv-tools.txt",
+            PACKAGES_DIR / "sdkman.txt",
         ]
         for manifest in simple_manifests:
             seen = set()
@@ -395,10 +418,8 @@ class BootstrapRepoTests(unittest.TestCase):
                 install_uv_tools() {{ printf 'uv-tools\\n' >> "{log_file}"; }}
                 install_claude_code() {{ printf 'claude\\n' >> "{log_file}"; }}
                 install_npm_clis() {{ printf 'npm\\n' >> "{log_file}"; }}
-                install_go_runtime() {{ printf 'go\\n' >> "{log_file}"; }}
-                install_python_runtime() {{ printf 'python\\n' >> "{log_file}"; }}
+                install_mise_runtimes() {{ printf 'mise-tools\\n' >> "{log_file}"; }}
                 install_rust() {{ printf 'rust\\n' >> "{log_file}"; }}
-                install_iac_tools() {{ printf 'iac\\n' >> "{log_file}"; }}
                 setup_ufw() {{ printf 'ufw\\n' >> "{log_file}"; }}
                 echo_header() {{ :; }}
                 log_success() {{ :; }}
@@ -447,8 +468,8 @@ class BootstrapRepoTests(unittest.TestCase):
             aliases = Path(temp_home) / ".bash_aliases"
             self.assertTrue(aliases.is_symlink(), ".bash_aliases should be a symlink after idempotent run")
 
-    def test_agents_script_creates_config_files(self):
-        """agents.sh creates codex config.toml and opencode config.json when absent."""
+    def test_agents_script_wires_all_three_agents(self):
+        """agents.sh points every agent at the one shared instructions file."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             home = Path(tmp_dir)
             # Pre-create the central agents config directory (normally done by dotfiles.sh)
@@ -462,18 +483,29 @@ class BootstrapRepoTests(unittest.TestCase):
             result = self.run_cmd(["bash", "agents/agents.sh"], env=env)
             self.assertEqual(result.returncode, 0, result.stderr)
 
-            codex_config = home / ".codex" / "config.toml"
-            self.assertTrue(codex_config.exists(), "codex config.toml must be created")
-            self.assertIn("o4-mini", codex_config.read_text(encoding="utf-8"))
+            shared = config_agents / "instructions.md"
+
+            claude_md = home / ".claude" / "CLAUDE.md"
+            self.assertTrue(claude_md.is_symlink(), "~/.claude/CLAUDE.md must be a symlink")
+            self.assertEqual(Path(os.readlink(claude_md)), shared)
+
+            codex_md = home / ".codex" / "AGENTS.md"
+            self.assertTrue(codex_md.is_symlink(), "~/.codex/AGENTS.md must be a symlink")
+            self.assertEqual(Path(os.readlink(codex_md)), shared)
+
+            # config.toml holds Codex auth and project trust state; the setup
+            # must not write it.
+            self.assertFalse(
+                (home / ".codex" / "config.toml").exists(),
+                "agents.sh must not write codex config.toml")
 
             opencode_config = home / ".config" / "opencode" / "config.json"
             self.assertTrue(opencode_config.exists(), "opencode config.json must be created")
             payload = json.loads(opencode_config.read_text(encoding="utf-8"))
-            self.assertIn("model", payload)
+            self.assertEqual(payload.get("instructions"), [str(shared)])
             self.assertFalse(payload.get("autoshare", True), "autoshare must be false")
-
-            claude_md = home / ".claude" / "CLAUDE.md"
-            self.assertTrue(claude_md.is_symlink(), "~/.claude/CLAUDE.md must be a symlink")
+            # No model id is pinned anywhere -- they go stale.
+            self.assertNotIn("model", payload)
 
     def test_configure_script_skips_in_non_interactive_env(self):
         """configure.sh must exit 0 and not block when stdin is not a TTY."""
@@ -534,15 +566,15 @@ class BootstrapRepoTests(unittest.TestCase):
 
     def test_versions_file_is_well_formed(self):
         """versions.txt must parse as KEY=value lines with no blanks in values."""
-        versions_file = REPO_ROOT / "versions.txt"
-        self.assertTrue(versions_file.exists(), "versions.txt must exist")
+        versions_file = PACKAGES_DIR / "versions.txt"
+        self.assertTrue(versions_file.exists(), "packages/versions.txt must exist")
+        # Only tools mise does NOT manage belong here; runtimes and IaC tooling
+        # are pinned in dotfiles/.config/mise/config.toml instead.
         required = {
             "NEOVIM_VERSION",
             "MISE_VERSION",
-            "NODE_VERSION",
-            "GO_VERSION",
-            "PYTHON_VERSION",
             "RUST_VERSION",
+            "NERD_FONTS_VERSION",
         }
         found = {}
         for raw in versions_file.read_text(encoding="utf-8").splitlines():
@@ -555,29 +587,32 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertTrue(val.strip(), f"Empty value in versions.txt: {line!r}")
             found[key.strip()] = val.strip()
         for key in required:
-            self.assertIn(key, found, f"{key} missing from versions.txt")
+            self.assertIn(key, found, f"{key} missing from packages/versions.txt")
+        # Runtime pins must NOT reappear here -- one home per version.
+        for key in ("NODE_VERSION", "GO_VERSION", "PYTHON_VERSION",
+                    "TERRAFORM_VERSION", "TFLINT_VERSION"):
+            self.assertNotIn(
+                key, found,
+                f"{key} belongs in dotfiles/.config/mise/config.toml, not versions.txt")
 
     def test_load_versions_exports_variables(self):
         """load_versions() in utils.sh must export pinned version variables."""
-        versions_file = REPO_ROOT / "versions.txt"
         command = textwrap.dedent(
             f"""\
             source "{REPO_ROOT / 'utils' / 'utils.sh'}"
-            load_versions "{versions_file}"
+            load_versions
             echo "NEOVIM=$NEOVIM_VERSION"
-            echo "NODE=$NODE_VERSION"
-            echo "GO=$GO_VERSION"
-            echo "PYTHON=$PYTHON_VERSION"
+            echo "MISE=$MISE_VERSION"
             echo "RUST=$RUST_VERSION"
+            echo "FONTS=$NERD_FONTS_VERSION"
             """
         )
         result = self.run_cmd(["bash", "-lc", command])
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("NEOVIM=", result.stdout)
-        self.assertIn("NODE=", result.stdout)
-        self.assertIn("GO=", result.stdout)
-        self.assertIn("PYTHON=", result.stdout)
+        self.assertIn("MISE=", result.stdout)
         self.assertIn("RUST=", result.stdout)
+        self.assertIn("FONTS=", result.stdout)
         # Values must be non-empty
         for line in result.stdout.splitlines():
             if "=" in line:
@@ -587,20 +622,34 @@ class BootstrapRepoTests(unittest.TestCase):
     def test_system_runtime_installs_are_pinned(self):
         """Core runtime installs should not float to latest/lts/stable selectors."""
         system_script = (REPO_ROOT / "system" / "system.sh").read_text(encoding="utf-8")
-        self.assertIn('"node@${NODE_VERSION}"', system_script)
-        self.assertIn('"go@${GO_VERSION}"', system_script)
-        self.assertIn('"python@${PYTHON_VERSION}"', system_script)
-        self.assertIn('"terraform@${TERRAFORM_VERSION}"', system_script)
-        self.assertIn('"tflint@${TFLINT_VERSION}"', system_script)
-        self.assertIn('"terragrunt@${TERRAGRUNT_VERSION}"', system_script)
-        self.assertIn('"terraform-docs@${TERRAFORM_DOCS_VERSION}"', system_script)
+        mise_config = (DOTFILES_DIR / ".config" / "mise" / "config.toml").read_text(encoding="utf-8")
+
+        # Every mise-managed tool is pinned to a concrete version, never a
+        # floating selector, in the single shared config.
+        for tool in ("python", "node", "go", "terraform", "tflint",
+                     "terragrunt", "terraform-docs"):
+            self.assertRegex(
+                mise_config,
+                re.compile(rf'^{re.escape(tool)}\s*=\s*"[0-9]', re.MULTILINE),
+                f"{tool} must be pinned to a concrete version in mise config.toml")
+        for floating in ("lts", "latest", "stable"):
+            self.assertNotIn(f'"{floating}"', mise_config)
+
+        # system.sh must only ever READ that config. `mise use --global`
+        # rewrites it, and it is a symlink into the repo.
+        self.assertIn('"$MISE_BIN" install', system_script)
+        code_lines = [
+            ln for ln in system_script.splitlines()
+            if not ln.lstrip().startswith("#")
+        ]
+        self.assertNotIn(
+            "use --global", "\n".join(code_lines),
+            "system.sh must never run `mise use --global`; it rewrites the "
+            "shared config, which is a symlink into the repo")
+
+        # Precompiled Python, or a fresh machine spends minutes building CPython.
         self.assertIn("MISE_PYTHON_PRECOMPILED_FLAVOR=install_only_stripped", system_script)
         self.assertIn('rustup toolchain install "$RUST_VERSION"', system_script)
-        self.assertNotIn("node@lts", system_script)
-        self.assertNotIn("go@latest", system_script)
-        self.assertNotIn("python@latest", system_script)
-        self.assertNotIn("terraform@latest", system_script)
-        self.assertNotIn("tflint@latest", system_script)
         self.assertNotIn("update stable --no-self-update", system_script)
 
     def test_wezterm_config_is_valid_lua(self):
