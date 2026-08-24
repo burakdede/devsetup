@@ -1,19 +1,42 @@
 # SDKMAN candidates -- shared by macOS and Ubuntu.
 #
-# One candidate name per line; comments with #. SDKMAN installs the latest
-# stable version of each. To pin one, install it by hand:
-#   sdk install java 21.0.3-tem
+# Format:  candidate[@version]
 #
-# This list is intentionally identical on both platforms: the point of the
-# repo is that `sdk use scala` works the same wherever you are sitting.
+# Without a version, SDKMAN installs its current default for that candidate,
+# which is what you want for tools that track their own latest stable.
+# With a version, that exact identifier is installed. Find identifiers with
+# `sdk list <candidate>`.
+#
+# ── Why SDKMAN and not mise ───────────────────────────────────────────────────
+# mise owns python, node, go and the IaC tooling, and it can install most of the
+# JVM ecosystem too. SDKMAN stays because mise cannot install GraalVM, the
+# Spring Boot CLI, or several other JVM-specific candidates. Keeping both is a
+# deliberate split, not an accident: SDKMAN owns everything JVM, mise owns
+# everything else. Do not add a JVM tool to the mise config, or the two will
+# shadow each other on PATH.
+#
+# ── java is special ───────────────────────────────────────────────────────────
+# GraalVM is NOT a separate SDKMAN candidate. It is a java DISTRIBUTION, so it
+# is installed as another `java` entry. Multiple java lines install multiple
+# JDKs side by side; the FIRST java line becomes the default, and is what
+# JAVA_HOME points at.
 
-java
+# ─── JDKs ─────────────────────────────────────────────────────────────────────
+java@25.0.4-tem       # default JDK: Eclipse Temurin 25 (LTS)
+java@25.2.4-graalce   # GraalVM CE 25, for native-image / AOT builds
+
+# ─── Build tools ──────────────────────────────────────────────────────────────
+# SDKMAN is the single owner of these. Do not also install them from Homebrew
+# or APT: whichever comes first on PATH wins, and it will not be this one.
+maven
+gradle
+
+# ─── Languages ────────────────────────────────────────────────────────────────
 kotlin
 scala
 groovy
-maven
-gradle
 sbt
-springboot
+
+# ─── Frameworks ───────────────────────────────────────────────────────────────
+springboot            # provides the `spring` CLI
 grails
-visualvm

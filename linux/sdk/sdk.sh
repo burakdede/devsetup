@@ -1,102 +1,37 @@
 #!/usr/bin/env bash
-# SDKMAN installation and package bootstrap.
+# SDKMAN bootstrap for Ubuntu.
+#
+# The logic is OS-neutral and lives in shared/sdk.sh; this wrapper only supplies
+# the paths. SDKMAN owns the JVM ecosystem (JDKs including GraalVM, Maven,
+# Gradle, Kotlin, Scala, Groovy, sbt, Spring Boot CLI, Grails); mise owns every
+# other runtime.
+#
+# ── Adding or pinning a candidate ─────────────────────────────────────────────
+# Edit packages/sdkman.txt at the repo root, then: ./run.sh --only sdk
+# Find version identifiers with: sdk list <candidate>
+#
+# ── Upgrading SDKMAN itself ───────────────────────────────────────────────────
+#   sdk selfupdate
+#
+# Skip: DEVSETUP_SKIP_SDK=1 ./run.sh --only sdk
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/dev/null
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=../utils/utils.sh
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 trap 'handle_error $? $LINENO' ERR
 
-SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if should_skip_step SDK; then
+    log_info "Skipping SDKMAN (DEVSETUP_SKIP_SDK is set)."
+    exit 0
+fi
+
 # Shared with the other platform -- see packages/sdkman.txt.
 PACKAGES_FILE="$REPO_ROOT/packages/sdkman.txt"
 
-load_sdkman() {
-    local restore_nounset=0
-
-    if [[ -s "$SDKMAN_INIT" ]]; then
-        if [[ -o nounset ]]; then
-            restore_nounset=1
-            set +u
-        fi
-        # shellcheck source=/dev/null
-        source "$SDKMAN_INIT"
-        if [[ "$restore_nounset" -eq 1 ]]; then
-            set -u
-        fi
-        return 0
-    fi
-
-    log_info "Installing SDKMAN."
-    local tmp_installer
-    tmp_installer="$(mktemp)"
-    curl -fsSL "https://get.sdkman.io" -o "$tmp_installer"
-    if [[ -o nounset ]]; then
-        restore_nounset=1
-        set +u
-    fi
-    # Do not let SDKMAN mutate shell rc files; we manage init explicitly in dotfiles.
-    SDKMAN_DIR="$HOME/.sdkman" rcupdate=false bash "$tmp_installer"
-    if [[ "$restore_nounset" -eq 1 ]]; then
-        set -u
-        restore_nounset=0
-    fi
-    rm -f "$tmp_installer"
-    if [[ -o nounset ]]; then
-        restore_nounset=1
-        set +u
-    fi
-    # shellcheck source=/dev/null
-    source "$SDKMAN_INIT"
-    if [[ "$restore_nounset" -eq 1 ]]; then
-        set -u
-    fi
-}
-
-run_sdk() {
-    local restore_nounset=0
-    if [[ -o nounset ]]; then
-        restore_nounset=1
-        set +u
-    fi
-    sdk "$@"
-    local rc=$?
-    if [[ "$restore_nounset" -eq 1 ]]; then
-        set -u
-    fi
-    return "$rc"
-}
-
-install_sdk_packages() {
-    echo_header "SDKMAN packages"
-
-    if [[ ! -f "$PACKAGES_FILE" ]]; then
-        log_warn "Missing ${PACKAGES_FILE}; skipping SDKMAN packages."
-        return 0
-    fi
-
-    local candidate
-    while IFS= read -r candidate || [[ -n "$candidate" ]]; do
-        candidate="${candidate%%#*}"
-        candidate="$(trim "$candidate")"
-        [[ -z "$candidate" ]] && continue
-
-        log_info "Installing SDKMAN candidate: $candidate"
-        run_sdk install "$candidate" || log_warn "Unable to install ${candidate}. Review available versions with 'sdk list ${candidate}'."
-    done < "$PACKAGES_FILE"
-}
-
-main() {
-    load_sdkman
-    run_sdk selfupdate || true
-    run_sdk update || true
-    install_sdk_packages
-
-    echo_header "SDKMAN setup complete"
-    log_success "SDKMAN is initialized for future shells via ~/.sdkman/bin/sdkman-init.sh."
-}
-
-main
+# shellcheck source=../../shared/sdk.sh
+source "$REPO_ROOT/shared/sdk.sh"
+setup_sdkman "$@"

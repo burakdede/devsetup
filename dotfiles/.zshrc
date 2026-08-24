@@ -32,10 +32,32 @@ if [[ -d "$HOME/.sdkman/candidates" ]]; then
     done
     unset _sdkman_bin
 
-    # Tools that read JAVA_HOME rather than searching PATH (Gradle, Maven,
-    # jdtls) still need it, and sdkman-init would normally have set it.
+    # SDKMAN puts binaries on PATH and stops there. Everything below is the
+    # environment those tools actually need, which sdkman-init would otherwise
+    # have set for us.
+
+    # JAVA_HOME: read by Gradle, Maven and jdtls rather than searching PATH.
+    # Points at the default JDK, i.e. the first java entry in packages/sdkman.txt.
     [[ -d "$SDKMAN_DIR/candidates/java/current" ]] \
         && export JAVA_HOME="$SDKMAN_DIR/candidates/java/current"
+
+    # GRAALVM_HOME: GraalVM is installed as a second JDK alongside the default,
+    # so it is deliberately NOT "current". Native-image builds and Micronaut
+    # look this up. Picks the highest-versioned graal install.
+    for _graal in "$SDKMAN_DIR"/candidates/java/*-graal*(N/); do
+        export GRAALVM_HOME="$_graal"
+    done
+    unset _graal
+
+    # MAVEN_HOME: not needed by Maven itself since 3.5, but various IDEs and
+    # plugins still look for it.
+    [[ -d "$SDKMAN_DIR/candidates/maven/current" ]] \
+        && export MAVEN_HOME="$SDKMAN_DIR/candidates/maven/current"
+
+    # The Spring Boot CLI ships a zsh completion but never installs it.
+    # fpath is consumed by compinit further down this file.
+    [[ -d "$SDKMAN_DIR/candidates/springboot/current/shell-completion/zsh" ]] \
+        && fpath=("$SDKMAN_DIR/candidates/springboot/current/shell-completion/zsh" $fpath)
 
     # First call to `sdk` replaces this stub with the real implementation.
     # SDKMAN internals are not nounset-safe, hence the defensive set +u.

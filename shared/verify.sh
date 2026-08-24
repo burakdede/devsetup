@@ -172,17 +172,58 @@ verify_shared() {
         fail "packages/npm-packages.txt  (missing)"
     fi
 
-    section "SDKMAN"
-    if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+    section "SDKMAN (owns the JVM toolchain)"
+    local sdk_home="$HOME/.sdkman"
+    if [[ -s "$sdk_home/bin/sdkman-init.sh" ]]; then
         ok "sdkman installed"
-        local candidate
-        while IFS= read -r candidate; do
-            if [[ -d "$HOME/.sdkman/candidates/$candidate/current" ]]; then
+
+        # Entries are candidate[@version]. A versioned entry must have that
+        # exact version present, which is how the GraalVM install is checked;
+        # an unversioned one just needs a "current" symlink.
+        local entry candidate version
+        while IFS= read -r entry; do
+            candidate="${entry%%@*}"
+            version=""
+            [[ "$entry" == *"@"* ]] && version="${entry#*@}"
+
+            if [[ -n "$version" ]]; then
+                if [[ -d "$sdk_home/candidates/$candidate/$version" ]]; then
+                    ok "$candidate $version"
+                else
+                    warn "$candidate $version  (not installed -- run: ./run.sh --only sdk)"
+                fi
+            elif [[ -d "$sdk_home/candidates/$candidate/current" ]]; then
                 ok "$candidate"
             else
                 warn "$candidate  (not installed -- run: ./run.sh --only sdk)"
             fi
         done < <(read_list_file "$sdkman_list")
+
+        # SDKMAN only puts things on PATH; .zshrc supplies the environment the
+        # JVM tools actually read. Check that a login shell exports it.
+        local jvm_env
+        jvm_env="$(zsh -lic 'printf "%s|%s|%s" "${JAVA_HOME:-}" "${GRAALVM_HOME:-}" "${MAVEN_HOME:-}"' 2>/dev/null | tail -1)"
+        local java_home="${jvm_env%%|*}"
+        local rest="${jvm_env#*|}"
+        local graal_home="${rest%%|*}"
+        local maven_home="${rest##*|}"
+
+        if [[ -n "$java_home"  ]]; then ok "JAVA_HOME -> $java_home"; else fail "JAVA_HOME not set in a login shell"; fi
+        if [[ -n "$graal_home" ]]; then ok "GRAALVM_HOME -> $graal_home"; else warn "GRAALVM_HOME not set (no GraalVM installed?)"; fi
+        if [[ -n "$maven_home" ]]; then ok "MAVEN_HOME set"; else warn "MAVEN_HOME not set"; fi
+
+        # Homebrew or APT copies of these would shadow SDKMAN's on PATH.
+        local tool resolved
+        for tool in mvn gradle java; do
+            resolved="$(zsh -lic "command -v $tool" 2>/dev/null | tail -1)"
+            if [[ -z "$resolved" ]]; then
+                warn "$tool not on PATH"
+            elif [[ "$resolved" == "$sdk_home"/* ]]; then
+                ok "$tool resolves to SDKMAN"
+            else
+                fail "$tool resolves to $resolved, not SDKMAN (remove the competing copy)"
+            fi
+        done
     else
         warn "sdkman  (not installed -- run: ./run.sh --only sdk)"
     fi

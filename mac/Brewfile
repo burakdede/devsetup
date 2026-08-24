@@ -24,6 +24,7 @@ brew "zsh"
 ########################################################################
 # Modern CLI tools (battle-tested, high daily value)                  #
 ########################################################################
+brew "bash"    # macOS ships bash 3.2 (2007); SDKMAN and mapfile need >= 4
 brew "bat"     # cat with syntax highlighting and git diff integration
 brew "eza"     # ls replacement -- tree view, git status, icons
 brew "fd"      # find replacement -- faster, simpler syntax
