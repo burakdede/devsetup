@@ -20,8 +20,8 @@ LOG_TEE_PID=""
 SAVED_STDIO=0
 
 usage() {
-    cat <<'EOF'
-Usage: ./run.sh [options]
+    cat <<EOF
+Usage: ${DEVSETUP_ENTRY:-./run.sh} [options]
 
 Options:
   --include-git       Include GitHub SSH setup step (default: enabled).
@@ -45,6 +45,12 @@ Valid STEP values (run in this order on a fresh machine):
   settings        GNOME desktop preferences (requires desktop session)
 
   --verify        Print a ✓/✗ summary of installed tools without installing.
+
+Environment variable overrides (identical on macOS and Ubuntu):
+  DEVSETUP_UPGRADE=1            Re-install tools even if already present.
+  DEVSETUP_SKIP_<STEP>=1        Skip a specific step, e.g. DEVSETUP_SKIP_SDK=1
+  DEVSETUP_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
+  DEVSETUP_LOG_FILE             Override the run log path.
 
 Dependencies:
   - Run system first on a fresh machine; all other steps need its packages.
@@ -95,7 +101,8 @@ run_script() {
     fi
 
     echo_header "Starting: ${description}"
-    bash "$script_path"
+    # Named in the failure message and in the resume command; see handle_error.
+    DEVSETUP_STEP="$step" bash "$script_path"
     log_success "Completed: ${description}"
 }
 

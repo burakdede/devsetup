@@ -67,10 +67,43 @@ ensure_sudo() {
     fi
 }
 
+# Report a failure with enough context to act on, then stop.
+#
+# The bare "command failed at line N" this used to print told you nothing about
+# which step died or how to pick up where it left off. Steps are independent
+# and re-runnable, so the useful thing to say is: what broke, and the exact
+# command to resume with.
+#
+# DEVSETUP_STEP is set by run.sh before each step; DEVSETUP_ENTRY is set by
+# install.sh so the suggested command matches how you invoked it.
 handle_error() {
     local exit_code="${1:-$?}"
     local line="${2:-unknown}"
-    log_error "Command failed at line ${line} (exit ${exit_code})."
+    local script="${BASH_SOURCE[1]:-${0}}"
+    local entry="${DEVSETUP_ENTRY:-./run.sh}"
+
+    log_error "Failed in $(basename "$script") at line ${line} (exit ${exit_code})."
+
+    if [[ -n "${DEVSETUP_STEP:-}" ]]; then
+        log_error "Step '${DEVSETUP_STEP}' did not complete."
+    fi
+
+    log_info ""
+    log_info "Nothing has been left half-configured: steps are independent and"
+    log_info "safe to re-run. To pick up from here:"
+    if [[ -n "${DEVSETUP_STEP:-}" ]]; then
+        log_info "  ${entry} --only ${DEVSETUP_STEP}"
+    else
+        log_info "  ${entry}"
+    fi
+    log_info ""
+    log_info "To see what is already in place:"
+    log_info "  ${entry} --verify"
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        log_info ""
+        log_info "Full output of this run: ${LOG_FILE}"
+    fi
+
     exit "$exit_code"
 }
 

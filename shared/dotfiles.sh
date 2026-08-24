@@ -15,6 +15,7 @@
 # Safe to re-run: idempotent.
 
 BACKUP_ROOT="$HOME/.local/state/devsetup/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
+BACKED_UP_ANY=0
 
 backup_target() {
     local target="$1"
@@ -23,18 +24,26 @@ backup_target() {
 
     [[ ! -e "$target" && ! -L "$target" ]] && return 0
 
-    # Skip symlinks already pointing into our dotfiles dir.
+    # Skip symlinks that already point into this repo.
+    #
+    # Compared against REPO_ROOT rather than DOTFILES_DIR: platform-specific
+    # configs live outside dotfiles/ (macOS links ~/.config/alacritty into
+    # mac/configs/), and matching only DOTFILES_DIR meant those were re-copied
+    # into a fresh backup directory on every single run.
     #
     # Plain readlink, not `readlink -f`: BSD readlink on macOS has no -f, and
-    # the links we create point directly at $DOTFILES_DIR, so reading one level
-    # is both sufficient and portable.
+    # the links we create point straight at their target, so one level is both
+    # sufficient and portable.
     if [[ -L "$target" ]] && \
-       [[ "$(readlink "$target" 2>/dev/null)" == "$DOTFILES_DIR"* ]]; then
+       [[ "$(readlink "$target" 2>/dev/null)" == "$REPO_ROOT"* ]]; then
         return 0
     fi
 
-    mkdir -p "$(dirname "$backup_path")"
+    # Created lazily: a re-run on an already-linked machine backs nothing up,
+    # and an empty timestamped directory per run is just churn.
+    mkdir -p "$BACKUP_ROOT" "$(dirname "$backup_path")"
     cp -a "$target" "$backup_path"
+    BACKED_UP_ANY=1
 }
 
 link_path() {
@@ -92,7 +101,6 @@ install_dotfiles() {
     fi
 
     echo_header "Dotfiles"
-    mkdir -p "$BACKUP_ROOT"
 
     install_home_dotfiles
     link_config_entries "$DOTFILES_DIR/.config"
@@ -107,7 +115,11 @@ install_dotfiles() {
 
     mkdir -p "$HOME/.git_template"
     log_success "Created ~/.git_template (required by init.templateDir in .gitconfig)"
-    log_info "Backups (if any) stored in $BACKUP_ROOT"
+    if [[ "${BACKED_UP_ANY:-0}" -eq 1 ]]; then
+        log_info "Replaced files were backed up to $BACKUP_ROOT"
+    else
+        log_info "Nothing needed backing up; all targets were already our symlinks."
+    fi
 }
 
 # mise discovers config by walking UP from the current directory, looking for

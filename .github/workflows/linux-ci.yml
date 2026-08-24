@@ -74,3 +74,31 @@ jobs:
 
       - name: Agents bootstrap
         run: bash run.sh --only agents
+      # Startup speed is a stated goal, so measure it on the real target OS
+      # rather than trusting a number measured on a laptop. Budgets are
+      # generous: this is here to catch a regression (an uncached eval, an
+      # eagerly loaded plugin), not to police milliseconds on a shared runner.
+      - name: Shell startup budget
+        run: |
+          set -e
+          measure() {
+            best=99
+            for _ in 1 2 3 4 5; do
+              t=$( { /usr/bin/time -p "$1" -lic 'exit' ; } 2>&1 | awk '/^real/{print $2}' )
+              [ -z "$t" ] && continue
+              best=$(awk -v a="$t" -v b="$best" 'BEGIN{print (a<b)?a:b}')
+            done
+            awk -v b="$best" 'BEGIN{printf "%d", b*1000}'
+          }
+          fail=0
+          for shell in zsh bash; do
+            command -v "$shell" >/dev/null 2>&1 || continue
+            ms=$(measure "$shell")
+            budget=$([ "$shell" = zsh ] && echo 400 || echo 500)
+            echo "$shell startup: ${ms}ms (budget ${budget}ms)"
+            if [ "$ms" -gt "$budget" ]; then
+              echo "::error::$shell startup ${ms}ms exceeds the ${budget}ms budget"
+              fail=1
+            fi
+          done
+          exit $fail

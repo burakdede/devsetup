@@ -55,8 +55,8 @@ LOG_TEE_PID=""
 SAVED_STDIO=0
 
 usage() {
-    cat <<'EOF'
-Usage: ./run.sh [options]
+    cat <<EOF
+Usage: ${DEVSETUP_ENTRY:-./run.sh} [options]
 
 Options:
   --skip-git          Skip GitHub SSH setup step (default: included).
@@ -69,7 +69,7 @@ Options:
 
 Valid STEP values (run in this order on a fresh machine):
   system          Homebrew, Brewfile packages, mise runtime manager
-  dotfiles        Symlink shared configs from dotfiles/ into $HOME
+  dotfiles        Symlink shared configs from dotfiles/ into \$HOME
   configure       Git identity prompts -- writes to ~/.gitconfig.local
   shell           Set zsh as default shell, install antidote + powerlevel10k
   editor          Neovim via Homebrew + lazy.nvim bootstrap, vi/vim shims
@@ -87,10 +87,11 @@ Dependencies:
   - Run sdk before editor if you use Java LSP in Neovim (jdtls needs a JDK).
   - Run system before agents (agents needs brew for codex/opencode casks).
 
-Environment variable overrides:
-  MACSETUP_UPGRADE=1           Re-install tools even if already present.
-  MACSETUP_SKIP_<STEP>=1       Skip a specific step from within a script.
-  MACSETUP_GIT_NAME / _EMAIL   Pre-seed git identity for non-interactive runs.
+Environment variable overrides (identical on macOS and Ubuntu):
+  DEVSETUP_UPGRADE=1            Re-install tools even if already present.
+  DEVSETUP_SKIP_<STEP>=1        Skip a specific step, e.g. DEVSETUP_SKIP_SDK=1
+  DEVSETUP_GIT_NAME / _EMAIL    Pre-seed git identity for unattended runs.
+  DEVSETUP_LOG_FILE             Override the run log path.
 EOF
 }
 
@@ -131,7 +132,8 @@ run_script() {
     fi
 
     echo_header "Starting: ${description}"
-    bash "$script_path"
+    # Named in the failure message and in the resume command; see handle_error.
+    DEVSETUP_STEP="$step" bash "$script_path"
     log_success "Completed: ${description}"
 }
 

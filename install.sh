@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# devsetup -- one entry point for both machines.
+#
+#   ./install.sh                 full bootstrap for whichever OS this is
+#   ./install.sh --verify        health check, installs nothing
+#   ./install.sh --only shell    run a single step
+#   ./install.sh --help          all options for this platform
+#
+# Detects the operating system and hands off to mac/run.sh or linux/run.sh.
+# Every argument is forwarded untouched, so anything the platform script
+# accepts works here too.
+#
+# ── Why this file is bash 3.2 compatible ──────────────────────────────────────
+# macOS still ships bash 3.2 (2007), and this runs before Homebrew has
+# installed anything. So: no mapfile, no ${var^^}, no associative arrays, and
+# no `exec {fd}>&1`. The macOS CI job enforces that.
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Colours, but only when attached to a terminal.
+if [ -t 1 ]; then
+    RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
+    BLUE=$'\033[0;34m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
+else
+    RED=''; GREEN=''; YELLOW=''; BLUE=''; BOLD=''; RESET=''
+fi
+
+say()  { printf '%s==>%s %s\n' "$BLUE"   "$RESET" "$*"; }
+ok()   { printf '%s[OK]%s %s\n' "$GREEN"  "$RESET" "$*"; }
+warn() { printf '%s[WARN]%s %s\n' "$YELLOW" "$RESET" "$*" >&2; }
+die()  { printf '%s[ERROR]%s %s\n' "$RED" "$RESET" "$*" >&2; exit 1; }
+
+# ─── Prerequisites ────────────────────────────────────────────────────────────
+# Both platform scripts need these before they can do anything useful, and the
+# failure is much clearer here than three steps deep.
+require_prereqs() {
+    local missing=""
+    local tool
+    for tool in git curl; do
+        command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+    done
+    [ -z "$missing" ] && return 0
+
+    printf '%s\n' "Missing required tool(s):$missing"
+    case "$(uname -s)" in
+        Darwin) die "Install the Xcode Command Line Tools first:  xcode-select --install" ;;
+        *)      die "Install them first, e.g.:  sudo apt-get install -y${missing}" ;;
+    esac
+}
+
+# ─── OS detection ─────────────────────────────────────────────────────────────
+# Sets PLATFORM_DIR and PLATFORM_NAME, or exits with a message explaining
+# exactly what was found and what is supported.
+detect_platform() {
+    local kernel
+    kernel="$(uname -s)"
+
+    case "$kernel" in
+        Darwin)
+            PLATFORM_DIR="$REPO_ROOT/mac"
+            PLATFORM_NAME="macOS $(sw_vers -productVersion 2>/dev/null || echo '?') ($(uname -m))"
+            ;;
+        Linux)
+            [ -r /etc/os-release ] || die "Linux detected but /etc/os-release is missing; cannot identify the distribution."
+            # shellcheck disable=SC1091
+            . /etc/os-release
+
+            case "${ID:-}${ID_LIKE:-}" in
+                *ubuntu*|*debian*) ;;
+                *) die "This setup targets Ubuntu LTS. Found '${PRETTY_NAME:-${ID:-unknown}}', which is not supported." ;;
+            esac
+
+            PLATFORM_DIR="$REPO_ROOT/linux"
+            PLATFORM_NAME="${PRETTY_NAME:-Linux} ($(uname -m))"
+
+            # Warn, do not block: a non-LTS release usually works, it is just
+            # not what CI exercises.
+            case "${VERSION_ID:-}" in
+                20.04|22.04|24.04|26.04) ;;
+                "") warn "Could not determine the Ubuntu version; proceeding anyway." ;;
+                *)  warn "Ubuntu ${VERSION_ID} is not an LTS release. CI only covers LTS, so expect rough edges." ;;
+            esac
+            ;;
+        *)
+            die "Unsupported operating system: $kernel. This setup targets macOS and Ubuntu LTS."
+            ;;
+    esac
+
+    [ -x "$PLATFORM_DIR/run.sh" ] || die "Expected $PLATFORM_DIR/run.sh to exist and be executable. Is the clone complete?"
+}
+
+main() {
+    require_prereqs
+    detect_platform
+
+    say "${BOLD}devsetup${RESET}"
+    ok  "Detected: $PLATFORM_NAME"
+    ok  "Running:  ${PLATFORM_DIR#"$REPO_ROOT"/}/run.sh $*"
+    printf '\n'
+
+    # So the platform script prints the command you actually typed.
+    export DEVSETUP_ENTRY="./install.sh"
+
+    cd "$PLATFORM_DIR"
+    exec ./run.sh "$@"
+}
+
+main "$@"
