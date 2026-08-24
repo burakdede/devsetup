@@ -20,6 +20,12 @@ NPM_PACKAGES_FILE="$REPO_ROOT/packages/npm-packages.txt"
 NPM_AGENT_CLIS_FILE="$SCRIPT_DIR/npm-packages.txt"
 UV_TOOLS_FILE="$REPO_ROOT/packages/uv-tools.txt"
 GITHUB_TOOLS_FILE="$SCRIPT_DIR/github-tools.txt"
+
+# Machine architecture, in the two spellings upstreams use for release assets.
+# DEB_ARCH  -- Debian naming:  amd64 / arm64   (also used for apt "arch=" pins)
+# GNU_ARCH  -- GNU triple:     x86_64 / aarch64
+DEB_ARCH="$(dpkg --print-architecture)"
+GNU_ARCH="$(uname -m)"
 MISE_BIN="$HOME/.local/bin/mise"
 MISE_VERSION="${MISE_VERSION:-}"   # loaded from versions.txt by load_versions below
 NODE_VERSION="${NODE_VERSION:-24.14.1}"
@@ -125,15 +131,30 @@ setup_google_chrome_repo() {
     fi
 
     echo_header "Google Chrome"
+
+    # Google publishes no arm64 Linux build of Chrome. Skip rather than add an
+    # apt source that can never resolve.
+    if [[ "$DEB_ARCH" != "amd64" ]]; then
+        log_warn "Google Chrome has no ${DEB_ARCH} Linux build upstream. Skipping."
+        log_info "Firefox is installed from APT and works on ${DEB_ARCH}."
+        return 0
+    fi
+
     sudo_run mkdir -p /etc/apt/keyrings
     curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg
-    printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main\n' | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
+    printf 'deb [arch=%s signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main\n' "$DEB_ARCH" | sudo tee /etc/apt/sources.list.d/google-chrome.list >/dev/null
     sudo_run chmod 644 /etc/apt/keyrings/google-chrome.gpg
     sudo_run apt-get update
     sudo_run apt-get install -y google-chrome-stable
 }
 
 setup_spotify_repo() {
+    # Spotify publishes no arm64 Linux build.
+    if [[ "$DEB_ARCH" != "amd64" ]]; then
+        log_warn "Spotify has no ${DEB_ARCH} Linux build upstream. Skipping."
+        return 0
+    fi
+
     echo_header "Spotify"
 
     if dpkg -s spotify-client >/dev/null 2>&1; then
@@ -161,8 +182,8 @@ setup_spotify_repo() {
     fi
     sudo_run chmod 644 /etc/apt/keyrings/spotify.gpg
 
-    printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free\n' \
-        | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
+    printf 'deb [arch=%s signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free\n' \
+        "$DEB_ARCH" | sudo tee /etc/apt/sources.list.d/spotify.list >/dev/null
 
     sudo_run apt-get update
     if ! sudo_run apt-get install -y spotify-client; then
@@ -467,6 +488,10 @@ install_github_release_tools() {
 
         IFS='|' read -r command_name repo asset_pattern mode binary_name <<< "$line"
         binary_name="${binary_name:-$command_name}"
+
+        # Release assets are named per architecture; fill in this machine's.
+        asset_pattern="${asset_pattern//\{deb_arch\}/$DEB_ARCH}"
+        asset_pattern="${asset_pattern//\{gnu_arch\}/$GNU_ARCH}"
 
         if command_exists "$command_name" && ! upgrade_enabled; then
             log_info "Tool already installed: $command_name (set LINUX_SETUP_UPGRADE=1 to upgrade)"
