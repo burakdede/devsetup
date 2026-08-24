@@ -14,11 +14,9 @@ brew "imagemagick"
 brew "jq"
 brew "moreutils"         # sponge, vipe, ts, etc.
 brew "nmap"              # network debugging and port scanning
-brew "openssl@3"
 brew "ripgrep"
 brew "shellcheck"
 brew "tree-sitter-cli"   # required by nvim-treesitter (main branch) to build parsers
-brew "sqlite"
 brew "tmux"
 brew "wget"              # also in the Ubuntu APT list
 brew "zsh"
@@ -52,7 +50,7 @@ brew "shfmt"   # shell formatter -- agents write shell; keeps it well-formatted
 # Apps                                                                 #
 ########################################################################
 cask "alfred"
-cask "antigravity"               # GPU switching in menu bar
+cask "antigravity"               # Google's agent IDE
 cask "codex"
 cask "docker-desktop"            # includes docker CLI and compose
 cask "firefox"

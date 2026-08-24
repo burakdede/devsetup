@@ -152,7 +152,7 @@ setup_google_chrome_repo() {
     # apt source that can never resolve.
     if [[ "$DEB_ARCH" != "amd64" ]]; then
         log_warn "Google Chrome has no ${DEB_ARCH} Linux build upstream. Skipping."
-        log_info "Firefox is installed from APT and works on ${DEB_ARCH}."
+        log_info "Use the Firefox snap Ubuntu ships by default, which is built for ${DEB_ARCH}."
         return 0
     fi
 

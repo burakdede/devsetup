@@ -13,14 +13,16 @@ p7zip-full
 patch
 pkg-config
 python3
-python3-pip
-python3-venv
 sqlite3
+
+# python3 is the system interpreter, needed by system tooling and by this
+# repo's own test suite. python3-pip and python3-venv are deliberately absent:
+# mise owns the interpreter you develop against and uv owns Python CLI tools,
+# so system pip would be a third, unused way to install packages.
 tar
 unzip
 wget
 xclip
-xsel
 xz-utils
 zip
 zstd
@@ -31,9 +33,12 @@ htop
 moreutils
 nmap
 
-# Clipboard. xclip/xsel cover X11; wl-clipboard is required under Wayland,
-# which is the GNOME default on Ubuntu 22.04+. Neovim's clipboard=unnamedplus
-# silently stops reaching the system clipboard without the matching one.
+# Clipboard. xclip covers X11, wl-clipboard covers Wayland (the GNOME default
+# since Ubuntu 21.04). Neovim's clipboard=unnamedplus silently stops reaching
+# the system clipboard without the one matching your session type.
+#
+# xsel is deliberately absent: it does the same job as xclip, and .zshrc only
+# ever calls xclip.
 wl-clipboard
 
 # Modern CLI tools
