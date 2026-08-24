@@ -91,7 +91,7 @@ config.font = wezterm.font_with_fallback({
     is_mac and "Menlo" or "DejaVu Sans Mono",
     "monospace",
 })
-config.font_size = 13.0
+config.font_size = 15.0
 
 -- Font rendering quality.
 -- freetype_* settings apply on Linux only; macOS uses CoreText and ignores them.
@@ -176,8 +176,12 @@ config.color_scheme = "Catppuccin Mocha"
 -- macos_window_background_blur blurs the content behind the window (macOS only).
 -- On Linux/X11 (no compositor blur API) transparency shows the desktop beneath.
 -- Adjust opacity to taste; values around 0.85–0.92 keep text readable.
-config.window_background_opacity    = 0.95
-config.macos_window_background_blur = 20   -- macOS only; no-op on Linux
+config.window_background_opacity    = 0.8
+config.macos_window_background_blur = 50   -- macOS only; no-op on Linux
+
+
+-- ─── Window Decoration ───────────────────────────────────────────────────────────
+config.window_decorations = "RESIZE"
 
 -- ─── Tab bar colours (Catppuccin Mocha palette) ───────────────────────────────
 -- Reference: https://github.com/catppuccin/catppuccin#-palette

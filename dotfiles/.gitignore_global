@@ -191,7 +191,6 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -1037,3 +1036,5 @@ gradle-app.setting
 
 # End of https://www.gitignore.io/api/ppengine,intellij,android,java,maven,osx,django,dotsettings,elixir,pycharm,rubymine,xcode,phoenix,c++,c,clojure,erlang,django,go,python,gradle,lua,objective-c,eclipse,playframework,scala,sublimetext,rails,swift,rust
 
+
+**/.claude/settings.local.json
