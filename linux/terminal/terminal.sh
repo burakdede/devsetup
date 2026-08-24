@@ -21,6 +21,9 @@ load_versions
 # Default falls back to latest release query if versions.txt doesn't pin one
 WEZTERM_VERSION="${WEZTERM_VERSION:-}"
 
+# Wrapper that clears XMODIFIERS; see install_wezterm_launcher below.
+WEZTERM_LAUNCHER="/usr/local/bin/wezterm-terminal"
+
 installed_wezterm_version() {
     if command_exists wezterm; then
         wezterm --version 2>/dev/null | awk '{print $2}'
@@ -127,6 +130,37 @@ install_wezterm() {
     return 0
 }
 
+# The .desktop override below only covers launches that GO THROUGH the .desktop
+# file: the GNOME launcher and the dock. It does NOT cover the two other ways
+# WezTerm gets started on this machine -- the GNOME "default terminal" setting
+# (Ctrl+Alt+T, "Open in Terminal") and the x-terminal-emulator alternative --
+# because both exec the binary directly, leaving XMODIFIERS set and the XIM
+# double-processing bug in place.
+#
+# So install one small wrapper that clears XMODIFIERS and point those two paths
+# at it. Every launch path then behaves the same.
+install_wezterm_launcher() {
+    if ! command_exists wezterm; then
+        log_info "wezterm not installed; skipping launcher wrapper."
+        return 0
+    fi
+
+    local wezterm_path
+    wezterm_path="$(command -v wezterm)"
+
+    sudo_run tee "$WEZTERM_LAUNCHER" >/dev/null <<EOF
+#!/bin/sh
+# Installed by devsetup (linux/terminal/terminal.sh). Do not edit by hand.
+#
+# Clears XMODIFIERS so WezTerm does not connect to the iBus XIM server, which
+# causes double key-event processing (duplicate and dropped keystrokes).
+# Scoped to WezTerm only, so iBus keeps working for every other application.
+exec env XMODIFIERS= "$wezterm_path" "\$@"
+EOF
+    sudo_run chmod 0755 "$WEZTERM_LAUNCHER"
+    log_success "WezTerm launcher wrapper installed at $WEZTERM_LAUNCHER"
+}
+
 install_wezterm_desktop_override() {
     # On GNOME/X11 sessions, XMODIFIERS=@im=ibus is injected by im-config.
     # WezTerm's winit backend connects to the iBus XIM server based on this env
@@ -170,17 +204,16 @@ set_default_terminal() {
     fi
 
     install_wezterm_desktop_override
+    install_wezterm_launcher
 
     log_info "Setting WezTerm as the default GNOME terminal..."
-    gsettings set org.gnome.desktop.default-applications.terminal exec 'wezterm'
+    gsettings set org.gnome.desktop.default-applications.terminal exec "$WEZTERM_LAUNCHER"
     gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''
 
-    if command_exists update-alternatives && command_exists wezterm; then
-        local wezterm_path
-        wezterm_path="$(command -v wezterm)"
+    if command_exists update-alternatives && [[ -x "$WEZTERM_LAUNCHER" ]]; then
         sudo_run update-alternatives --install /usr/bin/x-terminal-emulator \
-            x-terminal-emulator "$wezterm_path" 50 || true
-        sudo_run update-alternatives --set x-terminal-emulator "$wezterm_path" || true
+            x-terminal-emulator "$WEZTERM_LAUNCHER" 50 || true
+        sudo_run update-alternatives --set x-terminal-emulator "$WEZTERM_LAUNCHER" || true
     fi
 
     log_success "WezTerm set as default terminal."

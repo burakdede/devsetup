@@ -23,8 +23,26 @@ config.term = "xterm-256color"
 
 -- ─── Linux-specific settings ─────────────────────────────────────────────────
 if not is_mac then
-    -- Kitty keyboard protocol causes key-repeat/input jitter on some Linux/X11 setups.
+    -- Kitty keyboard protocol causes key-repeat/input jitter on some Linux/X11
+    -- setups. (This is also WezTerm's own default; set explicitly so a future
+    -- default change cannot reintroduce the problem.)
     config.enable_kitty_keyboard = false
+
+    -- Do not let WezTerm compose input through an IME.
+    --
+    -- On X11 the iBus XIM server double-processes key events, which shows up as
+    -- duplicated and dropped keystrokes. The primary fix is clearing XMODIFIERS
+    -- before WezTerm starts -- linux/terminal/terminal.sh installs a launcher
+    -- wrapper and a .desktop override that do exactly that -- because this
+    -- setting alone stops IME composition but not the XIM connection itself.
+    --
+    -- Belt and braces: this covers the case where WezTerm is started some other
+    -- way and XMODIFIERS leaks through.
+    --
+    -- Flip this back to true if you need IME composition (CJK input, dead keys
+    -- for accented characters). It is off because this setup assumes a US
+    -- layout, where nothing is composed.
+    config.use_ime = false
 
     -- Wayland vs X11.
     --

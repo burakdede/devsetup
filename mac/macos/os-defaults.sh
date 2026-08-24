@@ -67,8 +67,25 @@ defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 # Keyboard                                                                    #
 ###############################################################################
 
-defaults write NSGlobalDomain KeyRepeat -int 1
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+# Key repeat. Units are 15ms ticks.
+#
+# These were previously KeyRepeat=1 (15ms, ~67 chars/sec) and
+# InitialKeyRepeat=10 (150ms), both FASTER than System Settings can even
+# express. A 150ms delay sits inside the normal 70-150ms dwell time of a
+# keypress, so ordinarily-held keys started repeating, producing duplicated
+# characters and stray spaces -- worst in terminals and TUI prompts, where
+# every character counts and nothing corrects it.
+#
+# 2 and 15 are the fastest values the macOS UI offers: still quick, but the
+# repeat only starts once you are clearly holding the key. These match the
+# GNOME values set by the Ubuntu settings step, so both machines type alike.
+defaults write NSGlobalDomain KeyRepeat -int 2            # 30ms  -> ~33 chars/sec
+defaults write NSGlobalDomain InitialKeyRepeat -int 15    # 225ms before repeating
+
+# Disable press-and-hold accent popups so every key repeats consistently.
+# With this enabled, letters that take accents open a picker instead of
+# repeating, so some keys repeat and others do not.
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
 defaults write NSGlobalDomain AppleLanguages -array "en"
 defaults write NSGlobalDomain AppleLocale -string "en_GB@currency=EUR"

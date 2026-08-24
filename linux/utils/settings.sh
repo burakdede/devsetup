@@ -301,6 +301,19 @@ gsettings set org.gnome.desktop.interface monospace-font-name "$MONOSPACE_FONT"
 
 configure_wallpapers
 
+# ========================= Keyboard Repeat =====================================
+# Kept deliberately in step with the macOS values in mac/macos/os-defaults.sh
+# (KeyRepeat=2 -> 30ms, InitialKeyRepeat=15 -> 225ms) so that typing feels the
+# same on both machines. GNOME's own defaults are 500ms / 30ms, which is a 3.3x
+# slower delay than macOS was using, so the two felt noticeably different.
+#
+# Do not shorten the delay much further: once it drops into the normal 70-150ms
+# dwell time of a keypress, ordinarily-held keys start repeating and you get
+# duplicated characters and stray spaces.
+echo_header "Keyboard repeat rate"
+gsettings set org.gnome.desktop.peripherals.keyboard delay 'uint32 225'
+gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 'uint32 30'
+
 # ========================= Configure Workspace Settings =========================
 # This section sets up the multi-workspace environment with 4 workspaces
 # and custom keyboard shortcuts for workspace management

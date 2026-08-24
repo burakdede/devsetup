@@ -311,6 +311,68 @@ update`; that file is what keeps the two machines on identical plugin versions.
 
 ---
 
+## Terminal input problems
+
+If typing into the terminal produces duplicated characters, stray spaces, or
+runaway key repeat, work through these in order. All three have bitten this
+setup.
+
+**1. Key repeat set too aggressively (macOS).** This was self-inflicted:
+`os-defaults.sh` used to set `KeyRepeat=1` (15ms, ~67 chars/sec) and
+`InitialKeyRepeat=10` (150ms), both faster than System Settings can express. A
+150ms delay sits *inside* the normal 70-150ms dwell time of a keypress, so
+ordinarily-held keys began repeating. Check with:
+
+```bash
+defaults read -g KeyRepeat          # want 2  (30ms)
+defaults read -g InitialKeyRepeat   # want 15 (225ms)
+```
+
+Ubuntu's equivalents are set to match, so both machines type alike:
+
+```bash
+gsettings get org.gnome.desktop.peripherals.keyboard delay            # want 225
+gsettings get org.gnome.desktop.peripherals.keyboard repeat-interval  # want 30
+```
+
+Both take effect only for applications started after the change.
+
+**2. iBus XIM double-processing (Ubuntu).** On X11, `XMODIFIERS=@im=ibus`
+makes WezTerm connect to the iBus XIM server, which processes each key event
+twice: duplicated and dropped keystrokes. `use_ime = false` alone does not fix
+it, because that stops IME *composition*, not the XIM *connection*.
+
+The fix is clearing `XMODIFIERS` before WezTerm starts, and it must cover
+**every** launch path, not just the app launcher:
+
+| Launch path | Covered by |
+|---|---|
+| GNOME launcher / dock | `~/.local/share/applications/*.desktop` override |
+| Ctrl+Alt+T, "Open in Terminal" | `/usr/local/bin/wezterm-terminal` wrapper |
+| `x-terminal-emulator` | the same wrapper |
+
+Check it is actually clear inside a running WezTerm:
+
+```bash
+echo "[$XMODIFIERS]"    # want [] -- if it shows @im=ibus, this path is unpatched
+```
+
+**3. Native Wayland backend (Ubuntu).** WezTerm has an open upstream report of
+duplicate keystrokes under Wayland. This setup prefers the native backend, for
+fractional scaling and crisp HiDPI text. If input misbehaves on Wayland, fall
+back to XWayland:
+
+```bash
+echo 'export WEZTERM_DISABLE_WAYLAND=1' >> ~/.zshrc.local
+```
+
+Note what is deliberately **not** changed: `use_ime` is left at its default
+(enabled) on macOS. WezTerm's IME key-repeat bug was fixed in 20220319 and this
+setup runs a later build, so disabling it would cost accented and CJK input for
+no gain.
+
+---
+
 ## Git configuration
 
 `dotfiles/.gitconfig` is symlinked to `~/.gitconfig` and includes
