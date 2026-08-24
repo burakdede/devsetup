@@ -11,7 +11,8 @@ augroup("YankHighlight", { clear = true })
 autocmd("TextYankPost", {
     group    = "YankHighlight",
     callback = function()
-        vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 })
+        -- vim.highlight.on_yank was deprecated in Neovim 0.11 in favour of vim.hl.
+        (vim.hl or vim.highlight).on_yank({ higroup = "IncSearch", timeout = 150 })
     end,
     desc = "Flash yanked region",
 })

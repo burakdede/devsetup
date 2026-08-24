@@ -17,9 +17,16 @@
 
 return {
     -- ─── Mason: LSP / formatter / linter installer ────────────────────────────
+    --
+    -- NOTE the repo owner: mason moved from williamboman/ to mason-org/. The old
+    -- paths still work through a GitHub redirect, but the canonical name is this.
+    --
+    -- NOT lazy-loaded. Upstream: "Lazy-loading the plugin, or somehow deferring
+    -- the setup, is not recommended." Gating it on cmd = "Mason" also meant
+    -- :MasonInstall did not exist until you had opened :Mason once.
     {
-        "williamboman/mason.nvim",
-        cmd  = "Mason",
+        "mason-org/mason.nvim",
+        lazy = false,
         opts = {
             ui = {
                 icons = {
@@ -31,18 +38,24 @@ return {
         },
     },
 
-    -- ─── mason-lspconfig: auto-install + auto-setup ───────────────────────────
+    -- ─── mason-lspconfig: auto-install + auto-enable ──────────────────────────
+    --
+    -- mason-lspconfig v2 enables every installed server for you (automatic_enable
+    -- defaults to true), so this config only needs to declare which servers to
+    -- install and any per-server settings. Do NOT also call vim.lsp.enable() in
+    -- a loop here -- that is duplicated work and tries to start servers that may
+    -- not be installed yet.
     {
-        "williamboman/mason-lspconfig.nvim",
+        "mason-org/mason-lspconfig.nvim",
         event        = { "BufReadPre", "BufNewFile" },
         dependencies = {
-            "williamboman/mason.nvim",
+            "mason-org/mason.nvim",
             "neovim/nvim-lspconfig",
         },
         config = function()
             -- ── Servers ────────────────────────────────────────────────────────
-            -- Keys are nvim-lspconfig server names; values override default opts.
-            -- Use an empty table {} to accept all defaults for that server.
+            -- Keys are nvim-lspconfig server names; values are settings passed to
+            -- vim.lsp.config. An empty table accepts all defaults.
             local servers = {
                 -- Python
                 pyright        = {},
@@ -52,18 +65,21 @@ return {
                 gopls          = {
                     settings = {
                         gopls = {
-                            gofumpt        = true,
-                            staticcheck    = true,
-                            analyses       = { unusedparams = true },
+                            gofumpt     = true,
+                            staticcheck = true,
+                            analyses    = { unusedparams = true },
                         },
                     },
                 },
 
-                -- Rust (rustup must be installed; rust-analyzer is managed by mason)
+                -- Rust (rustup provides the toolchain; rust-analyzer via mason)
                 rust_analyzer  = {
                     settings = {
                         ["rust-analyzer"] = {
-                            checkOnSave = { command = "clippy" },
+                            -- Current schema. The old checkOnSave = { command = ... }
+                            -- shape was deprecated and is ignored by recent
+                            -- rust-analyzer releases.
+                            check = { command = "clippy" },
                         },
                     },
                 },
@@ -108,65 +124,26 @@ return {
 
                 -- ── Add more servers here ─────────────────────────────────────
                 -- kotlin_language_server = {},
-                -- scala_language_server  = {},
                 -- clangd                 = {},
-                -- cmake                  = {},
                 -- terraformls            = {},
             }
 
-            -- ── Mason ensure-install ───────────────────────────────────────────
+            -- Completion capabilities for every server, applied via the '*'
+            -- wildcard rather than repeated per server.
+            vim.lsp.config("*", {
+                capabilities = require("cmp_nvim_lsp").default_capabilities(),
+            })
+
+            -- Per-server settings. Servers with no overrides need no call.
+            for name, opts in pairs(servers) do
+                if next(opts) ~= nil then
+                    vim.lsp.config(name, opts)
+                end
+            end
+
             require("mason-lspconfig").setup({
                 ensure_installed = vim.tbl_keys(servers),
             })
-
-            -- ── Shared on_attach ───────────────────────────────────────────────
-            local function on_attach(_, bufnr)
-                local map = function(mode, lhs, rhs, desc)
-                    vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
-                end
-
-                -- Navigation
-                map("n", "gd",         vim.lsp.buf.definition,       "Go to definition")
-                map("n", "gD",         vim.lsp.buf.declaration,       "Go to declaration")
-                map("n", "gi",         vim.lsp.buf.implementation,    "Go to implementation")
-                map("n", "gr",         vim.lsp.buf.references,        "List references")
-                map("n", "gy",         vim.lsp.buf.type_definition,   "Go to type definition")
-
-                -- Hover / signature
-                -- <C-k> is reserved for vim-tmux-navigator (TmuxNavigateUp) -- do NOT
-                -- bind it in normal mode here or pane navigation breaks when LSP is active.
-                -- Signature help is available in insert mode or via :lua vim.lsp.buf.signature_help()
-                map("n", "K",          vim.lsp.buf.hover,             "Hover docs")
-                map("i", "<C-k>",      vim.lsp.buf.signature_help,    "Signature help")
-
-                -- Actions
-                map("n", "<leader>rn", vim.lsp.buf.rename,            "Rename symbol")
-                map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code action")
-                map("n", "<leader>f",  function()
-                    vim.lsp.buf.format({ async = true })
-                end, "Format file")
-
-                -- Workspace
-                map("n", "<leader>wa", vim.lsp.buf.add_workspace_folder,    "Add workspace folder")
-                map("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, "Remove workspace folder")
-                map("n", "<leader>wl", function()
-                    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-                end, "List workspace folders")
-            end
-
-            -- ── Capabilities (extended by nvim-cmp) ───────────────────────────
-            local capabilities = vim.lsp.protocol.make_client_capabilities()
-            capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-
-            -- ── Setup each server (nvim 0.11+ vim.lsp.config API) ────────────
-            for server_name, server_opts in pairs(servers) do
-                local opts = vim.tbl_deep_extend("force", {
-                    on_attach    = on_attach,
-                    capabilities = capabilities,
-                }, server_opts or {})
-                vim.lsp.config(server_name, opts)
-                vim.lsp.enable(server_name)
-            end
         end,
     },
 
