@@ -23,7 +23,16 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 
 trap 'handle_error $? $LINENO' ERR
 
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BREWFILE="$SCRIPT_DIR/../Brewfile"
+UV_TOOLS_FILE="$REPO_ROOT/packages/uv-tools.txt"
+NPM_PACKAGES_FILE="$REPO_ROOT/packages/npm-packages.txt"
+
+# Same location as on Linux, so the single activation line in .zshrc and
+# .zprofile works on both platforms without OS branching.
+MISE_BIN="$HOME/.local/bin/mise"
+
+load_versions
 
 install_homebrew() {
     echo_header "Homebrew"
@@ -60,7 +69,9 @@ install_brew_packages() {
         return 0
     fi
 
-    brew bundle --file="$BREWFILE" --no-lock
+    # --no-lock was removed from `brew bundle`; lockfile generation no longer
+    # exists, so passing it aborts the whole step.
+    brew bundle install --file="$BREWFILE"
     brew cleanup -s
     log_success "Homebrew packages installed."
 }
@@ -68,23 +79,83 @@ install_brew_packages() {
 install_mise() {
     echo_header "mise (runtime version manager)"
 
-    # mise is also in Brewfile, but installing via the official script matches
-    # ~/.local/bin/mise is the standard path used by both mac and linux so the same .zshrc activation
-    # line works on both platforms without OS branching.
-    if command_exists mise && ! upgrade_enabled; then
-        log_info "mise $(mise --version 2>/dev/null) already installed."
-        return 0
-    fi
-
     if should_skip_step MISE; then
         log_info "Skipping mise (MACSETUP_SKIP_MISE is set)."
         return 0
     fi
 
-    log_info "Installing mise via official installer..."
-    curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
-    log_success "mise installed to ~/.local/bin/mise"
-    log_info "Reload your shell or run: eval \"\$(~/.local/bin/mise activate zsh)\""
+    # Test for $MISE_BIN specifically, NOT `command -v mise`. A Homebrew-managed
+    # mise on PATH would satisfy `command -v` while leaving ~/.local/bin/mise
+    # absent, and the activation lines in .zshrc and .zprofile reference that
+    # exact path -- so mise would silently never activate.
+    local want="${MISE_VERSION:-}"
+    local got=""
+    [[ -x "$MISE_BIN" ]] && got="$("$MISE_BIN" --version 2>/dev/null | awk '{print $2}')"
+
+    if [[ -n "$got" ]] && ! upgrade_enabled && [[ -z "$want" || "$got" == "$want" ]]; then
+        log_info "mise $got is already installed."
+    else
+        [[ -n "$got" ]] && log_info "mise installed: $got  pinned: ${want:-latest} -- reinstalling."
+        log_info "Installing mise ${want:-latest} via official installer..."
+        if [[ -n "$want" ]]; then
+            MISE_VERSION="$want" curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
+        else
+            curl --proto '=https' --tlsv1.2 -fsSL https://mise.run | sh
+        fi
+        log_success "mise installed to $MISE_BIN"
+    fi
+
+    # A leftover Homebrew mise is harmless (~/.local/bin precedes /opt/homebrew
+    # /bin in PATH) but is a second copy to keep updated. Flag it.
+    if brew list --formula 2>/dev/null | grep -qx mise; then
+        log_warn "Homebrew also has mise installed. It is no longer in the Brewfile;"
+        log_warn "remove the duplicate with: brew uninstall mise"
+    fi
+
+    export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_mise_runtimes() {
+    echo_header "Language runtimes via mise"
+
+    # Versions come from the shared dotfiles/.config/mise/config.toml, so macOS
+    # and Ubuntu resolve to the same python/node/go.
+    "$MISE_BIN" install
+    log_success "Runtimes installed: $("$MISE_BIN" ls --current 2>/dev/null | awk '{printf "%s@%s ", $1, $2}')"
+}
+
+install_uv_tools() {
+    echo_header "uv tools"
+
+    if [[ ! -f "$UV_TOOLS_FILE" ]]; then
+        log_warn "Missing ${UV_TOOLS_FILE}; skipping uv tools."
+        return 0
+    fi
+    if ! command_exists uv; then
+        log_warn "uv not found; skipping uv tools. It is in the Brewfile."
+        return 0
+    fi
+
+    local package_name
+    while IFS= read -r package_name; do
+        log_info "Installing uv tool: $package_name"
+        uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
+    done < <(read_list_file "$UV_TOOLS_FILE")
+}
+
+install_npm_clis() {
+    echo_header "Node-based tooling"
+
+    if [[ ! -f "$NPM_PACKAGES_FILE" ]]; then
+        log_warn "Missing ${NPM_PACKAGES_FILE}; skipping npm CLIs."
+        return 0
+    fi
+
+    local package_name
+    while IFS= read -r package_name; do
+        log_info "Installing npm package: $package_name"
+        "$MISE_BIN" exec node -- npm install --global "$package_name"
+    done < <(read_list_file "$NPM_PACKAGES_FILE")
 }
 
 main() {
@@ -93,9 +164,12 @@ main() {
     install_homebrew
     install_brew_packages
     install_mise
+    install_mise_runtimes
+    install_uv_tools
+    install_npm_clis
 
     echo_header "System setup complete"
-    log_success "Homebrew packages and mise are ready."
+    log_success "Homebrew packages, mise runtimes and CLI tooling are ready."
     log_info "Next: run dotfiles and shell steps."
 }
 

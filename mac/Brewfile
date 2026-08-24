@@ -31,7 +31,10 @@ brew "yq"      # YAML/JSON/TOML processor -- used in CI and dotfile automation
 ########################################################################
 # Runtime and package management                                       #
 ########################################################################
-brew "mise"    # single tool for node/python/go/java version management
+# NOTE: mise is deliberately NOT installed from Homebrew. It is installed to
+# ~/.local/bin/mise by system.sh, the same path Ubuntu uses, so the single
+# activation line in .zshrc/.zprofile works on both platforms. A Homebrew mise
+# would satisfy `command -v mise` while leaving that path empty.
 brew "uv"      # Python package manager -- replaces pip/venv/pyenv
 
 ########################################################################
