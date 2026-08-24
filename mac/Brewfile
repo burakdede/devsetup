@@ -70,6 +70,7 @@ cask "maccy"                     # clipboard manager
 cask "rectangle"                 # window management
 cask "slack"
 cask "spotify"
+cask "stats"                     # menubar system monitor
 cask "the-unarchiver"
 cask "wezterm"                   # primary terminal emulator
 cask "whatsapp"
