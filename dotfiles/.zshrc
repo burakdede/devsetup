@@ -38,61 +38,6 @@ if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     fi
 fi
 
-# ─── Completion ───────────────────────────────────────────────────────────────
-autoload -Uz compinit
-zmodload zsh/complist
-mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
-compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/.zcompdump-${ZSH_VERSION}"
-
-# ─── History ──────────────────────────────────────────────────────────────────
-HISTFILE="$HOME/.zsh_history"
-HISTSIZE=50000
-SAVEHIST=50000
-setopt HIST_IGNORE_ALL_DUPS   # no duplicate entries
-setopt HIST_IGNORE_SPACE      # skip commands starting with a space
-setopt SHARE_HISTORY          # share history across sessions
-setopt HIST_FCNTL_LOCK        # faster and safer history writes
-
-# ─── Navigation ───────────────────────────────────────────────────────────────
-setopt AUTO_CD                # type a directory name to cd into it
-
-# ─── Key bindings ─────────────────────────────────────────────────────────────
-bindkey -e                    # emacs key bindings (change to -v for vi mode)
-
-# ─── Aliases ──────────────────────────────────────────────────────────────────
-# Source shared aliases if present.
-[[ -f "$HOME/.bash_aliases" ]] && source "$HOME/.bash_aliases"
-
-# Modern replacements (installed by system.sh)
-if command -v eza &>/dev/null; then
-    alias ls='eza --group-directories-first'
-    alias ll='eza -lah --group-directories-first'
-    alias lt='eza --tree --level=2'
-fi
-# bat is available as its own command -- not aliased over cat because it adds
-# decorations that interfere with piping and copy-pasting output.
-# rg and fd are available as their own commands -- not aliased over grep/find
-# because they have different flags and aliasing breaks scripts that rely on
-# standard grep/find behaviour.
-
-# Editor shortcuts
-alias vi='nvim'
-alias vim='nvim'
-
-# ─── fzf ──────────────────────────────────────────────────────────────────────
-# Enable fzf key bindings and fuzzy completion if installed.
-# Homebrew (macOS) installs fzf shell scripts under $(brew --prefix)/opt/fzf/shell/
-# while Linux distros put them in /usr/share/doc/fzf/examples/.
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    _fzf_prefix="$(brew --prefix 2>/dev/null)/opt/fzf/shell"
-    [[ -f "$_fzf_prefix/key-bindings.zsh" ]] && source "$_fzf_prefix/key-bindings.zsh"
-    [[ -f "$_fzf_prefix/completion.zsh" ]]   && source "$_fzf_prefix/completion.zsh"
-    unset _fzf_prefix
-else
-    [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-    [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]   && source /usr/share/doc/fzf/examples/completion.zsh
-fi
-
 # ─── Prompt + plugin profile ──────────────────────────────────────────────────
 # Supported values:
 #   antidote-p10k  (default, low-latency explicit setup)
@@ -153,6 +98,84 @@ case "$ZSH_PROFILE" in
         load_antidote_p10k
         ;;
 esac
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+# Runs AFTER the plugin block above so that fpath already contains
+# zsh-completions; compinit only sees the fpath it is given at call time.
+#
+# Rebuilding the completion dump is the single most expensive thing in this
+# file, and previously happened on EVERY shell start. Do the full scan
+# (including the fpath security audit) at most once a day and use the cached
+# dump the rest of the time. After installing something that ships new
+# completions, delete the dump to pick them up immediately:
+#   rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-*
+autoload -Uz compinit
+zmodload zsh/complist
+
+_zcompdump="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/.zcompdump-${ZSH_VERSION}"
+[[ -d "${_zcompdump:h}" ]] || mkdir -p "${_zcompdump:h}"
+
+# Glob qualifiers: N = no match is not an error, . = plain file,
+# mh-24 = last modified less than 24 hours ago.
+_zcompdump_fresh=( $_zcompdump(N.mh-24) )
+
+if (( $#_zcompdump_fresh )); then
+    compinit -C -d "$_zcompdump"      # -C: trust the cache, skip the fpath audit
+else
+    compinit -d "$_zcompdump"
+    # Compile the dump so the next shell loads bytecode instead of re-parsing it.
+    zcompile -R -- "${_zcompdump}.zwc" "$_zcompdump" 2>/dev/null
+fi
+unset _zcompdump _zcompdump_fresh
+
+# ─── History ──────────────────────────────────────────────────────────────────
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_IGNORE_ALL_DUPS   # no duplicate entries
+setopt HIST_IGNORE_SPACE      # skip commands starting with a space
+setopt SHARE_HISTORY          # share history across sessions
+setopt HIST_FCNTL_LOCK        # faster and safer history writes
+
+# ─── Navigation ───────────────────────────────────────────────────────────────
+setopt AUTO_CD                # type a directory name to cd into it
+
+# ─── Key bindings ─────────────────────────────────────────────────────────────
+bindkey -e                    # emacs key bindings (change to -v for vi mode)
+
+# ─── Aliases ──────────────────────────────────────────────────────────────────
+# Source shared aliases if present.
+[[ -f "$HOME/.bash_aliases" ]] && source "$HOME/.bash_aliases"
+
+# Modern replacements (installed by system.sh)
+if command -v eza &>/dev/null; then
+    alias ls='eza --group-directories-first'
+    alias ll='eza -lah --group-directories-first'
+    alias lt='eza --tree --level=2'
+fi
+# bat is available as its own command -- not aliased over cat because it adds
+# decorations that interfere with piping and copy-pasting output.
+# rg and fd are available as their own commands -- not aliased over grep/find
+# because they have different flags and aliasing breaks scripts that rely on
+# standard grep/find behaviour.
+
+# Editor shortcuts
+alias vi='nvim'
+alias vim='nvim'
+
+# ─── fzf ──────────────────────────────────────────────────────────────────────
+# Enable fzf key bindings and fuzzy completion if installed.
+# Homebrew (macOS) installs fzf shell scripts under $(brew --prefix)/opt/fzf/shell/
+# while Linux distros put them in /usr/share/doc/fzf/examples/.
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    _fzf_prefix="$(brew --prefix 2>/dev/null)/opt/fzf/shell"
+    [[ -f "$_fzf_prefix/key-bindings.zsh" ]] && source "$_fzf_prefix/key-bindings.zsh"
+    [[ -f "$_fzf_prefix/completion.zsh" ]]   && source "$_fzf_prefix/completion.zsh"
+    unset _fzf_prefix
+else
+    [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+    [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]   && source /usr/share/doc/fzf/examples/completion.zsh
+fi
 
 # ─── direnv ───────────────────────────────────────────────────────────────────
 if command -v direnv &>/dev/null; then

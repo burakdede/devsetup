@@ -110,6 +110,20 @@ purpose (WezTerm spawns `$SHELL -l`, tmux spawns `$SHELL -l` again per pane), so
 without de-duplication PATH grows at every nesting level. macOS hides this via
 `path_helper`; Ubuntu does not, so it is made explicit for both.
 
+**The completion dump is cached for 24 hours.** `compinit` rescans `fpath` and
+rewrites `~/.cache/zsh/.zcompdump-<version>` on every shell start by default,
+which is the most expensive thing in `.zshrc`. It now does the full scan at most
+once a day and uses `compinit -C` otherwise. If you install a tool that ships
+new shell completions and they do not show up, drop the cache:
+
+```bash
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-*
+```
+
+Plugins are loaded **before** `compinit`, because `compinit` only sees the
+`fpath` it is given at call time. If you add a plugin that ships completions,
+it must go in `.zsh_plugins.txt`, not below the completion block.
+
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 
 ### Editing configs
