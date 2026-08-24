@@ -30,6 +30,24 @@ Note that git silently ignores any alias that shadows a builtin, so `add`,
 `diff`, `pull`, `remote` and `tag` cannot be aliased. Those are `rv` and `ta`
 here; `pull` and `diff` behaviour comes from config instead.
 
+## What the git step wires up
+
+Installing `git-lfs`, `gh` and an SSH key is not the same as having them work.
+The step also does the wiring that each one needs before it does anything:
+
+- **git-lfs filters.** `git lfs install --skip-repo` registers the clean and
+  smudge filters in `~/.gitconfig`. Without them an LFS clone gives you
+  pointer files instead of content, and nothing warns you.
+- **`gh` uses SSH.** The step generates an ed25519 key and uploads it, so
+  `gh` is set to `git_protocol = ssh` to match. Left at the default it clones
+  over HTTPS and prompts for credentials the key would have covered.
+- **`~/.ssh/config`.** A `# managed by machinist` block is *prepended* with
+  `AddKeysToAgent yes`, `IdentityFile ~/.ssh/id_ed25519`, and `UseKeychain yes`
+  on macOS. Prepended, because ssh honours the **first** value it sees for a
+  keyword, so appending to a file that already has a `Host *` block does
+  nothing. If more than one `Host *` block exists the step says so rather than
+  guessing which one you meant.
+
 **The global gitignore is deliberately small.** `dotfiles/.gitignore_global`
 covers OS metadata, editor scratch files and local tool state only. Build
 output and language artefacts are a property of the project, not the machine,

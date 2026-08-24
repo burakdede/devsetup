@@ -169,6 +169,77 @@ test_github_connection() {
     fi
 }
 
+# Registering git-lfs is a separate act from installing it. Without this, the
+# smudge/clean filters are absent and cloning an LFS repo gives you pointer
+# files instead of content -- with no error to explain why.
+configure_git_extras() {
+    echo_header "Git integrations"
+
+    if command_exists git-lfs; then
+        if git config --get filter.lfs.clean >/dev/null 2>&1; then
+            log_info "git-lfs filters already registered."
+        elif git lfs install --skip-repo >/dev/null 2>&1; then
+            log_success "git-lfs filters registered."
+        else
+            log_warn "Could not register git-lfs. Run: git lfs install"
+        fi
+    fi
+
+    # gh defaults to https, which would have it clone over HTTPS on a machine
+    # where this step just set up an SSH key. Keep the two agreeing.
+    if command_exists gh && gh auth status >/dev/null 2>&1; then
+        if [[ "$(gh config get git_protocol 2>/dev/null)" != "ssh" ]]; then
+            gh config set git_protocol ssh
+            log_success "gh will use SSH for git operations."
+        fi
+    fi
+}
+
+# An SSH key that is not in the agent has to be unlocked on every use, and on
+# macOS it is forgotten at every reboot without UseKeychain. Manage a single
+# block rather than the whole file, so anything else in there survives.
+configure_ssh_client() {
+    echo_header "SSH client"
+
+    local config="$HOME/.ssh/config"
+    local marker="# managed by machinist"
+
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    touch "$config"
+    chmod 600 "$config"
+
+    if grep -qF "$marker" "$config" 2>/dev/null; then
+        log_info "SSH client block already present."
+        return 0
+    fi
+
+    local keychain_line=""
+    [[ "$OSTYPE" == "darwin"* ]] && keychain_line="    UseKeychain yes"
+
+    # Prepended, not appended: ssh takes the FIRST value it sees for each
+    # keyword, so a block added at the end loses to anything already above it.
+    local tmp
+    tmp="$(mktemp)"
+    {
+        printf '%s\n' "$marker"
+        printf 'Host *\n'
+        printf '    AddKeysToAgent yes\n'
+        [[ -n "$keychain_line" ]] && printf '%s\n' "$keychain_line"
+        printf '    IdentityFile ~/.ssh/id_ed25519\n'
+        printf '\n'
+        cat "$config"
+    } > "$tmp"
+    mv "$tmp" "$config"
+    chmod 600 "$config"
+
+    log_success "SSH client configured (agent + ed25519 key)."
+    if [[ "$(grep -c '^Host \*' "$config")" -gt 1 ]]; then
+        log_warn "$config has more than one 'Host *' block."
+        log_warn "  ssh uses the first value it finds for each keyword; the rest are dead."
+    fi
+}
+
 main() {
     echo_header "Checking Git installation"
     if ! command_exists git; then
@@ -177,6 +248,7 @@ main() {
     fi
     log_success "Git is installed."
 
+    configure_ssh_client
     setup_ssh_key
     load_ssh_agent
 
@@ -192,6 +264,8 @@ main() {
     echo_header "GitHub SSH setup complete"
     log_success "SSH key: ~/.ssh/id_ed25519"
     log_info "Clone repos with: git clone git@github.com:username/repo.git"
+
+    configure_git_extras
 }
 
 main
