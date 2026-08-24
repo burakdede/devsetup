@@ -4,6 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/../utils/utils.sh"
 
@@ -13,8 +14,11 @@ load_versions
 
 APT_PACKAGES_FILE="$SCRIPT_DIR/apt-packages.txt"
 SNAP_PACKAGES_FILE="$SCRIPT_DIR/snap-packages.txt"
-NPM_PACKAGES_FILE="$SCRIPT_DIR/npm-packages.txt"
-UV_TOOLS_FILE="$SCRIPT_DIR/uv-tools.txt"
+# Shared cross-platform JS tooling, plus the Ubuntu-only agent CLIs that
+# macOS gets from Homebrew casks.
+NPM_PACKAGES_FILE="$REPO_ROOT/packages/npm-packages.txt"
+NPM_AGENT_CLIS_FILE="$SCRIPT_DIR/npm-packages.txt"
+UV_TOOLS_FILE="$REPO_ROOT/packages/uv-tools.txt"
 GITHUB_TOOLS_FILE="$SCRIPT_DIR/github-tools.txt"
 MISE_BIN="$HOME/.local/bin/mise"
 MISE_VERSION="${MISE_VERSION:-}"   # loaded from versions.txt by load_versions below
@@ -531,14 +535,10 @@ install_uv_tools() {
     fi
 
     local package_name
-    while IFS= read -r package_name || [[ -n "$package_name" ]]; do
-        package_name="${package_name%%#*}"
-        package_name="$(trim "$package_name")"
-        [[ -z "$package_name" ]] && continue
-
+    while IFS= read -r package_name; do
         log_info "Installing uv tool: $package_name"
         uv tool install --quiet "$package_name" || uv tool upgrade "$package_name"
-    done < "$UV_TOOLS_FILE"
+    done < <(read_list_file "$UV_TOOLS_FILE")
 }
 
 install_claude_code() {
@@ -672,22 +672,20 @@ install_iac_tools() {
 install_npm_clis() {
     echo_header "Node-based tooling"
 
-    if [[ ! -f "$NPM_PACKAGES_FILE" ]]; then
-        log_warn "Missing ${NPM_PACKAGES_FILE}; skipping npm CLIs."
-        return 0
-    fi
-
     install_node_runtime
 
-    local package_name
-    while IFS= read -r package_name || [[ -n "$package_name" ]]; do
-        package_name="${package_name%%#*}"
-        package_name="$(trim "$package_name")"
-        [[ -z "$package_name" ]] && continue
+    local list package_name
+    for list in "$NPM_PACKAGES_FILE" "$NPM_AGENT_CLIS_FILE"; do
+        if [[ ! -f "$list" ]]; then
+            log_warn "Missing ${list}; skipping those npm CLIs."
+            continue
+        fi
 
-        log_info "Installing npm package: $package_name"
-        "$MISE_BIN" exec "node@${NODE_VERSION}" -- npm install --global "$package_name"
-    done < "$NPM_PACKAGES_FILE"
+        while IFS= read -r package_name; do
+            log_info "Installing npm package: $package_name"
+            "$MISE_BIN" exec "node@${NODE_VERSION}" -- npm install --global "$package_name"
+        done < <(read_list_file "$list")
+    done
 }
 
 install_nerd_fonts() {

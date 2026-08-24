@@ -1,0 +1,7 @@
+# Node-based CLI tools installed globally -- shared by macOS and Ubuntu.
+#
+# Agent CLIs are NOT listed here: macOS installs them from Homebrew casks and
+# Ubuntu from npm/vendor installers, so they are tracked per platform.
+
+eslint
+prettier

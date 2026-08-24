@@ -7,11 +7,31 @@ Developer machine setup for macOS and Ubuntu. One clone, two platforms, shared c
 ```
 devsetup/
 ├── dotfiles/          shared cross-platform configs (zsh, nvim, tmux, wezterm, …)
+├── packages/          shared tool manifests (SDKMAN, uv, npm)
 ├── mac/               macOS setup scripts (Homebrew-based)
 └── linux/             Ubuntu setup scripts (APT/snap/GitHub-release-based)
 ```
 
 `dotfiles/` is a plain directory -- no submodule. Edit a file, commit, push. Both machines pull the same change with `git pull`.
+
+### The organising rule
+
+macOS and Ubuntu are different operating systems with different desktop
+environments, and this repo does not pretend otherwise. What it does guarantee
+is that **anything shared is defined in exactly one place**, and anything
+OS-specific lives in that OS's directory.
+
+| Scope | Lives in | Examples |
+|---|---|---|
+| Shared config | `dotfiles/` | zsh, nvim, tmux, wezterm, git, mise |
+| Shared tool lists | `packages/` | SDKMAN candidates, uv tools, npm CLIs |
+| OS-specific packages | `mac/`, `linux/` | Brewfile casks, APT, snap, GitHub-release binaries |
+| OS-specific behaviour | `mac/`, `linux/` | `defaults write`, GNOME settings, `chsh` vs `usermod` |
+
+So the JVM candidates you get are identical on both machines because they come
+from one file, while the window manager and the clipboard daemon are
+necessarily different. If you add a cross-platform CLI tool to an OS-specific
+list, that is how the two machines drift apart.
 
 ---
 

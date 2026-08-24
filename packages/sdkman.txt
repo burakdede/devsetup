@@ -1,0 +1,19 @@
+# SDKMAN candidates -- shared by macOS and Ubuntu.
+#
+# One candidate name per line; comments with #. SDKMAN installs the latest
+# stable version of each. To pin one, install it by hand:
+#   sdk install java 21.0.3-tem
+#
+# This list is intentionally identical on both platforms: the point of the
+# repo is that `sdk use scala` works the same wherever you are sitting.
+
+java
+kotlin
+scala
+groovy
+maven
+gradle
+sbt
+springboot
+grails
+visualvm

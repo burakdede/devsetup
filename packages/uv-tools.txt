@@ -1,0 +1,9 @@
+# Python-based CLI tools, installed with `uv tool install` into isolated
+# environments -- shared by macOS and Ubuntu.
+#
+# These are standalone commands, not project dependencies. Anything a project
+# needs belongs in that project's pyproject.toml instead.
+
+pre-commit
+ruff
+yamllint

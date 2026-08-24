@@ -1,4 +1,0 @@
-# Python-based agent helpers and fast linting
-pre-commit
-ruff
-yamllint

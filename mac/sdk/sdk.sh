@@ -6,11 +6,12 @@
 # between vendors, GraalVM, etc.) whereas mise is better for other runtimes.
 #
 # ── Adding SDK candidates ─────────────────────────────────────────────────────
-# Edit sdk/packages.txt -- one candidate per line, comments with #.
+# Edit packages/sdkman.txt at the repo root -- one candidate per line.
+# That list is shared with Linux, so both machines get the same candidates.
 # Then run: ./run.sh --only sdk
 #
 # ── Installing a specific version ────────────────────────────────────────────
-# sdk/packages.txt lists the candidate name only; SDKMAN installs the latest
+# packages/sdkman.txt lists the candidate name only; SDKMAN installs the latest
 # stable version.  To pin a version, specify it manually:
 #   sdk install java 21.0.3-tem
 #
@@ -28,7 +29,9 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
-PACKAGES_FILE="$SCRIPT_DIR/packages.txt"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Shared with the other platform -- see packages/sdkman.txt.
+PACKAGES_FILE="$REPO_ROOT/packages/sdkman.txt"
 
 load_sdkman() {
     local restore_nounset=0

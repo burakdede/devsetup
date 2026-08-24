@@ -103,16 +103,25 @@ Notes:
 
 ## Manifests
 
-Most package decisions live in text manifests:
+Most package decisions live in text manifests. Which directory a manifest
+lives in tells you its scope.
+
+**Shared with macOS** (repo root, one list drives both machines):
+
+- `packages/sdkman.txt` -- JVM candidates
+- `packages/uv-tools.txt` -- Python CLI tools
+- `packages/npm-packages.txt` -- Node CLI tools
+- `dotfiles/.config/mise/config.toml` -- language runtimes
+
+**Ubuntu-specific** (this directory, no macOS equivalent):
 
 - `system/apt-packages.txt`
 - `system/snap-packages.txt`
-- `system/github-tools.txt`
-- `system/npm-packages.txt`
-- `system/uv-tools.txt`
-- `sdk/packages.txt`
+- `system/github-tools.txt` -- upstream release binaries not packaged in APT
+- `system/npm-packages.txt` -- agent CLIs; macOS installs these from Homebrew casks
 
-If you want to tailor the machine, start there first.
+If you want to tailor the machine, start there first. Adding a cross-platform
+CLI tool to an Ubuntu-only list is the usual way the two machines drift apart.
 
 ## Version Pins
 

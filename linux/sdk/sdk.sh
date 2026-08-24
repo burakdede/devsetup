@@ -10,7 +10,9 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 trap 'handle_error $? $LINENO' ERR
 
 SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
-PACKAGES_FILE="$SCRIPT_DIR/packages.txt"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Shared with the other platform -- see packages/sdkman.txt.
+PACKAGES_FILE="$REPO_ROOT/packages/sdkman.txt"
 
 load_sdkman() {
     local restore_nounset=0
