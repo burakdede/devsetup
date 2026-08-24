@@ -175,7 +175,21 @@ verify_shared() {
     local sdkman_list="$REPO_ROOT/packages/sdkman.txt"
 
     if [[ -f "$uv_tools" ]]; then
-        while IFS= read -r c; do check_cmd "$c" "$c  (uv)"; done < <(read_list_file "$uv_tools")
+        # Entries are `package[|source]`, and a package's executable need not
+        # share its name (specify-cli installs `specify`). So ask uv what it
+        # has installed rather than guessing a command name.
+        local uv_installed=""
+        command -v uv >/dev/null 2>&1 && uv_installed="$(uv tool list 2>/dev/null)"
+
+        local entry pkg
+        while IFS= read -r entry; do
+            pkg="${entry%%|*}"
+            if [[ "$uv_installed" == *"$pkg"* ]]; then
+                ok "$pkg  (uv)"
+            else
+                fail "$pkg  (uv)  not installed -- run: ./install.sh --only system"
+            fi
+        done < <(read_list_file "$uv_tools")
     else
         fail "packages/uv-tools.txt  (missing)"
     fi
