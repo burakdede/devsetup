@@ -40,11 +40,21 @@ prompt_with_default() {
         prompt_in="/dev/tty"
     fi
 
-    if [[ -n "$default" ]]; then
-        printf '%s [%s]: ' "$prompt" "$default" > "$prompt_out"
-    else
-        printf '%s: ' "$prompt" > "$prompt_out"
-    fi
+    # Deliberately loud. A bootstrap sitting silently at a bare "Name:" looks
+    # indistinguishable from a hang, so the prompt announces itself, says what
+    # it wants, and shows what pressing Enter will do.
+    {
+        printf '\n%s%s input needed%s\n' "$UI_YELLOW$UI_BOLD" "$UI_ARROW" "$UI_RESET"
+        printf '  %s\n' "$prompt"
+        if [[ -n "$default" ]]; then
+            printf '  %spress Enter to accept:%s %s%s%s\n' \
+                "$UI_DIM" "$UI_RESET" "$UI_BOLD" "$default" "$UI_RESET"
+        fi
+        if [[ "${PROMPT_TIMEOUT_SECONDS}" =~ ^[0-9]+$ ]] && [[ "$PROMPT_TIMEOUT_SECONDS" -gt 0 ]]; then
+            printf '  %stimes out after %ss%s\n' "$UI_DIM" "$PROMPT_TIMEOUT_SECONDS" "$UI_RESET"
+        fi
+        printf '  %s>%s ' "$UI_CYAN" "$UI_RESET"
+    } > "$prompt_out"
 
     if [[ "${PROMPT_TIMEOUT_SECONDS}" =~ ^[0-9]+$ ]] && [[ "$PROMPT_TIMEOUT_SECONDS" -gt 0 ]]; then
         if [[ -n "$prompt_in" ]]; then

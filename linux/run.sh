@@ -13,6 +13,7 @@ INCLUDE_SETTINGS=1
 ONLY_STEPS=()
 VERIFY_ONLY=0
 RUN_TS="$(date +%Y%m%d-%H%M%S)"
+RUN_STARTED="$(date +%s)"
 LOG_FILE="${DEVSETUP_LOG_FILE:-${LINUX_SETUP_LOG_FILE:-$HOME/.local/state/devsetup/logs/linux-run-${RUN_TS}.log}}"
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
@@ -297,15 +298,16 @@ main() {
     for record in "${steps[@]}"; do
         IFS='|' read -r step_name script_path description <<< "$record"
         if ! should_run_step "$step_name"; then
+            ui_summary_add skip "$step_name" 0
             continue
         fi
 
         current=$((current + 1))
-        echo_header "Step ${current}/${total}: ${description}"
+        ui_step "$current" "$total" "$step_name" "$description"
         run_script "$step_name" "$script_path" "$description"
     done
 
-    echo_header "Bootstrap complete"
+    ui_summary_print "$(( $(date +%s) - RUN_STARTED ))"
     log_success "Run log saved to: $LOG_FILE"
     log_info "Post-install checklist:"
     log_info "  1. Log out and back in for default-shell/session-level changes."

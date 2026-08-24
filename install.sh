@@ -19,18 +19,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Colours, but only when attached to a terminal.
-if [ -t 1 ]; then
-    RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
-    BLUE=$'\033[0;34m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
-else
-    RED=''; GREEN=''; YELLOW=''; BLUE=''; BOLD=''; RESET=''
-fi
+# Terminal output: colour and boxes on a tty, plain text when piped. Lives in
+# shared/ui.sh so install.sh and every step below it render identically, and so
+# there is one place that knows about terminal width and UTF-8 support.
+# shellcheck source=shared/ui.sh
+. "$REPO_ROOT/shared/ui.sh"
 
-say()  { printf '%s==>%s %s\n' "$BLUE"   "$RESET" "$*"; }
-ok()   { printf '%s[OK]%s %s\n' "$GREEN"  "$RESET" "$*"; }
-warn() { printf '%s[WARN]%s %s\n' "$YELLOW" "$RESET" "$*" >&2; }
-die()  { printf '%s[ERROR]%s %s\n' "$RED" "$RESET" "$*" >&2; exit 1; }
+die() { ui_err "$*"; exit 1; }
 
 # ─── Prerequisites ────────────────────────────────────────────────────────────
 # Both platform scripts need these before they can do anything useful, and the
@@ -43,7 +38,7 @@ require_prereqs() {
     done
     [ -z "$missing" ] && return 0
 
-    printf '%s\n' "Missing required tool(s):$missing"
+    ui_err "Missing required tool(s):$missing"
     case "$(uname -s)" in
         Darwin) die "Install the Xcode Command Line Tools first:  xcode-select --install" ;;
         *)      die "Install them first, e.g.:  sudo apt-get install -y${missing}" ;;
@@ -79,8 +74,8 @@ detect_platform() {
             # not what CI exercises.
             case "${VERSION_ID:-}" in
                 20.04|22.04|24.04|26.04) ;;
-                "") warn "Could not determine the Ubuntu version; proceeding anyway." ;;
-                *)  warn "Ubuntu ${VERSION_ID} is not an LTS release. CI only covers LTS, so expect rough edges." ;;
+                "") ui_warn "Could not determine the Ubuntu version; proceeding anyway." ;;
+                *)  ui_warn "Ubuntu ${VERSION_ID} is not an LTS release. CI only covers LTS, so expect rough edges." ;;
             esac
             ;;
         *)
@@ -95,10 +90,9 @@ main() {
     require_prereqs
     detect_platform
 
-    say "${BOLD}devsetup${RESET}"
-    ok  "Detected: $PLATFORM_NAME"
-    ok  "Running:  ${PLATFORM_DIR#"$REPO_ROOT"/}/run.sh $*"
-    printf '\n'
+    ui_header "devsetup"
+    ui_ok "Detected  $PLATFORM_NAME"
+    ui_ok "Running   ${PLATFORM_DIR#"$REPO_ROOT"/}/run.sh $*"
 
     # So the platform script prints the command you actually typed.
     export DEVSETUP_ENTRY="./install.sh"

@@ -4,35 +4,25 @@
 
 set -o pipefail
 
-RED=$'\033[0;31m'
-GREEN=$'\033[0;32m'
-YELLOW=$'\033[1;33m'
-BLUE=$'\033[0;34m'
-CYAN=$'\033[0;36m'
-RESET=$'\033[0m'
+# ─── Output ───────────────────────────────────────────────────────────────────
+# Rendering lives in shared/ui.sh: colour and boxes only on a terminal, real
+# terminal width, and padding by character count so multibyte titles do not
+# skew the box. These wrappers keep the historical names so every call site
+# throughout the repo works unchanged.
+# shellcheck source=../../shared/ui.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/shared/ui.sh"
 
-echo_header() {
-    local title="${1:-}"
-    printf '\n%s┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓%s\n' "$BLUE" "$RESET"
-    printf '%s┃ %-78s ┃%s\n' "$BLUE" "${title}" "$RESET"
-    printf '%s┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛%s\n' "$BLUE" "$RESET"
-}
+# Part of this file's public surface: scripts that source it reference the
+# colour names directly (scripts/verify-install.sh among others). Exported so
+# that stays true for anything they invoke.
+export RED="$UI_RED" GREEN="$UI_GREEN" YELLOW="$UI_YELLOW"
+export BLUE="$UI_BLUE" CYAN="$UI_CYAN" RESET="$UI_RESET"
 
-log_info() {
-    printf '%s[INFO]%s %s\n' "$CYAN" "$RESET" "$1"
-}
-
-log_warn() {
-    printf '%s[WARN]%s %s\n' "$YELLOW" "$RESET" "$1" >&2
-}
-
-log_error() {
-    printf '%s[ERROR]%s %s\n' "$RED" "$RESET" "$1" >&2
-}
-
-log_success() {
-    printf '%s[OK]%s %s\n' "$GREEN" "$RESET" "$1"
-}
+echo_header()  { ui_header "${1:-}"; }
+log_info()     { ui_info "$1"; }
+log_warn()     { ui_warn "$1"; }
+log_error()    { ui_err "$1"; }
+log_success()  { ui_ok "$1"; }
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1

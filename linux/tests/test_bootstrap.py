@@ -187,6 +187,10 @@ class BootstrapRepoTests(unittest.TestCase):
             shutil.copy2(REPO_ROOT / "run.sh", repo / "run.sh")
             shutil.copy2(REPO_ROOT / "utils" / "utils.sh", repo / "utils" / "utils.sh")
 
+            # utils.sh sources shared/ui.sh from the monorepo root, so the
+            # fake repo needs that sibling directory to exist too.
+            shutil.copytree(SHARED_DIR, Path(tmp_dir) / "shared")
+
             marker_dir = repo / "markers"
             marker_dir.mkdir()
 

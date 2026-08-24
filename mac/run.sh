@@ -48,6 +48,7 @@ INCLUDE_MACOS=1
 ONLY_STEPS=()
 VERIFY_ONLY=0
 RUN_TS="$(date +%Y%m%d-%H%M%S)"
+RUN_STARTED="$(date +%s)"
 LOG_FILE="${DEVSETUP_LOG_FILE:-${MACSETUP_LOG_FILE:-$HOME/.local/state/devsetup/logs/mac-run-${RUN_TS}.log}}"
 LOGGING_INITIALIZED=0
 LOG_PIPE=""
@@ -131,10 +132,14 @@ run_script() {
         return 0
     fi
 
-    echo_header "Starting: ${description}"
-    # Named in the failure message and in the resume command; see handle_error.
+    local started ended
+    started="$(date +%s)"
+
+    # DEVSETUP_STEP is named in the failure message and the resume command.
     DEVSETUP_STEP="$step" bash "$script_path"
-    log_success "Completed: ${description}"
+
+    ended="$(date +%s)"
+    ui_summary_add ok "$step" "$((ended - started))"
 }
 
 init_run_logging() {
@@ -254,19 +259,22 @@ main() {
     local script_path description
     for record in "${steps[@]}"; do
         IFS='|' read -r step_name script_path description <<< "$record"
-        should_run_step "$step_name" || continue
+        if ! should_run_step "$step_name"; then
+            ui_summary_add skip "$step_name" 0
+            continue
+        fi
         current=$((current + 1))
-        echo_header "Step ${current}/${total}: ${description}"
+        ui_step "$current" "$total" "$step_name" "$description"
         run_script "$step_name" "$script_path" "$description"
     done
 
-    echo_header "Bootstrap complete"
+    ui_summary_print "$(( $(date +%s) - RUN_STARTED ))"
     log_success "Run log saved to: $LOG_FILE"
     log_info "Post-install checklist:"
     log_info "  1. Log out and back in for default-shell change to take effect."
     log_info "  2. Open a new terminal to load the updated zsh / mise configuration."
     log_info "  3. Open WezTerm → tmux session → nvim to verify the full stack."
-    log_info "  4. Run ./run.sh --verify for a health check summary."
+    log_info "  4. Run ${DEVSETUP_ENTRY:-./run.sh} --verify for a health check summary."
 }
 
 main
