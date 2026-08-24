@@ -21,9 +21,10 @@ NPM_AGENT_CLIS_FILE="$SCRIPT_DIR/npm-packages.txt"
 UV_TOOLS_FILE="$REPO_ROOT/packages/uv-tools.txt"
 GITHUB_TOOLS_FILE="$SCRIPT_DIR/github-tools.txt"
 
-# Machine architecture, in the two spellings upstreams use for release assets.
-# DEB_ARCH  -- Debian naming:  amd64 / arm64   (also used for apt "arch=" pins)
-# GNU_ARCH  -- GNU triple:     x86_64 / aarch64
+# Machine architecture, in the three spellings upstreams use for release assets.
+# DEB_ARCH   -- Debian naming:  amd64 / arm64   (also used for apt "arch=" pins)
+# GNU_ARCH   -- GNU triple:     x86_64 / aarch64
+# NODE_ARCH  -- Node/JS naming: x64 / arm64     (tree-sitter and friends use it)
 GNU_ARCH="$(uname -m)"
 if command -v dpkg >/dev/null 2>&1; then
     DEB_ARCH="$(dpkg --print-architecture)"
@@ -37,6 +38,11 @@ else
         *)             DEB_ARCH="$GNU_ARCH" ;;
     esac
 fi
+case "$GNU_ARCH" in
+    x86_64)        NODE_ARCH="x64" ;;
+    aarch64|arm64) NODE_ARCH="arm64" ;;
+    *)             NODE_ARCH="$GNU_ARCH" ;;
+esac
 MISE_BIN="$HOME/.local/bin/mise"
 # Both loaded from packages/versions.txt by load_versions. No hardcoded
 # fallbacks: a stale default here would be a second source of truth that
@@ -502,6 +508,7 @@ install_github_release_tools() {
         # Release assets are named per architecture; fill in this machine's.
         asset_pattern="${asset_pattern//\{deb_arch\}/$DEB_ARCH}"
         asset_pattern="${asset_pattern//\{gnu_arch\}/$GNU_ARCH}"
+        asset_pattern="${asset_pattern//\{node_arch\}/$NODE_ARCH}"
 
         if command_exists "$command_name" && ! upgrade_enabled; then
             log_info "Tool already installed: $command_name (set LINUX_SETUP_UPGRADE=1 to upgrade)"
@@ -538,6 +545,13 @@ install_github_release_tools() {
                     continue
                 fi
                 sudo_run install -m 0755 "$extracted_path" "/usr/local/bin/$command_name"
+                ;;
+            gz)
+                # A single gzip-compressed binary, not a tarball.
+                archive_path="$temp_dir/$binary_name.gz"
+                curl -fsSL "$download_url" -o "$archive_path"
+                gunzip -f "$archive_path"
+                sudo_run install -m 0755 "$temp_dir/$binary_name" "/usr/local/bin/$command_name"
                 ;;
             *)
                 log_warn "Unsupported install mode '$mode' for $command_name."

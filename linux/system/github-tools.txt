@@ -10,6 +10,10 @@
 #
 #   {deb_arch}   Debian naming    amd64 / arm64
 #   {gnu_arch}   GNU triple       x86_64 / aarch64
+#   {node_arch}  Node/JS naming   x64 / arm64
+#
+# Install modes: raw (a bare binary), tar.gz (a tarball), gz (a gzipped binary).
 
 yq|mikefarah/yq|^yq_linux_{deb_arch}$|raw|yq
 eza|eza-community/eza|^eza_{gnu_arch}-unknown-linux-gnu\.tar\.gz$|tar.gz|eza
+tree-sitter|tree-sitter/tree-sitter|^tree-sitter-linux-{node_arch}\.gz$|gz|tree-sitter

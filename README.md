@@ -250,6 +250,35 @@ compositor misbehaves, export `WEZTERM_DISABLE_WAYLAND=1` in `~/.zshrc.local`.
 
 ---
 
+## Neovim
+
+Plugins are managed by lazy.nvim and pinned in
+`dotfiles/.config/nvim/lazy-lock.json`. Update with `:Lazy update`, then commit
+the lock file so both machines move together.
+
+### treesitter is on the `main` branch
+
+This matters, because `main` is a **full, incompatible rewrite** of
+nvim-treesitter and most guidance you will find online is for `master`. On
+`main`:
+
+- `ensure_installed`, `highlight = { enable = true }`, `indent`, and
+  `auto_install` **do not exist**. Writing them is silently ignored, which
+  leaves you with Vim's regex syntax and no treesitter at all.
+- Parsers are installed with `require("nvim-treesitter").install{...}`.
+- Highlighting is turned on per buffer with `vim.treesitter.start()`, which the
+  config does from a `FileType` autocommand.
+- It needs **Neovim >= 0.12** and the **`tree-sitter` CLI >= 0.26.1**, which
+  master never required. Upstream is explicit that it must come from a package
+  manager and **not npm**, so it is `tree-sitter-cli` in the Brewfile on macOS
+  and a release binary via `github-tools.txt` on Ubuntu.
+
+To add a language: add its parser name to the `parsers` list in
+`lua/plugins/lsp.lua` and restart. `:checkhealth nvim-treesitter` shows what is
+installed.
+
+---
+
 ## Git configuration
 
 `dotfiles/.gitconfig` is symlinked to `~/.gitconfig` and includes
@@ -437,7 +466,7 @@ inheriting.
 | Python CLIs | uv | Isolated tool installs, no global pip |
 | Terminal | WezTerm | Same config and same keys on both platforms |
 | Multiplexer | tmux, OSC 52 clipboard | Copy behaves identically on macOS and Ubuntu, and over SSH |
-| Editor | Neovim + lazy.nvim | |
+| Editor | Neovim + lazy.nvim, treesitter `main` branch | |
 | Prompt | powerlevel10k with instant prompt | |
 
 **One runtime manager, not several.** mise owns Python, Node and Go; SDKMAN

@@ -252,13 +252,29 @@ return {
         end,
     },
 
-    -- ─── Treesitter: syntax highlighting & text-objects ───────────────────────
+    -- ─── Treesitter: syntax highlighting & indentation ───────────────────────
+    --
+    -- NOTE: this is the `main` branch of nvim-treesitter, which is a full,
+    -- incompatible rewrite. The old master-branch options -- ensure_installed,
+    -- highlight = { enable = true }, indent = { enable = true }, auto_install --
+    -- DO NOT EXIST here and are silently ignored if you write them. Parsers are
+    -- installed with require("nvim-treesitter").install(), and highlighting is
+    -- turned on per buffer with vim.treesitter.start().
+    --
+    -- Requires Neovim >= 0.12 (pinned in packages/versions.txt).
+    --
+    -- Adding a language: add its parser name below, restart, and it installs on
+    -- next launch. `:checkhealth nvim-treesitter` lists what is installed.
     {
         "nvim-treesitter/nvim-treesitter",
-        build  = ":TSUpdate",
+        branch = "main",
         lazy   = false,
-        opts   = {
-            ensure_installed = {
+        build  = ":TSUpdate",
+        config = function()
+            local ts = require("nvim-treesitter")
+            ts.setup()
+
+            local parsers = {
                 "bash", "c", "cmake", "css", "diff",
                 "dockerfile", "go", "gomod", "gowork",
                 "html", "java", "javascript", "json", "json5",
@@ -268,11 +284,38 @@ return {
                 "rust", "scala", "sql",
                 "toml", "tsx", "typescript",
                 "vim", "vimdoc", "yaml",
-            },
-            auto_install = true,
-            highlight    = { enable = true },
-            indent       = { enable = true },
-        },
+            }
+
+            -- install() is async and re-downloads what it is given, so only ask
+            -- for what is actually missing. Keeps startup free after first run.
+            local installed = ts.get_installed()
+            local missing = vim.tbl_filter(function(parser)
+                return not vim.tbl_contains(installed, parser)
+            end, parsers)
+            if #missing > 0 then
+                ts.install(missing)
+            end
+
+            -- Enable per buffer. Deriving the language from the filetype rather
+            -- than listing patterns means tsx/typescriptreact and friends map
+            -- correctly, and a filetype with no parser is simply skipped.
+            vim.api.nvim_create_autocmd("FileType", {
+                group = vim.api.nvim_create_augroup("TreesitterStart", { clear = true }),
+                callback = function(ev)
+                    local lang = vim.treesitter.language.get_lang(vim.bo[ev.buf].filetype)
+                    if not lang then
+                        return
+                    end
+                    -- Fails when the parser is not installed yet; that is fine,
+                    -- the buffer just falls back to regex syntax.
+                    if not pcall(vim.treesitter.start, ev.buf, lang) then
+                        return
+                    end
+                    vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+                end,
+                desc = "Start treesitter highlighting and indentation",
+            })
+        end,
     },
 
     -- ─── Inline diagnostics (optional; un-comment to enable) ─────────────────
