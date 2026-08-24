@@ -164,17 +164,45 @@ alias vi='nvim'
 alias vim='nvim'
 
 # ─── fzf ──────────────────────────────────────────────────────────────────────
-# Enable fzf key bindings and fuzzy completion if installed.
-# Homebrew (macOS) installs fzf shell scripts under $(brew --prefix)/opt/fzf/shell/
-# while Linux distros put them in /usr/share/doc/fzf/examples/.
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    _fzf_prefix="$(brew --prefix 2>/dev/null)/opt/fzf/shell"
-    [[ -f "$_fzf_prefix/key-bindings.zsh" ]] && source "$_fzf_prefix/key-bindings.zsh"
-    [[ -f "$_fzf_prefix/completion.zsh" ]]   && source "$_fzf_prefix/completion.zsh"
-    unset _fzf_prefix
-else
-    [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-    [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]   && source /usr/share/doc/fzf/examples/completion.zsh
+if command -v fzf &>/dev/null; then
+    # fzf 0.48+ prints its own shell integration, which removes all per-distro
+    # path guessing. Fall back to the packaged scripts for older builds --
+    # Ubuntu 22.04 ships 0.29 and 24.04 ships 0.44, neither of which has it.
+    _fzf_init="$(fzf --zsh 2>/dev/null)"
+    if [[ -n "$_fzf_init" ]]; then
+        eval "$_fzf_init"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        _fzf_prefix="$(brew --prefix 2>/dev/null)/opt/fzf/shell"
+        [[ -f "$_fzf_prefix/key-bindings.zsh" ]] && source "$_fzf_prefix/key-bindings.zsh"
+        [[ -f "$_fzf_prefix/completion.zsh" ]]   && source "$_fzf_prefix/completion.zsh"
+        unset _fzf_prefix
+    else
+        [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+        [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]   && source /usr/share/doc/fzf/examples/completion.zsh
+    fi
+    unset _fzf_init
+
+    # Back fzf with fd so it honours .gitignore and skips .git. Without this
+    # fzf shells out to find and walks node_modules and friends.
+    if command -v fd &>/dev/null; then
+        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+        export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+    fi
+    export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
+fi
+
+# ─── Clipboard parity ─────────────────────────────────────────────────────────
+# pbcopy/pbpaste are macOS built-ins. Alias the Linux equivalents to the same
+# names so the same muscle memory and the same scripts work on both machines.
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy &>/dev/null; then
+        alias pbcopy='wl-copy'
+        alias pbpaste='wl-paste'
+    elif command -v xclip &>/dev/null; then
+        alias pbcopy='xclip -selection clipboard'
+        alias pbpaste='xclip -selection clipboard -o'
+    fi
 fi
 
 # ─── direnv ───────────────────────────────────────────────────────────────────

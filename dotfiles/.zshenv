@@ -41,5 +41,11 @@ export PAGER="less"
 export LESS="-R --quit-if-one-screen"
 
 # ─── Language / locale ────────────────────────────────────────────────────────
+# LANG only, as a fallback for systems that set nothing.
+#
+# LC_ALL is deliberately NOT set. It overrides every LC_* category at once and
+# outranks LANG, so forcing it here silently discards the region you picked in
+# System Settings or localectl -- an en_GB machine would still get US date and
+# number formats. Set LC_ALL per-command when you need to pin one, e.g.
+# `LC_ALL=C sort`.
 export LANG="${LANG:-en_US.UTF-8}"
-export LC_ALL="${LC_ALL:-en_US.UTF-8}"

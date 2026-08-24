@@ -144,6 +144,20 @@ Plugins are loaded **before** `compinit`, because `compinit` only sees the
 `fpath` it is given at call time. If you add a plugin that ships completions,
 it must go in `.zsh_plugins.txt`, not below the completion block.
 
+**`LC_ALL` is not set, only `LANG`.** `LC_ALL` overrides every `LC_*` category
+at once and outranks `LANG`, so setting it discards the region you chose in
+System Settings or `localectl`. An `en_GB` machine would still get US date and
+number formats. Pin it per command when you need to: `LC_ALL=C sort`.
+
+**`pbcopy` / `pbpaste` work on both machines.** They are macOS built-ins; on
+Linux they are aliased to `wl-copy`/`wl-paste` under Wayland or `xclip` under
+X11, so the same commands and the same scripts work either side.
+
+**fzf is backed by `fd`** via `FZF_DEFAULT_COMMAND`, so it honours `.gitignore`
+and skips `.git` instead of shelling out to `find` and walking `node_modules`.
+Shell integration comes from `fzf --zsh` where available (0.48+), falling back
+to the packaged scripts on older Ubuntu builds.
+
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 
 ### Editing configs
