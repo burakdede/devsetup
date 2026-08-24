@@ -21,15 +21,42 @@ path_prepend() {
     export PATH="$1${PATH:+:$PATH}"
 }
 
+# ─── Cached shell integrations ────────────────────────────────────────────────
+# Same idea as the _evalcache in .zshenv: brew, mise, fzf and direnv each print
+# shell code that has to be eval'd, and each is a fork+exec on every start. The
+# output only changes when the tool does, so cache it and re-source.
+#
+# bash has no zcompile, so this is a plain cached file.
+# To force a rebuild:  rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}"/bash/init
+_evalcache() {
+    local name="$1" gen="$2"
+    shift 2                      # drop the cache name and the mtime reference
+    local dir="${XDG_CACHE_HOME:-$HOME/.cache}/bash/init"
+    local cache="$dir/${name}.bash"
+
+    if [[ ! -s "$cache" || "$gen" -nt "$cache" ]]; then
+        [[ -d "$dir" ]] || mkdir -p "$dir"
+        if ! "$@" > "$cache" 2>/dev/null; then
+            rm -f "$cache"
+            return 1
+        fi
+    fi
+
+    # shellcheck source=/dev/null
+    source "$cache"
+}
+
 # ─── Homebrew (macOS) ─────────────────────────────────────────────────────────
 # Must run AFTER /etc/profile, which calls path_helper and hoists /usr/bin to
 # the front. Same reasoning as ~/.zprofile; see the long note there.
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -x /opt/homebrew/bin/brew ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -x /usr/local/bin/brew ]]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
+    for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+        if [[ -x "$_brew" ]]; then
+            _evalcache brew "$_brew" "$_brew" shellenv
+            break
+        fi
+    done
+    unset _brew
 fi
 
 path_prepend "$HOME/go/bin"
@@ -53,7 +80,7 @@ export LANG="${LANG:-en_US.UTF-8}"
 # the versions pinned in dotfiles/.config/mise/config.toml -- so a script run in
 # bash would use a different runtime than the same script run in zsh.
 if [[ -x "$HOME/.local/bin/mise" ]]; then
-    eval "$("$HOME/.local/bin/mise" activate bash)"
+    _evalcache mise "$HOME/.local/bin/mise" "$HOME/.local/bin/mise" activate bash
 fi
 
 # ─── SDKMAN (lazy) ────────────────────────────────────────────────────────────
@@ -117,14 +144,10 @@ fi
 
 # ─── fzf ──────────────────────────────────────────────────────────────────────
 if command -v fzf &>/dev/null; then
-    _fzf_init="$(fzf --bash 2>/dev/null)"
-    if [[ -n "$_fzf_init" ]]; then
-        eval "$_fzf_init"
-    else
+    if ! _evalcache fzf "$(command -v fzf)" fzf --bash; then
         [[ -f /usr/share/doc/fzf/examples/key-bindings.bash ]] && source /usr/share/doc/fzf/examples/key-bindings.bash
         [[ -f /usr/share/doc/fzf/examples/completion.bash ]]   && source /usr/share/doc/fzf/examples/completion.bash
     fi
-    unset _fzf_init
 
     if command -v fd &>/dev/null; then
         export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
@@ -146,7 +169,7 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
 fi
 
 # ─── direnv ───────────────────────────────────────────────────────────────────
-command -v direnv &>/dev/null && eval "$(direnv hook bash)"
+command -v direnv &>/dev/null && _evalcache direnv "$(command -v direnv)" direnv hook bash
 
 # ─── Completion ───────────────────────────────────────────────────────────────
 if [[ -r /opt/homebrew/etc/profile.d/bash_completion.sh ]]; then

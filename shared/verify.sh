@@ -20,6 +20,20 @@ section() { printf '\n%s── %s%s\n' "$CYAN" "$1" "$RESET"; }
 
 _version_of() { command "$1" --version 2>/dev/null | head -n1 || true; }
 
+# Best-of-3 interactive login shell startup, in whole milliseconds.
+_startup_ms() {
+    local shell="$1" best="" t _
+    command -v "$shell" >/dev/null 2>&1 || return 1
+    for _ in 1 2 3; do
+        t="$( { /usr/bin/time -p "$shell" -lic 'exit' ; } 2>&1 | awk '/^real/{print $2}' )"
+        [[ -z "$t" ]] && continue
+        if [[ -z "$best" ]] || awk -v a="$t" -v b="$best" 'BEGIN{exit !(a<b)}'; then
+            best="$t"
+        fi
+    done
+    [[ -n "$best" ]] && awk -v b="$best" 'BEGIN{printf "%d", b*1000}'
+}
+
 # Display a path home-relative, so labels read "~/.zshrc" not the full path.
 _pretty_path() {
     local tilde='~'
@@ -265,6 +279,27 @@ verify_shared() {
     # .zshrc only for interactive ones. Runtimes must resolve the same in all
     # three, or `ssh host "node --version"`, cron and git hooks get a different
     # version than your terminal does.
+    # Startup time is a feature here, so guard it. These are generous ceilings:
+    # the intent is to catch a regression (an uncached eval, a plugin loaded
+    # eagerly), not to police a few milliseconds.
+    section "Shell startup"
+    local zsh_ms bash_ms
+    zsh_ms="$(_startup_ms zsh)"
+    if [[ -n "$zsh_ms" ]]; then
+        if   (( zsh_ms <= 150 )); then ok   "zsh starts in ${zsh_ms}ms"
+        elif (( zsh_ms <= 300 )); then warn "zsh starts in ${zsh_ms}ms (expected under 150ms)"
+        else                           fail "zsh starts in ${zsh_ms}ms -- something is no longer cached"
+        fi
+    fi
+    if command -v bash >/dev/null 2>&1; then
+        bash_ms="$(_startup_ms bash)"
+        if [[ -n "$bash_ms" ]]; then
+            if   (( bash_ms <= 250 )); then ok   "bash starts in ${bash_ms}ms"
+            else                            warn "bash starts in ${bash_ms}ms (expected under 250ms)"
+            fi
+        fi
+    fi
+
     section "Shell invocation parity"
     if command -v node >/dev/null 2>&1; then
         local n_int n_login n_script

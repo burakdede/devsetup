@@ -11,7 +11,7 @@ fi
 
 # ─── mise runtime activation ──────────────────────────────────────────────────
 if [[ -x "$HOME/.local/bin/mise" ]]; then
-    eval "$("$HOME/.local/bin/mise" activate zsh)"
+    _evalcache mise "$HOME/.local/bin/mise" "$HOME/.local/bin/mise" activate zsh
 fi
 
 # ─── SDKMAN activation (lazy) ─────────────────────────────────────────────────
@@ -114,11 +114,13 @@ load_plugins_and_prompt
 # Runs AFTER the plugin block above so that fpath already contains
 # zsh-completions; compinit only sees the fpath it is given at call time.
 #
-# Rebuilding the completion dump is the single most expensive thing in this
-# file, and previously happened on EVERY shell start. Do the full scan
-# (including the fpath security audit) at most once a day and use the cached
-# dump the rest of the time. After installing something that ships new
-# completions, delete the dump to pick them up immediately:
+# Rebuilding the dump means scanning every fpath directory, which costs ~450ms.
+# Doing that synchronously -- even once a day -- is a visible stall when you
+# open a terminal. So: always load the cached dump (instant), and if it has
+# gone stale, rebuild it in the BACKGROUND for the next shell. The only cost is
+# that a newly installed completion shows up one shell launch later.
+#
+# To force a rebuild now:
 #   rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-*
 autoload -Uz compinit
 zmodload zsh/complist
@@ -126,18 +128,32 @@ zmodload zsh/complist
 _zcompdump="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/.zcompdump-${ZSH_VERSION}"
 [[ -d "${_zcompdump:h}" ]] || mkdir -p "${_zcompdump:h}"
 
-# Glob qualifiers: N = no match is not an error, . = plain file,
-# mh-24 = last modified less than 24 hours ago.
-_zcompdump_fresh=( $_zcompdump(N.mh-24) )
-
-if (( $#_zcompdump_fresh )); then
-    compinit -C -d "$_zcompdump"      # -C: trust the cache, skip the fpath audit
-else
+if [[ ! -s "$_zcompdump" ]]; then
+    # No dump at all (first ever run): there is nothing to load from, so pay
+    # the full scan once rather than start with no completions.
     compinit -d "$_zcompdump"
-    # Compile the dump so the next shell loads bytecode instead of re-parsing it.
     zcompile -R -- "${_zcompdump}.zwc" "$_zcompdump" 2>/dev/null
+else
+    # -C: trust the dump, skip the fpath security audit. Always instant.
+    compinit -C -d "$_zcompdump"
+
+    # Glob qualifiers: N = no match is fine, . = plain file,
+    # mh-24 = modified within the last 24 hours.
+    _zcompdump_fresh=( $_zcompdump(N.mh-24) )
+    if (( ! $#_zcompdump_fresh )); then
+        # Rebuild detached, writing to a temp file and moving it into place so
+        # two shells starting at once cannot corrupt each other's dump.
+        {
+            _zcompdump_tmp="${_zcompdump}.$$"
+            compinit -d "$_zcompdump_tmp"
+            zcompile -R -- "${_zcompdump_tmp}.zwc" "$_zcompdump_tmp" 2>/dev/null
+            mv -f "$_zcompdump_tmp" "$_zcompdump" 2>/dev/null
+            mv -f "${_zcompdump_tmp}.zwc" "${_zcompdump}.zwc" 2>/dev/null
+        } &!
+    fi
+    unset _zcompdump_fresh
 fi
-unset _zcompdump _zcompdump_fresh
+unset _zcompdump
 
 # ─── History ──────────────────────────────────────────────────────────────────
 HISTFILE="$HOME/.zsh_history"
@@ -176,9 +192,8 @@ if command -v fzf &>/dev/null; then
     # fzf 0.48+ prints its own shell integration, which removes all per-distro
     # path guessing. Fall back to the packaged scripts for older builds --
     # Ubuntu 22.04 ships 0.29 and 24.04 ships 0.44, neither of which has it.
-    _fzf_init="$(fzf --zsh 2>/dev/null)"
-    if [[ -n "$_fzf_init" ]]; then
-        eval "$_fzf_init"
+    if _evalcache fzf "$(command -v fzf)" fzf --zsh; then
+        :
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         _fzf_prefix="$(brew --prefix 2>/dev/null)/opt/fzf/shell"
         [[ -f "$_fzf_prefix/key-bindings.zsh" ]] && source "$_fzf_prefix/key-bindings.zsh"
@@ -188,7 +203,6 @@ if command -v fzf &>/dev/null; then
         [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
         [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]   && source /usr/share/doc/fzf/examples/completion.zsh
     fi
-    unset _fzf_init
 
     # Back fzf with fd so it honours .gitignore and skips .git. Without this
     # fzf shells out to find and walks node_modules and friends.
@@ -228,7 +242,7 @@ fi
 
 # ─── direnv ───────────────────────────────────────────────────────────────────
 if command -v direnv &>/dev/null; then
-    eval "$(direnv hook zsh)"
+    _evalcache direnv "$(command -v direnv)" direnv hook zsh
 fi
 
 # ─── tmux auto-attach (optional) ──────────────────────────────────────────────
@@ -239,6 +253,28 @@ if [[ "${ZSH_TMUX_AUTO_ATTACH:-0}" == "1" ]] \
     && [[ "$TERM_PROGRAM" != "vscode" ]]; then
     tmux attach-session -t main 2>/dev/null || tmux new-session -s main
 fi
+
+# ─── Byte-compile our own config ──────────────────────────────────────────────
+# zsh will load <file>.zwc instead of parsing <file> when the .zwc is newer, so
+# compiling the files we source on every start saves re-parsing them each time.
+# Cheap and self-maintaining: each is recompiled only when the source changes.
+#
+# The symlinked dotfiles live in the repo, so the .zwc files land there too and
+# are gitignored. Compiling happens after everything else so it never delays the
+# prompt on the run that does the work.
+() {
+    local f
+    for f in "${ZDOTDIR:-$HOME}"/.zshrc "${ZDOTDIR:-$HOME}"/.zshenv \
+             "${ZDOTDIR:-$HOME}"/.zprofile "${ZDOTDIR:-$HOME}"/.p10k.zsh \
+             "${ZDOTDIR:-$HOME}"/.zsh_plugins.zsh; do
+        # -L resolves the symlink so the .zwc sits next to the real file.
+        local real="${f:A}"
+        [[ -r "$real" ]] || continue
+        if [[ ! -s "${real}.zwc" || "$real" -nt "${real}.zwc" ]]; then
+            zcompile -R -- "${real}.zwc" "$real" 2>/dev/null
+        fi
+    done
+}
 
 # ─── Local overrides ──────────────────────────────────────────────────────────
 # Machine-specific settings that should not be committed to version control.

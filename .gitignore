@@ -22,6 +22,9 @@ dotfiles/.config/agents/skills/
 dotfiles/.zsh_plugins.zsh
 dotfiles/.zsh_plugins.clean.txt
 
+# zsh byte-compiled configs, rebuilt automatically whenever the source changes
+*.zwc
+
 # Python
 __pycache__/
 *.pyc

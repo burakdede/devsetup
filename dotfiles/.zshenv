@@ -39,6 +39,38 @@ path=("$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/go/bin" $path)
 # .zshrc, which supersedes this.
 path=("${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims" $path)
 
+# ─── Cached shell integrations ────────────────────────────────────────────────
+# Tools like brew, mise, fzf and direnv print shell code that you eval at
+# startup. Each of those is a fork+exec, and together they were ~50ms of a ~90ms
+# startup -- the single largest remaining cost, and entirely repeated work:
+# the output only changes when the tool itself changes.
+#
+# _evalcache runs the generator once, stores the output under
+# $XDG_CACHE_HOME/zsh/init/, byte-compiles it, and sources that thereafter.
+# The cache is regenerated when the generating binary is newer than it, so a
+# `brew upgrade` or `mise self-update` picks itself up automatically.
+#
+# To force a rebuild:  rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/init
+_evalcache() {
+    local name="$1" gen="$2"
+    shift 2                      # drop the cache name and the mtime reference
+    local dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/init"
+    local cache="$dir/${name}.zsh"
+
+    if [[ ! -s "$cache" || "$gen" -nt "$cache" ]]; then
+        [[ -d "$dir" ]] || mkdir -p "$dir"
+        if ! "$@" >| "$cache" 2>/dev/null; then
+            # Generator failed; do not leave a truncated cache behind.
+            rm -f "$cache"
+            return 1
+        fi
+        # zsh prefers a .zwc sitting next to the script, so compile it.
+        zcompile -R -- "${cache}.zwc" "$cache" 2>/dev/null
+    fi
+
+    source "$cache"
+}
+
 # ─── XDG base directories ─────────────────────────────────────────────────────
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"

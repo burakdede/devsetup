@@ -22,11 +22,13 @@
 # Homebrew ones are installed. Running it here, after path_helper, is what
 # actually makes Homebrew-managed binaries win.
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -x /opt/homebrew/bin/brew ]]; then        # Apple Silicon
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -x /usr/local/bin/brew ]]; then         # Intel
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
+    for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do   # Apple Silicon, Intel
+        if [[ -x "$_brew" ]]; then
+            _evalcache brew "$_brew" "$_brew" shellenv
+            break
+        fi
+    done
+    unset _brew
 fi
 
 # path_helper also demotes the user-local entries set in ~/.zshenv, so

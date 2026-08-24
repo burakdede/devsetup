@@ -211,7 +211,50 @@ small hand-written prompt rather than a second prompt framework, since
 powerlevel10k is zsh-only. `--verify` checks that both shells resolve `node`
 identically and that mise is active in bash.
 
-Startup: zsh ~0.10s, bash ~0.16s.
+### Startup speed
+
+Startup is treated as a feature, and `--verify` fails if it regresses.
+
+| | |
+|---|---|
+| zsh, typical | **~60ms** |
+| bash, typical | ~120ms |
+| zsh, first ever run | ~420ms (builds the completion dump once) |
+
+Three things get it there:
+
+**Shell integrations are cached.** `brew shellenv`, `mise activate`, `fzf --zsh`
+and `direnv hook` each print shell code you have to `eval`. That is four
+fork+execs on every single shell, and together they were ~50ms of a ~90ms
+startup -- pure repeated work, since the output only changes when the tool does.
+`_evalcache` (in `.zshenv`, mirrored in `.bashrc`) runs each generator once,
+stores the result under `$XDG_CACHE_HOME/zsh/init/`, byte-compiles it, and
+sources that instead. It regenerates automatically when the generating binary
+is newer than its cache, so upgrades are picked up without you thinking about
+it.
+
+**The completion dump is rebuilt in the background.** Rescanning `fpath` costs
+~450ms. Doing that synchronously, even once a day, is a visible stall. So the
+cached dump is always loaded instantly with `compinit -C`, and if it has gone
+stale the rebuild is detached with `&!` for the *next* shell. The only cost is
+that a newly installed completion appears one shell launch later. Stale-dump
+startup went from 470ms to 60ms.
+
+**Config files are byte-compiled.** `.zshrc`, `.zshenv`, `.zprofile`,
+`.p10k.zsh` and the plugin bundle each get a `.zwc` that zsh loads instead of
+re-parsing the source. Recompiled automatically whenever the source changes,
+and gitignored.
+
+To force everything to rebuild:
+
+```bash
+rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/init "${XDG_CACHE_HOME:-$HOME/.cache}"/bash/init
+rm -f  "${XDG_CACHE_HOME:-$HOME/.cache}"/zsh/.zcompdump-* ~/Projects/devsetup/dotfiles/*.zwc
+```
+
+One case is genuinely slow and is not ours: the first shell after a `mise`
+upgrade takes ~400ms, because mise revalidates its own internal cache when its
+binary changes. It happens once per upgrade.
 
 **SDKMAN is loaded lazily.** `sdkman-init.sh` loops over every installed
 candidate in shell to build PATH, which costs ~90ms per shell with ten
