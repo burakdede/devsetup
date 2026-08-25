@@ -55,6 +55,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/smoke-system.sh
 
+      # The runner image ships its own aws and gcloud, so the step above takes
+      # the "already installed" branch and never exercises either installer.
+      # Force them to run and assert they land in ~/.local, which is what a
+      # real Ubuntu machine without them would do.
+      - name: Cloud CLI installers (forced)
+        env:
+          MACHINIST_UPGRADE: "1"
+        run: |
+          set -euo pipefail
+          # system.sh ends with a bare `main`, so strip that before sourcing or
+          # this re-runs the entire bootstrap. Same trick the unit tests use.
+          # The copy stays inside system/ so SCRIPT_DIR still resolves and its
+          # own `source ../utils/utils.sh` keeps working.
+          sed '/^main$/d' system/system.sh > system/system-sourceable.sh
+          # shellcheck disable=SC1091
+          source system/system-sourceable.sh
+          install_cloud_clis
+
+          test -x "$HOME/.local/bin/aws"
+          test -x "$HOME/.local/bin/gcloud"
+          "$HOME/.local/bin/aws" --version
+          "$HOME/.local/bin/gcloud" version
+
       - name: Verify installed commands
         env:
           MACHINIST_SKIP_WEZTERM: "1"
