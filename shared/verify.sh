@@ -203,7 +203,16 @@ verify_shared() {
     fi
 
     if [[ -f "$npm_tools" ]]; then
-        while IFS= read -r c; do check_cmd "$c" "$c  (npm)"; done < <(read_list_file "$npm_tools")
+        # Entries are `package[|command]`; a scoped package's executable does
+        # not share its name (@ast-grep/cli installs `ast-grep`), so check the
+        # command where one is given and the package name otherwise.
+        local entry npm_pkg npm_cmd
+        while IFS= read -r entry; do
+            npm_pkg="${entry%%|*}"
+            npm_cmd="${entry#*|}"
+            [[ "$npm_cmd" == "$entry" ]] && npm_cmd="$npm_pkg"
+            check_cmd "$npm_cmd" "$npm_pkg  (npm)"
+        done < <(read_list_file "$npm_tools")
     else
         fail "packages/npm-packages.txt  (missing)"
     fi
@@ -280,6 +289,18 @@ verify_shared() {
     if [[ "$found_conflict" -eq 0 ]]; then
         ok "no competing runtime managers on PATH"
     fi
+
+    # A Homebrew copy of something mise owns is invisible to the resolution
+    # check below: ~/.local/bin and the mise shims sort ahead of /opt/homebrew,
+    # so the shim wins and nothing looks wrong. It stays wrong quietly until
+    # one PATH reorder -- or one script calling the tool by absolute path --
+    # picks the other one. This machine carried a Homebrew node v26 behind a
+    # mise-pinned v24 that way, and two mise binaries nine months apart.
+    #
+    # mise itself is the sharp case and is a failure, not a warning: .zshrc and
+    # .zprofile activate ~/.local/bin/mise by absolute path, so a Homebrew mise
+    # satisfies `command -v mise` while the activation silently uses the other
+    # binary. mac/Brewfile documents this; the check enforces it.
 
     # The runtimes that actually resolve should be the mise ones.
     local rt

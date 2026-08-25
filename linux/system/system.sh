@@ -721,6 +721,8 @@ install_npm_clis() {
         fi
 
         while IFS= read -r package_name; do
+            # Entries may be `package|command`; npm only wants the package.
+            package_name="${package_name%%|*}"
             log_info "Installing npm package: $package_name"
             # No version here: mise resolves node from the shared config.
             "$MISE_BIN" exec -- npm install --global "$package_name"

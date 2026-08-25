@@ -1,5 +1,12 @@
 # Node-based CLI tools installed globally -- shared by macOS and Ubuntu.
 #
+# Format:  package[|command]
+#
+# Give a command when the executable does not share the package name, as with
+# a scoped package: `@ast-grep/cli` installs `ast-grep`. Without it the
+# verifier looks for a command named after the package and reports a false
+# failure. Same convention as packages/uv-tools.txt.
+#
 # Agent CLIs are NOT listed here: macOS installs them from Homebrew casks and
 # Ubuntu from npm/vendor installers, so they are tracked per platform.
 
@@ -14,3 +21,10 @@ prettier
 # browsers must be reinstalled when this is upgraded. install_playwright_browser
 # in the system step handles that.
 playwright
+
+# Structural code search. Matches on syntax tree shape rather than text, so an
+# agent asking "where is this pattern used" gets the matching nodes instead of
+# every line that happens to contain the same words. Installed from npm rather
+# than a native package because its Linux release ships only a .zip, which the
+# github-tools installer has no mode for.
+@ast-grep/cli|ast-grep
