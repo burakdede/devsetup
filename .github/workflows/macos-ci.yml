@@ -98,6 +98,14 @@ jobs:
       - name: Brewfile is valid
         run: brew bundle list --file=Brewfile >/dev/null
 
+      # `brew bundle list` only parses the file. This asks Homebrew whether
+      # each entry still exists, is the declared kind, and has not been
+      # renamed upstream -- the failure that aborts a fresh machine's system
+      # step partway through. Metadata only; nothing is installed.
+      - name: Brewfile entries resolve against Homebrew
+        working-directory: .
+        run: bash mac/scripts/check-brewfile.sh
+
       - name: run.sh --help
         run: ./run.sh --help
 
