@@ -38,6 +38,29 @@ costs seconds rather than the hour a real `brew bundle` would.
 
 Run the Linux suite locally with `cd linux && bash scripts/test.sh`.
 
+### What CI does not prove
+
+Worth knowing before trusting a green tick on a brand-new machine.
+
+**The Ubuntu job runs on a GitHub runner image, not a bare Ubuntu.** That image
+preinstalls a great deal -- node, python, docker, even `aws` and `gcloud`. So a
+dependency this repo *uses* but never *declares* would still work there and
+fail on a real machine. It has already happened once in the small: the cloud
+CLI installers appeared to run in CI while actually taking their
+"already installed" branch, because the runner had both. `linux/scripts/vm-smoke-test.sh`
+launches a genuinely bare 24.04 VM via multipass and is the check for this; it
+is manual, and worth running before trusting a big change.
+
+**The macOS `system` step never runs anywhere.** Installing the Brewfile,
+casks included, is impractical on a hosted runner and is deliberately out of
+scope. `check-brewfile.sh` covers the failure that actually bites -- an entry
+that no longer resolves -- but nothing exercises `brew bundle install` itself.
+A fresh Mac is the only real test.
+
+Neither gap is silent when it bites: `handle_error` stops the run, names the
+step, and prints the `--only <step>` command to resume with, because steps are
+independent and safe to re-run.
+
 ## Post-install state
 
 Most tools work immediately after the run completes. Two things require a session restart:
