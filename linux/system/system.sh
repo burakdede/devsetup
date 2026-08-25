@@ -13,7 +13,6 @@ trap 'handle_error $? $LINENO' ERR
 load_versions
 
 APT_PACKAGES_FILE="$SCRIPT_DIR/apt-packages.txt"
-SNAP_PACKAGES_FILE="$SCRIPT_DIR/snap-packages.txt"
 # Shared cross-platform JS tooling, plus the Ubuntu-only agent CLIs that
 # macOS gets from Homebrew casks.
 NPM_PACKAGES_FILE="$REPO_ROOT/packages/npm-packages.txt"
@@ -110,39 +109,6 @@ ensure_agent_command_names() {
     ensure_command_symlink bat batcat
 }
 
-install_snap_packages() {
-    echo_header "Snap packages"
-
-    if [[ ! -f "$SNAP_PACKAGES_FILE" ]]; then
-        log_warn "Missing ${SNAP_PACKAGES_FILE}; skipping Snap packages."
-        return 0
-    fi
-
-    local line package_name channel mode
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line="${line%%#*}"
-        line="$(trim "$line")"
-        [[ -z "$line" ]] && continue
-
-        package_name=""
-        channel=""
-        mode=""
-        read -r package_name channel mode <<< "$line"
-
-        if snap list "$package_name" >/dev/null 2>&1; then
-            log_info "Snap package already installed: $package_name"
-            continue
-        fi
-
-        local args=("snap" "install" "$package_name")
-        [[ -n "$channel" && "$channel" != "-" ]] && args+=("--channel=$channel")
-        [[ "$mode" == "classic" ]] && args+=("--classic")
-
-        sudo_run "${args[@]}"
-    done < "$SNAP_PACKAGES_FILE"
-}
-
-
 setup_google_chrome_repo() {
     if command_exists google-chrome; then
         log_info "Google Chrome is already installed."
@@ -155,7 +121,7 @@ setup_google_chrome_repo() {
     # apt source that can never resolve.
     if [[ "$DEB_ARCH" != "amd64" ]]; then
         log_warn "Google Chrome has no ${DEB_ARCH} Linux build upstream. Skipping."
-        log_info "Use the Firefox snap Ubuntu ships by default, which is built for ${DEB_ARCH}."
+        log_info "Use the Firefox that Ubuntu ships by default, which is built for ${DEB_ARCH}."
         return 0
     fi
 
@@ -708,6 +674,96 @@ install_rust() {
 }
 
 
+install_cloud_clis() {
+    echo_header "Cloud CLIs"
+
+    install_aws_cli
+    install_gcloud
+}
+
+# AWS ships no GitHub release, and Ubuntu's `awscli` package is still version
+# 1, so neither github-tools.txt nor APT can serve this.
+#
+# The official installer is the documented route and needs no root: it honours
+# XDG_DATA_HOME and XDG_BIN_HOME, which .zshenv already sets, so the CLI lands
+# in ~/.local/share/aws-cli with a symlink in ~/.local/bin -- a directory this
+# repo already puts on PATH for every shell.
+#
+# Unpinned on purpose, matching macOS, where Homebrew's awscli tracks latest
+# and is not in packages/versions.txt. The installer takes `--version X.Y.Z`
+# if that ever needs to change; pin both platforms together or not at all.
+install_aws_cli() {
+    if command_exists aws && ! upgrade_enabled; then
+        log_info "aws is already installed ($(aws --version 2>&1 | awk '{print $1}'))."
+        return 0
+    fi
+
+    log_info "Installing the AWS CLI via the official installer..."
+    if curl --proto '=https' --tlsv1.2 -fsSL https://awscli.amazonaws.com/v2/install.sh \
+        | bash -s -- --quiet; then
+        log_success "aws installed to ${XDG_DATA_HOME:-$HOME/.local/share}/aws-cli"
+    else
+        log_warn "The AWS CLI installer failed; continuing without it."
+    fi
+}
+
+# Google ships no GitHub release either. The versioned archive is the
+# documented install that needs no root -- the apt repo would mean another
+# third-party source plus root, for one tool.
+install_gcloud() {
+    if command_exists gcloud && ! upgrade_enabled; then
+        log_info "gcloud is already installed."
+        return 0
+    fi
+
+    # Google names the 64-bit ARM build "arm", not "arm64" or "aarch64".
+    local gcloud_arch
+    case "$GNU_ARCH" in
+        x86_64)        gcloud_arch="x86_64" ;;
+        aarch64|arm64) gcloud_arch="arm" ;;
+        *)
+            log_warn "Google publishes no Cloud CLI build for ${GNU_ARCH}. Skipping."
+            return 0
+            ;;
+    esac
+
+    local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+    local bin_home="$HOME/.local/bin"
+    local url="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${gcloud_arch}.tar.gz"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+
+    log_info "Installing the Google Cloud CLI from the versioned archive..."
+    if ! curl --proto '=https' --tlsv1.2 -fsSL "$url" -o "$tmp_dir/gcloud.tar.gz"; then
+        log_warn "Could not download the Google Cloud CLI. Skipping."
+        rm -rf "$tmp_dir"
+        return 0
+    fi
+
+    mkdir -p "$data_home" "$bin_home"
+
+    # Replace the tree rather than unpacking over it. The archive is a full SDK
+    # and files left behind by an older release are how a half-upgraded, subtly
+    # broken gcloud happens.
+    rm -rf "${data_home:?}/google-cloud-sdk"
+    tar -xzf "$tmp_dir/gcloud.tar.gz" -C "$data_home"
+    rm -rf "$tmp_dir"
+
+    # --path-update=false because PATH belongs to the dotfiles: .zshenv already
+    # puts ~/.local/bin ahead of everything, and letting the installer append
+    # its own block to ~/.bashrc would fight the tracked config.
+    "$data_home/google-cloud-sdk/install.sh" \
+        --quiet --path-update=false --usage-reporting=false
+
+    local tool
+    for tool in gcloud gsutil bq; do
+        ln -sf "$data_home/google-cloud-sdk/bin/$tool" "$bin_home/$tool"
+    done
+
+    log_success "gcloud installed to $data_home/google-cloud-sdk"
+}
+
+
 install_npm_clis() {
     echo_header "Node-based tooling"
 
@@ -832,10 +888,6 @@ main() {
         setup_docker_repo
     fi
 
-    if ! should_skip_step SNAPS; then
-        install_snap_packages
-    fi
-
     if ! should_skip_step CHROME; then
         setup_google_chrome_repo
     fi
@@ -858,6 +910,10 @@ main() {
 
     if ! should_skip_step GITHUB_RELEASE_TOOLS; then
         install_github_release_tools
+    fi
+
+    if ! should_skip_step CLOUD_CLIS; then
+        install_cloud_clis
     fi
 
     if ! should_skip_step UV; then

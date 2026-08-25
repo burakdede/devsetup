@@ -217,6 +217,19 @@ verify_shared() {
         fail "packages/npm-packages.txt  (missing)"
     fi
 
+    # Declared per-platform -- Homebrew on macOS, github-tools.txt or a vendor
+    # installer on Ubuntu -- so nothing else in this script would notice one
+    # going missing on one side only. That asymmetry is what this catches.
+    #
+    # `wrangler` is deliberately absent: it is invoked as `npx wrangler` from
+    # each project, so there is no machine-wide copy to look for. See the note
+    # in mac/Brewfile.
+    section "Cloud CLIs"
+    check_cmd aws         "aws  (AWS)"
+    check_cmd gcloud      "gcloud  (Google Cloud)"
+    check_cmd cloudflared "cloudflared  (Cloudflare Tunnel)"
+    check_cmd hcloud      "hcloud  (Hetzner)"
+
     section "SDKMAN (owns the JVM toolchain)"
     local sdk_home="$HOME/.sdkman"
     if [[ -s "$sdk_home/bin/sdkman-init.sh" ]]; then

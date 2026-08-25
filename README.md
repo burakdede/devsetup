@@ -84,7 +84,7 @@ machinist/
 ├── dotfiles/          shared cross-platform configs (zsh, nvim, tmux, wezterm, …)
 ├── packages/          shared tool manifests (SDKMAN, uv, npm)
 ├── mac/               macOS setup scripts (Homebrew-based)
-└── linux/             Ubuntu setup scripts (APT/snap/GitHub-release-based)
+└── linux/             Ubuntu setup scripts (APT/GitHub-release-based)
 ```
 
 `dotfiles/` is a plain directory -- no submodule. Edit a file, commit, push. Both machines pull the same change with `git pull`.
@@ -100,7 +100,7 @@ OS-specific lives in that OS's directory.
 |---|---|---|
 | Shared config | `dotfiles/` | zsh, nvim, tmux, wezterm, git, mise |
 | Shared tool lists | `packages/` | SDKMAN candidates, uv tools, npm CLIs |
-| OS-specific packages | `mac/`, `linux/` | Brewfile casks, APT, snap, GitHub-release binaries |
+| OS-specific packages | `mac/`, `linux/` | Brewfile casks, APT, GitHub-release binaries |
 | OS-specific behaviour | `mac/`, `linux/` | `defaults write`, GNOME settings, `chsh` vs `usermod` |
 
 So the JVM candidates you get are identical on both machines because they come
@@ -136,7 +136,7 @@ Re-install: `MACHINIST_UPGRADE=1 ./run.sh --only editor`
 
 | Step | What it does |
 |---|---|
-| `system` | APT packages, snap packages, GitHub-release binaries, mise, Nerd Fonts |
+| `system` | APT packages, GitHub-release binaries, cloud CLIs, mise, Nerd Fonts |
 | `dotfiles` | Symlinks `dotfiles/` into `$HOME` |
 | `configure` | Prompts for git name/email → writes `~/.gitconfig.local` |
 | `shell` | Installs zsh, sets it as default shell |
