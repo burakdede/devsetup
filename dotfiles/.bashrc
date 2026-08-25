@@ -178,6 +178,15 @@ elif [[ -r /usr/share/bash-completion/bash_completion ]]; then
     source /usr/share/bash-completion/bash_completion
 fi
 
+# ─── zoxide ───────────────────────────────────────────────────────────────────
+# Mirrors .zshrc: `cd` itself is replaced, not supplemented. Kept in step for
+# the same reason the rest of this file is -- a jump habit that works in zsh
+# and silently does nothing in bash is worse than not having it at all.
+#
+# Below the completion block on purpose; zoxide attaches its completions to the
+# existing system and they are dropped if it has not been sourced yet.
+command -v zoxide &>/dev/null && _evalcache zoxide "$(command -v zoxide)" zoxide init bash --cmd cd
+
 # ─── Prompt ───────────────────────────────────────────────────────────────────
 # Deliberately hand-rolled and small. powerlevel10k is zsh-only, and adding a
 # second prompt framework for a fallback shell is not worth the moving parts.
