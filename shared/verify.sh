@@ -301,6 +301,42 @@ verify_shared() {
     # .zprofile activate ~/.local/bin/mise by absolute path, so a Homebrew mise
     # satisfies `command -v mise` while the activation silently uses the other
     # binary. mac/Brewfile documents this; the check enforces it.
+    #
+    # The test is "does anything depend on it", not "is it a leaf". Both of the
+    # obvious shortcuts are wrong here, and this machine had one of each:
+    #
+    #   `brew list --formula` alone flags python@3.14, which awscli, gcloud-cli,
+    #   nmap and watchman all depend on -- uninstalling it breaks them.
+    #
+    #   `brew leaves` alone misses hashicorp/tap/terraform, which was installed
+    #   at v1.15.3 against a mise pin of 1.8.5 while being neither a leaf nor
+    #   depended on by anything.
+    #
+    # So: match every installed formula whose name duplicates a mise-managed
+    # tool, then keep only the ones nothing else needs. Names are matched with
+    # any tap prefix stripped, since a third-party tap shadows just as well.
+    if command -v brew >/dev/null 2>&1; then
+        if brew list --formula 2>/dev/null | grep -qE '(^|/)mise$'; then
+            fail "mise is installed from Homebrew  (brew uninstall mise -- the pinned one lives at ~/.local/bin/mise)"
+        else
+            ok "mise comes only from the pinned installer"
+        fi
+
+        local dupe found_dupe=0
+        while IFS= read -r dupe; do
+            [[ -z "$dupe" ]] && continue
+            # A formula something else needs is not drift; it never reaches PATH.
+            [[ -n "$(brew uses --installed "$dupe" 2>/dev/null)" ]] && continue
+            warn "Homebrew has $dupe, which mise already owns  (brew uninstall $dupe)"
+            found_dupe=1
+        done < <(brew list --formula 2>/dev/null \
+                 | awk -F/ '{print $NF"\t"$0}' \
+                 | grep -E '^(node|python|ruby|go|terraform|terragrunt|tflint)(@[0-9.]+)?\t' \
+                 | cut -f2)
+        if [[ "$found_dupe" -eq 0 ]]; then
+            ok "no Homebrew duplicates of mise-managed runtimes"
+        fi
+    fi
 
     # The runtimes that actually resolve should be the mise ones.
     local rt
