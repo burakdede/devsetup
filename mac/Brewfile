@@ -19,6 +19,7 @@ brew "jq"
 brew "moreutils"         # sponge, vipe, ts, etc.
 brew "nmap"              # network debugging and port scanning
 brew "ripgrep"
+brew "ffmpeg"            # media transcoding; also in the Ubuntu APT list
 brew "actionlint"        # lints GitHub workflows; agents edit these
 brew "gitleaks"          # secret scanning, enforced via pre-commit
 brew "shellcheck"
@@ -37,6 +38,13 @@ brew "eza"     # ls replacement -- tree view, git status, icons
 brew "fd"      # find replacement -- faster, simpler syntax
 brew "fzf"     # fuzzy finder -- shell history, file search, ctrl-r
 brew "yq"      # YAML/JSON/TOML processor -- used in CI and dotfile automation
+brew "zoxide"  # cd replacement -- wired over `cd` itself in .zshrc, see docs/shell.md
+# Benchmarking belongs here rather than in a dev-only list: docs/shell.md quotes
+# startup figures to the millisecond and --verify fails the install on a
+# regression. Timing that by hand has a noise floor wide enough to swallow the
+# differences those numbers assert, so the claims need a tool that does warmup
+# runs and outlier detection.
+brew "hyperfine"
 
 ########################################################################
 # Runtime and package management                                       #
@@ -56,13 +64,49 @@ brew "shfmt"   # shell formatter -- agents write shell; keeps it well-formatted
 brew "opencode"  # agent CLI -- a formula, not a cask, despite the app-like name
 
 ########################################################################
+# Apple platform toolchain (macOS only)                                #
+########################################################################
+# Xcode itself is not installable from here -- it comes from the App Store,
+# and `xcode-select --install` provides the command line tools. Everything
+# below is the layer on top that both you and the agents drive.
+#
+# XcodeBuildMCP is deliberately absent: it runs as `npx -y xcodebuildmcp@latest`
+# from the MCP client config, so there is nothing for a package manager to own.
+# It shells out to the tools below, which is why they belong in the manifest
+# even though nothing in this repo calls them directly.
+brew "xcbeautify"          # formats xcodebuild output -- raw output is thousands of
+                           # DerivedData path lines; agents pay for every one of them
+brew "swiftlint"           # lint
+brew "swiftformat"         # format -- the pair agents reach for after editing Swift
+brew "xcode-build-server"  # SourceKit-LSP for a non-Xcode editor; this is what makes
+                           # neovim useful in a Swift project
+brew "xcodes"              # installs and switches Xcode versions from the CLI
+brew "ipatool"             # App Store package tooling
+brew "asc"                 # App Store Connect CLI
+
+########################################################################
+# Cloud CLIs                                                           #
+########################################################################
+# NOTE: wrangler is deliberately NOT here, and not in npm-packages.txt either.
+# Its version is coupled to each Worker's compatibility date and bindings, so
+# it belongs in the project's own package.json. Use `npx wrangler`. This is the
+# same reasoning that keeps project dependencies out of the global npm list.
+brew "cloudflared"   # Cloudflare Tunnel -- a machine-level daemon, unlike wrangler
+brew "awscli"
+brew "hcloud"        # Hetzner Cloud
+
+########################################################################
 # Apps                                                                 #
 ########################################################################
 cask "alfred"
 cask "antigravity"               # Google's agent IDE
 cask "codex"
-cask "docker-desktop"            # includes docker CLI and compose
+cask "docker-desktop"            # includes docker CLI and compose. Local databases
+                                 # are containers started from a project's compose
+                                 # file -- no standalone database server is installed
+                                 # by this repo, deliberately.
 cask "firefox"
+cask "gcloud-cli"                # renamed from google-cloud-sdk; auto-updates itself
 cask "google-chrome"
 cask "jetbrains-toolbox"
 cask "font-jetbrains-mono-nerd-font"  # required by WezTerm + neovim UI icons

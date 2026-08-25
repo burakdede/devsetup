@@ -68,3 +68,7 @@ ufw
 direnv    # per-directory env vars -- agents cd in and env is set automatically
 just      # task runner -- agents call `just <task>` without parsing Makefiles
 shfmt     # shell script formatter -- agents write shell; keeps it well-formatted
+
+# Shell and benchmarking -- the cross-platform half of the macOS Brewfile
+zoxide     # cd replacement, wired over `cd` itself in .zshrc
+hyperfine  # benchmarking with warmup runs and outlier detection; --verify uses it
