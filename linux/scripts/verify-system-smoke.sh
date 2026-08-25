@@ -26,6 +26,11 @@ echo "==> Verifying smoke-install commands"
 # from linux/system/github-tools.txt; tree-sitter in particular is a hard
 # requirement of nvim-treesitter's main branch, which silently falls back to
 # regex syntax without it.
+# Hand-maintained, and that is the weakness: this list silently fell behind
+# every tool added after it was written, so a fresh VM could miss them and
+# still report success. Anything added to apt-packages.txt, github-tools.txt,
+# npm-packages.txt or an installer in system.sh belongs here too -- the name
+# is the COMMAND, which is not always the package (fd-find installs fd).
 base_commands=(
     rg
     fd
@@ -55,12 +60,22 @@ base_commands=(
     shfmt
     zsh
     tmux
+    ffmpeg
+    zoxide
+    hyperfine
+    ast-grep
+    cloudflared
+    hcloud
 )
 
 for cmd in "${base_commands[@]}"; do
     require_command "$cmd"
 done
 
+if ! flag_enabled "${MACHINIST_SKIP_CLOUD_CLIS:-0}"; then
+    require_command aws
+    require_command gcloud
+fi
 if ! flag_enabled "${MACHINIST_SKIP_DOCKER:-0}"; then
     require_command docker
 fi
