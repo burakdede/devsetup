@@ -111,15 +111,20 @@ Startup is treated as a feature, and `--verify` fails if it regresses.
 
 | | |
 |---|---|
-| zsh, typical | **~60ms** |
-| bash, typical | ~120ms |
+| zsh, typical | **~120ms** |
+| bash, typical | ~160ms |
 | zsh, first ever run | ~420ms (builds the completion dump once) |
+
+Best of ten `time zsh -lic exit` on an idle machine. Treat them as an order of
+magnitude, not a budget: the same config measures 30-45ms of first-prompt lag
+under `zsh-bench` depending only on how busy the machine is, so a difference
+under ~10ms is noise. CI enforces a deliberately loose 400ms.
 
 Three things get it there:
 
-**Shell integrations are cached.** `brew shellenv`, `mise activate`, `fzf --zsh`
-and `direnv hook` each print shell code you have to `eval`. That is four
-fork+execs on every single shell, and together they were ~50ms of a ~90ms
+**Shell integrations are cached.** `brew shellenv`, `mise activate`, `fzf --zsh`,
+`direnv hook` and `zoxide init` each print shell code you have to `eval`. That is
+five fork+execs on every single shell, and together they were ~50ms of a ~90ms
 startup -- pure repeated work, since the output only changes when the tool does.
 `_evalcache` (in `.zshenv`, mirrored in `.bashrc`) runs each generator once,
 stores the result under `$XDG_CACHE_HOME/zsh/init/`, byte-compiles it, and
@@ -159,7 +164,10 @@ the real init until the first time you actually run `sdk`. The `sdk` stub
 replaces itself on first call, so everything (`sdk list`, `sdk use`, `sdk env`)
 behaves normally.
 
-Interactive shell startup is roughly **100ms** as a result, down from 210ms.
+`zprof` on the current config puts the remaining time in two places: mise's
+`_mise_hook` (~25ms, a fork of the mise binary on the first prompt) and
+`compinit` (~22ms). Both are the price of the features, not overhead this repo
+added.
 
 macOS-only configs (Alacritty, etc.) live in `mac/configs/.config/` and are symlinked separately by `mac/dotfiles.sh`.
 
