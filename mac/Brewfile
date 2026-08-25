@@ -91,6 +91,10 @@ brew "asc"                 # App Store Connect CLI
 # Its version is coupled to each Worker's compatibility date and bindings, so
 # it belongs in the project's own package.json. Use `npx wrangler`. This is the
 # same reasoning that keeps project dependencies out of the global npm list.
+#
+# Linux counterparts: cloudflared and hcloud come from github-tools.txt;
+# awscli and gcloud from vendor installers in linux/system/system.sh, since
+# neither ships a GitHub release and Ubuntu's awscli package is still v1.
 brew "cloudflared"   # Cloudflare Tunnel -- a machine-level daemon, unlike wrangler
 brew "awscli"
 brew "hcloud"        # Hetzner Cloud

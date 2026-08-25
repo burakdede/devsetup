@@ -57,6 +57,8 @@ mise trust <clone>/dotfiles/.config/mise/config.toml
 
 **GitHub release binary (Linux):** add a line to `linux/system/github-tools.txt` in the format `command|owner/repo|asset_regex|mode|binary`. The modes are `raw`, `tar.gz`, `tar.xz` and `gz` — a project that ships only a `.zip` needs a new mode in the installer, so prefer another route if one exists.
 
+**Vendor installer (Linux):** add a function to `linux/system/system.sh` and a `should_skip_step` block in `main`. This is the last resort, for a tool with no GitHub release and no usable APT package — `awscli` and `gcloud` are both installed this way, as `mise` and `rustup` already were. Install under `~/.local/share` with a symlink in `~/.local/bin`, which is on PATH for every shell, so the step needs no root.
+
 **npm (both):** add to `packages/npm-packages.txt` in the format `package[|command]`. Give the command when the executable does not share the package name, as with a scoped package — `@ast-grep/cli` installs `ast-grep`. Without it the verifier looks for a command named after the package and reports a failure that is not real.
 
 **Both platforms:** prefer a shared manifest so the two machines cannot drift.
