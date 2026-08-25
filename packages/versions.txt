@@ -18,6 +18,6 @@
 # rustup channels:  https://forge.rust-lang.org/infra/channel-layout.html
 
 NEOVIM_VERSION=0.12.3
-MISE_VERSION=2025.11.11
+MISE_VERSION=2026.8.12
 RUST_VERSION=1.94.1
 NERD_FONTS_VERSION=3.3.0

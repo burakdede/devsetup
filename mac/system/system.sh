@@ -221,6 +221,8 @@ install_npm_clis() {
 
     local package_name
     while IFS= read -r package_name; do
+        # Entries may be `package|command`; npm only wants the package.
+        package_name="${package_name%%|*}"
         log_info "Installing npm package: $package_name"
         "$MISE_BIN" exec node -- npm install --global "$package_name"
     done < <(read_list_file "$NPM_PACKAGES_FILE")

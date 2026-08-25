@@ -65,6 +65,23 @@ break piping and copy-paste. It is wired in only where it is unambiguously
 better, as `MANPAGER` for syntax-highlighted man pages and as the preview
 window for fzf's Ctrl-T.
 
+**`cd` is zoxide, not the builtin.** Both shells initialise zoxide with
+`--cmd cd`, which replaces `cd` outright rather than adding a `z` command next
+to it. That is deliberate: a second command only helps once you remember to
+reach for it, and `cd` is the most-typed command on this machine.
+
+Nothing about the old behaviour is lost. Real paths, `cd -`, `cd ..` and a bare
+`cd` all work exactly as before; zoxide only adds a fallback for when the
+argument is not a path, matching it against directories you have already
+visited. So `cd machinist` from anywhere lands in the repo. `cdi` opens an
+interactive picker, which uses `fzf` when it is present.
+
+The init line sits **below** `compinit` in `.zshrc` and below the
+`bash_completion` block in `.bashrc`. zoxide attaches its completions to the
+existing completion system, and they are silently dropped if it has not been
+initialised yet. It is also below `direnv`, so jumping into a directory still
+fires direnv's hook.
+
 **`delta` is the git pager,** configured in `.gitconfig`. The setting is
 guarded with a `command -v` fallback to `less`, because git treats a missing
 pager as a fatal error and this file is symlinked on machines where the system

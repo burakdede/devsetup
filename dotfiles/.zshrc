@@ -247,6 +247,23 @@ if command -v direnv &>/dev/null; then
     _evalcache direnv "$(command -v direnv)" direnv hook zsh
 fi
 
+# ─── zoxide ───────────────────────────────────────────────────────────────────
+# `--cmd cd` replaces cd itself rather than adding a `z` command beside it.
+# That is the point: a second command only helps once you remember to use it,
+# and the habit being replaced here is the most-typed command on this machine.
+#
+# Nothing about the old behaviour is lost. zoxide's cd still takes real paths,
+# `cd -`, `cd ..` and a bare `cd` for $HOME; it only adds a fallback that
+# matches against directories you have already visited when the argument is
+# not a path. `cdi` opens the interactive picker, which uses fzf when present.
+#
+# This MUST stay below compinit -- zoxide's completions attach to the existing
+# completion system and are silently dropped if it has not been initialised.
+# It is deliberately below direnv too, so a directory jump fires direnv's hook.
+if command -v zoxide &>/dev/null; then
+    _evalcache zoxide "$(command -v zoxide)" zoxide init zsh --cmd cd
+fi
+
 # ─── tmux auto-attach (optional) ──────────────────────────────────────────────
 # Keep disabled by default for predictable shell startup.
 if [[ "${ZSH_TMUX_AUTO_ATTACH:-0}" == "1" ]] \
