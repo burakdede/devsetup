@@ -19,7 +19,7 @@ Available skip flags:
 | Variable | Skips |
 |---|---|
 | `MACHINIST_SKIP_DOCKER` | Docker CLI and Compose plugin |
-| `MACHINIST_SKIP_SNAPS` | All snap packages |
+| `MACHINIST_SKIP_CLOUD_CLIS` | The AWS and Google Cloud CLIs |
 | `MACHINIST_SKIP_CHROME` | Google Chrome |
 | `MACHINIST_SKIP_GITHUB_RELEASE_TOOLS` | GitHub-release binaries such as `yq`, `eza`, `sd`, `scc` |
 | `MACHINIST_SKIP_UV` | `uv` and `uv`-managed tools |
@@ -116,7 +116,6 @@ lives in tells you its scope.
 **Ubuntu-specific** (this directory, no macOS equivalent):
 
 - `system/apt-packages.txt`
-- `system/snap-packages.txt`
 - `system/github-tools.txt` -- upstream release binaries not packaged in APT
 - `system/npm-packages.txt` -- agent CLIs; macOS installs these from Homebrew casks
 

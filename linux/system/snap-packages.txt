@@ -1,6 +1,0 @@
-# Format:
-# package [channel|-] [classic]
-
-# Collaboration and productivity
-localsend
-slack - classic

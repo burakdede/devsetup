@@ -294,27 +294,6 @@ class BootstrapRepoTests(unittest.TestCase):
                 self.assertNotIn(line, seen, f"Duplicate entry {line!r} in {manifest}")
                 seen.add(line)
 
-        snap_seen = set()
-        for raw_line in (
-            (REPO_ROOT / "system" / "snap-packages.txt")
-            .read_text(encoding="utf-8")
-            .splitlines()
-        ):
-            line = raw_line.split("#", 1)[0].strip()
-            if not line:
-                continue
-            parts = line.split()
-            self.assertGreaterEqual(len(parts), 1)
-            self.assertLessEqual(len(parts), 3)
-            self.assertNotIn(line, snap_seen)
-            snap_seen.add(line)
-            if len(parts) >= 2:
-                self.assertTrue(
-                    parts[1] == "-" or re.fullmatch(r"[A-Za-z0-9./_-]+", parts[1])
-                )
-            if len(parts) == 3:
-                self.assertEqual(parts[2], "classic")
-
         github_seen = set()
         # Keep in step with the case statement in install_github_release_tools.
         valid_modes = {"raw", "tar.gz", "tar.xz", "gz"}
@@ -369,39 +348,6 @@ class BootstrapRepoTests(unittest.TestCase):
                 log_output,
             )
 
-    def test_system_installer_parses_snap_manifest(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-            log_file = Path(tmp_dir) / "log.txt"
-            manifest = Path(tmp_dir) / "snaps.txt"
-            sourceable_script = self.create_sourceable_system_script(tmp_path)
-            manifest.write_text(
-                "discord - classic\npostman latest/stable\nlocalsend\n",
-                encoding="utf-8",
-            )
-
-            command = textwrap.dedent(
-                f"""\
-                source "{REPO_ROOT / "utils" / "utils.sh"}"
-                sudo_run() {{ printf 'sudo:%s\\n' "$*" >> "{log_file}"; }}
-                log_info() {{ :; }}
-                log_warn() {{ :; }}
-                log_success() {{ :; }}
-                echo_header() {{ :; }}
-                snap() {{ return 1; }}
-                source "{sourceable_script}"
-                SNAP_PACKAGES_FILE="{manifest}"
-                install_snap_packages
-                """
-            )
-
-            result = self.run_cmd(["bash", "-lc", command])
-            self.assertEqual(result.returncode, 0, result.stderr)
-            lines = log_file.read_text(encoding="utf-8").splitlines()
-            self.assertIn("sudo:snap install discord --classic", lines)
-            self.assertIn("sudo:snap install postman --channel=latest/stable", lines)
-            self.assertIn("sudo:snap install localsend", lines)
-
     def test_ensure_line_in_file_is_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
@@ -437,7 +383,7 @@ class BootstrapRepoTests(unittest.TestCase):
                 install_apt_packages() {{ printf 'apt\\n' >> "{log_file}"; }}
                 ensure_agent_command_names() {{ printf 'compat\\n' >> "{log_file}"; }}
                 setup_docker_repo() {{ printf 'docker\\n' >> "{log_file}"; }}
-                install_snap_packages() {{ printf 'snaps\\n' >> "{log_file}"; }}
+                install_cloud_clis() {{ printf 'cloud-clis\\n' >> "{log_file}"; }}
                 setup_google_chrome_repo() {{ printf 'chrome\\n' >> "{log_file}"; }}
                 setup_spotify_repo() {{ printf 'spotify\\n' >> "{log_file}"; }}
                 setup_tailscale_repo() {{ printf 'tailscale\\n' >> "{log_file}"; }}
@@ -453,7 +399,7 @@ class BootstrapRepoTests(unittest.TestCase):
                 setup_ufw() {{ printf 'ufw\\n' >> "{log_file}"; }}
                 echo_header() {{ :; }}
                 log_success() {{ :; }}
-                export MACHINIST_SKIP_SNAPS=1
+                export MACHINIST_SKIP_CLOUD_CLIS=1
                 export MACHINIST_SKIP_CHROME=1
                 export MACHINIST_SKIP_GO=1
                 export MACHINIST_SKIP_PYTHON=1
@@ -474,7 +420,7 @@ class BootstrapRepoTests(unittest.TestCase):
             self.assertIn("tailscale", output)
             self.assertIn("jetbrains-toolbox", output)
             self.assertIn("timeshift", output)
-            self.assertNotIn("snaps", output)
+            self.assertNotIn("cloud-clis", output)
             self.assertNotIn("chrome", output)
             self.assertNotIn("go", output)
             self.assertNotIn("python", output)

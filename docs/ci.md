@@ -25,7 +25,7 @@ Both platforms are covered:
 macOS deliberately does not run the full `system` step: installing every cask
 in the Brewfile is far too slow for a hosted runner. Both workflows also run
 weekly, to catch upstream breakage (a removed Homebrew flag, a renamed GitHub
-release asset, a snap that disappears) rather than discovering it mid-install
+release asset, a vendor archive that moves) rather than discovering it mid-install
 on a new machine.
 
 Run the Linux suite locally with `cd linux && bash scripts/test.sh`.

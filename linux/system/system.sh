@@ -13,7 +13,6 @@ trap 'handle_error $? $LINENO' ERR
 load_versions
 
 APT_PACKAGES_FILE="$SCRIPT_DIR/apt-packages.txt"
-SNAP_PACKAGES_FILE="$SCRIPT_DIR/snap-packages.txt"
 # Shared cross-platform JS tooling, plus the Ubuntu-only agent CLIs that
 # macOS gets from Homebrew casks.
 NPM_PACKAGES_FILE="$REPO_ROOT/packages/npm-packages.txt"
@@ -110,39 +109,6 @@ ensure_agent_command_names() {
     ensure_command_symlink bat batcat
 }
 
-install_snap_packages() {
-    echo_header "Snap packages"
-
-    if [[ ! -f "$SNAP_PACKAGES_FILE" ]]; then
-        log_warn "Missing ${SNAP_PACKAGES_FILE}; skipping Snap packages."
-        return 0
-    fi
-
-    local line package_name channel mode
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line="${line%%#*}"
-        line="$(trim "$line")"
-        [[ -z "$line" ]] && continue
-
-        package_name=""
-        channel=""
-        mode=""
-        read -r package_name channel mode <<< "$line"
-
-        if snap list "$package_name" >/dev/null 2>&1; then
-            log_info "Snap package already installed: $package_name"
-            continue
-        fi
-
-        local args=("snap" "install" "$package_name")
-        [[ -n "$channel" && "$channel" != "-" ]] && args+=("--channel=$channel")
-        [[ "$mode" == "classic" ]] && args+=("--classic")
-
-        sudo_run "${args[@]}"
-    done < "$SNAP_PACKAGES_FILE"
-}
-
-
 setup_google_chrome_repo() {
     if command_exists google-chrome; then
         log_info "Google Chrome is already installed."
@@ -155,7 +121,7 @@ setup_google_chrome_repo() {
     # apt source that can never resolve.
     if [[ "$DEB_ARCH" != "amd64" ]]; then
         log_warn "Google Chrome has no ${DEB_ARCH} Linux build upstream. Skipping."
-        log_info "Use the Firefox snap Ubuntu ships by default, which is built for ${DEB_ARCH}."
+        log_info "Use the Firefox that Ubuntu ships by default, which is built for ${DEB_ARCH}."
         return 0
     fi
 
@@ -920,10 +886,6 @@ main() {
 
     if ! should_skip_step DOCKER; then
         setup_docker_repo
-    fi
-
-    if ! should_skip_step SNAPS; then
-        install_snap_packages
     fi
 
     if ! should_skip_step CHROME; then

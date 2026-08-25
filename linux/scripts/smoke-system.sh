@@ -8,7 +8,6 @@ cd "$ROOT_DIR"
 # MACHINIST_* is the documented prefix on both platforms; should_skip_step and
 # verify-system-smoke.sh both read it, so only one spelling needs exporting.
 if [[ "${MACHINIST_SMOKE_FULL:-0}" != "1" ]]; then
-    export MACHINIST_SKIP_SNAPS="${MACHINIST_SKIP_SNAPS:-1}"
     export MACHINIST_SKIP_CHROME="${MACHINIST_SKIP_CHROME:-1}"
     export MACHINIST_SKIP_RUST="${MACHINIST_SKIP_RUST:-1}"
     export MACHINIST_SKIP_UFW="${MACHINIST_SKIP_UFW:-1}"
